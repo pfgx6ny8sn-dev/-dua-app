@@ -5936,6 +5936,418 @@ renderWissen = function(){
   });
 };
 
+/* =================== p27: Gebet – animierter Schritt-Player =================== */
+(function(){
+const css = `
+.lm-gintro{display:flex;gap:12px;align-items:flex-start;background:linear-gradient(135deg,var(--teal-soft),var(--gold-soft));border-radius:18px;padding:14px 16px;margin:4px 0 14px}
+.lm-gintro .ic{flex:none;width:40px;height:40px;border-radius:14px;background:var(--surface);display:grid;place-items:center;font-size:20px}
+.lm-gintro p{margin:0;font-size:15.5px}
+.lm-gintro p+p{margin-top:4px;color:var(--muted);font-size:14px}
+.lm-pl{background:var(--surface);border-radius:26px;overflow:hidden;box-shadow:var(--shadow);margin-bottom:16px;border:1px solid var(--sep)}
+.lm-top{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 14px 10px}
+.lm-count{font-size:13px;color:var(--muted);letter-spacing:.06em;text-transform:uppercase;font-weight:600}
+.lm-count b{color:var(--gold);font-size:17px;letter-spacing:0;font-family:var(--display,inherit)}
+.lm-stage{position:relative;margin:0 10px;border-radius:20px;overflow:hidden;background:#0B2A2C;touch-action:pan-y;cursor:pointer;aspect-ratio:320/210;max-width:100%;isolation:isolate;outline:none}
+.lm-stage:focus-visible{box-shadow:0 0 0 3px var(--gold)}
+.lm-sv{display:block;width:100%;height:100%}
+.lm-lantern{transform-origin:40px 0;animation:lmSwing 4s ease-in-out infinite}
+@keyframes lmSwing{0%,100%{transform:rotate(-4deg)}50%{transform:rotate(4deg)}}
+.lm-glow{animation:lmGlow 3s ease-in-out infinite}
+@keyframes lmGlow{0%,100%{opacity:.55}50%{opacity:.9}}
+.lm-tw{animation:lmTw 2.6s ease-in-out infinite}
+@keyframes lmTw{0%,100%{opacity:.25}50%{opacity:.9}}
+.lm-bub{position:absolute;z-index:1;right:4%;top:5%;max-width:48%;background:#FFFDF6;color:#13302F;border-radius:16px;padding:7px 11px 7px;box-shadow:0 8px 20px rgba(0,0,0,.3);transform-origin:10% 100%;transition:opacity .2s,transform .25s cubic-bezier(.2,1.4,.4,1);text-align:center}
+.lm-bub::after{content:"";position:absolute;left:14px;bottom:-7px;width:14px;height:14px;background:#FFFDF6;transform:rotate(45deg);border-radius:2px}
+.lm-bub.off{opacity:0;transform:scale(.6)}
+.lm-bub .a{font-family:"Scheherazade New",serif;font-size:clamp(16px,4.6vw,23px);line-height:1.5;display:block;direction:rtl}
+.lm-bub .t{font-size:12px;font-style:italic;color:#46605E;display:block;line-height:1.3}
+.lm-bub .n{position:absolute;top:-9px;right:-6px;background:#F2B04A;color:#14302F;font-size:11.5px;font-weight:800;border-radius:999px;padding:2px 7px;box-shadow:0 2px 6px rgba(0,0,0,.25)}
+.lm-nav{position:absolute;top:60%;transform:translateY(-50%);width:38px;height:38px;border-radius:50%;border:0;background:rgba(255,255,255,.14);color:#fff;display:grid;place-items:center;cursor:pointer;backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);font-size:20px;line-height:1;z-index:2}
+.lm-nav:disabled{opacity:.25;cursor:default}
+.lm-nav.p{left:8px}.lm-nav.n{right:8px}
+.lm-re{position:absolute;left:10px;bottom:10px;z-index:2;border:0;border-radius:999px;background:rgba(255,255,255,.92);color:#13302F;font-weight:700;font-size:13px;padding:6px 12px 6px 9px;display:flex;align-items:center;gap:5px;cursor:pointer;box-shadow:0 4px 12px rgba(0,0,0,.25)}
+.lm-re svg{width:15px;height:15px}
+.lm-strip{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;padding:12px 14px 4px;scroll-snap-type:x proximity}
+.lm-strip::-webkit-scrollbar{display:none}
+.lm-strip button{flex:none;scroll-snap-align:center;position:relative;width:58px;height:62px;border-radius:16px;border:0;background:var(--fill);cursor:pointer;padding:2px;transition:transform .2s,background .2s}
+.lm-strip button svg{width:100%;height:100%}
+.lm-strip .fig-bg{fill:transparent}
+.lm-strip button i{position:absolute;top:3px;left:6px;font-style:normal;font-size:11px;font-weight:700;color:var(--muted)}
+.lm-strip button[aria-current="step"]{background:var(--gold-soft);box-shadow:inset 0 0 0 2px var(--gold);transform:translateY(-2px)}
+.lm-strip button[aria-current="step"] i{color:var(--gold)}
+.lm-info{padding:12px 16px 16px;cursor:pointer}
+.lm-info .lm-ar{font-family:"Scheherazade New",serif;color:var(--gold);font-size:26px;line-height:1.5;margin:0;direction:rtl;text-align:right}
+.lm-ttl{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;margin:0 0 6px}
+.lm-ttl h3{margin:0;font-size:22px;font-weight:800;line-height:1.2;font-family:var(--display,inherit)}
+.lm-ttl span{font-size:14px;color:var(--muted)}
+.lm-p1{margin:0 0 4px}
+.lm-p2{margin:0 0 6px;font-size:14px;color:var(--muted)}
+.lm-lt{display:inline-block;font-size:10px;font-weight:800;letter-spacing:.06em;border-radius:5px;padding:1px 5px;margin-right:6px;background:var(--fill);color:var(--muted);vertical-align:1px;font-style:normal}
+.lm-rec{position:relative;margin:12px 0 10px;border-radius:16px;padding:12px 14px;background:var(--surface2);border-left:4px solid var(--gold)}
+.lm-rec .ar{font-size:calc(var(--ar-size,26px)*.95);line-height:2;margin:0 0 4px;text-align:right}
+.lm-rec .tr{font-style:italic;color:var(--muted);margin:0 0 6px;font-size:15px}
+.lm-rec .de{margin:0 0 4px;font-size:15.5px}
+.lm-rec .de.s{font-size:14px;color:var(--muted)}
+.lm-chips{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0 12px}
+.lm-cta{display:flex;align-items:center;justify-content:space-between;gap:10px;width:100%;border:0;border-radius:16px;padding:13px 16px;background:var(--grad);color:var(--on-acc);font-size:16px;font-weight:700;cursor:pointer;text-align:left;box-shadow:0 8px 18px rgba(242,154,59,.25)}
+.lm-cta small{display:block;font-weight:500;font-size:13px;opacity:.85}
+.lm-cta .go{flex:none;width:30px;height:30px;border-radius:50%;background:rgba(255,255,255,.35);display:grid;place-items:center;font-size:18px}
+.lm-info .src{margin:10px 0 0}
+.lm-tiny{font-size:13px;color:var(--muted);text-align:center;margin:6px 0 0}
+/* Sheet */
+.lm-hero{display:flex;gap:12px;align-items:center;background:linear-gradient(135deg,var(--teal-soft),var(--gold-soft));border-radius:18px;padding:10px 14px;margin:4px 0 6px}
+.lm-hero svg{flex:none;width:74px;height:auto}
+.lm-hero .fig-bg{fill:transparent}
+.lm-hero .lm-ar{font-family:"Scheherazade New",serif;color:var(--gold);font-size:24px;line-height:1.4;margin:0}
+.lm-hero p{margin:0;font-size:14px;color:var(--muted)}
+.lm-hero .lm-chips{margin:6px 0 0}
+.lm-sec{display:flex;align-items:center;gap:10px;margin:22px 2px 10px}
+.lm-sec .i{flex:none;width:34px;height:34px;border-radius:12px;display:grid;place-items:center;font-size:17px;background:var(--gold-soft)}
+.lm-sec.s .i{background:var(--teal-soft)}
+.lm-sec.f .i{background:var(--fill)}
+.lm-sec b{display:block;font-size:17px;line-height:1.2}
+.lm-sec small{display:block;color:var(--muted);font-size:13px}
+.lm-sec .ar{margin-left:auto;font-family:"Scheherazade New",serif;color:var(--gold);font-size:19px}
+.lm-dua{background:var(--surface);border-radius:18px;padding:13px 15px;margin:0 0 10px;border:1px solid var(--sep);position:relative}
+.lm-dua .h{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin:0 0 4px}
+.lm-dua .h b{font-size:15px;line-height:1.3}
+.lm-dua .h .ar2{font-family:"Scheherazade New",serif;color:var(--gold);font-size:17px;white-space:nowrap}
+.lm-dua .when{font-size:13px;color:var(--teal);margin:0 0 6px;font-weight:600}
+.lm-dua .ar{font-size:calc(var(--ar-size,26px)*.92);line-height:2;margin:6px 0;text-align:right}
+.lm-dua .tr{font-style:italic;color:var(--muted);margin:0 0 6px;font-size:15px}
+.lm-dua .de{margin:0 0 4px;font-size:15.5px}
+.lm-dua .de.s{font-size:14px;color:var(--muted)}
+.lm-dua .rep{position:absolute;top:-8px;right:12px;background:var(--gold);color:var(--on-acc);font-weight:800;font-size:12px;border-radius:999px;padding:2px 8px}
+.lm-dua .src{margin:6px 0 0}
+.lm-it{display:flex;gap:10px;align-items:flex-start;padding:10px 12px;background:var(--surface);border-radius:14px;margin:0 0 6px}
+.lm-it .bdg{flex:none;margin-top:2px}
+.lm-it p{margin:0;font-size:15.5px}
+.lm-it p.s2{font-size:13.5px;color:var(--muted);margin-top:2px}
+.lm-it .src{font-size:12.5px;margin-top:3px;display:block}
+.lm-tip{background:var(--gold-soft);border-radius:16px;padding:12px 14px;margin:16px 0 4px}
+.lm-tip b{color:var(--gold)}
+.lm-tip p{margin:4px 0 0}
+details.lm-leg{margin-top:18px;background:var(--fill);border-radius:14px;padding:10px 14px}
+details.lm-leg summary{cursor:pointer;font-weight:600;color:var(--lapis)}
+/* Bedingungen & Säulen: frischer Look */
+#gBody .g-card{border:1px solid var(--sep);border-radius:22px;box-shadow:var(--shadow)}
+#gBody .g-num{background:var(--grad);color:var(--on-acc);font-weight:800;box-shadow:0 4px 10px rgba(242,154,59,.3)}
+#gBody .g-term{color:var(--gold)}
+#gBody .figbox svg .fig-bg{fill:var(--teal-soft)}
+@media (prefers-reduced-motion:reduce){.lm-lantern,.lm-glow,.lm-tw{animation:none}.lm-bub{transition:none}}
+`;
+const st = document.createElement("style"); st.textContent = css; document.head.appendChild(st);
+
+const EN = () => lang === "en";
+const two = (de, en, cls) => { const [p, s, ps] = EN() ? [en, de, "DE"] : [de, en, "EN"];
+  return `<p class="${cls||"lm-p1"}">${p}</p>${s ? `<p class="${cls ? cls + " s" : "lm-p2"}"><span class="lm-lt">${ps}</span>${s}</p>` : ""}`; };
+
+/* ---------- Posen interpolieren (Gelenkwinkel statt Punkte → natürliche Bewegung) ---------- */
+const KNEEL = {H:[68,112],S:[87,77],head:[96,59],rot:24,
+  legB:[[66,112],[80,135],[56,135]],footB:[[54,129],[56,138]],
+  legF:[[69,112],[84,135],[60,135]],footF:[[58,129],[60,138]],
+  armB:[[85,81],[95,101],[104,118]],armF:[[89,81],[99,103],[108,120]]};
+const resolve = n => { const o = typeof n === "string" ? POSES[n] : n; return Object.assign({face:0}, POSES[o.base] || {}, o); };
+const rel = (a, b) => { const dx = a[0]-b[0], dy = a[1]-b[1]; return [Math.atan2(dy, dx), Math.hypot(dx, dy)]; };
+const add = (b, r) => [b[0] + Math.cos(r[0]) * r[1], b[1] + Math.sin(r[0]) * r[1]];
+function toPol(p){
+  const o = {H:p.H, rot:p.rot || 0, face:p.face || 0, S:rel(p.S, p.H), head:rel(p.head, p.S)};
+  for(const k of ["armB","armF"]) o[k] = [rel(p[k][0], p.S), rel(p[k][1], p[k][0]), rel(p[k][2], p[k][1])];
+  for(const k of ["legB","legF"]) o[k] = [rel(p[k][0], p.H), rel(p[k][1], p[k][0]), rel(p[k][2], p[k][1])];
+  for(const [f, l] of [["footB","legB"],["footF","legF"]]) o[f] = [rel(p[f][0], p[l][2]), rel(p[f][1], p[f][0])];
+  return o;
+}
+function fromPol(o){
+  const p = {H:o.H, rot:o.rot, face:o.face}; p.S = add(o.H, o.S); p.head = add(p.S, o.head);
+  for(const k of ["armB","armF"]){ const a = add(p.S, o[k][0]), b = add(a, o[k][1]); p[k] = [a, b, add(b, o[k][2])]; }
+  for(const k of ["legB","legF"]){ const a = add(o.H, o[k][0]), b = add(a, o[k][1]); p[k] = [a, b, add(b, o[k][2])]; }
+  for(const [f, l] of [["footB","legB"],["footF","legF"]]){ const a = add(p[l][2], o[f][0]); p[f] = [a, add(a, o[f][1])]; }
+  return p;
+}
+const lerp = (a, b, t) => a + (b - a) * t;
+const lang_ = (a, b, t) => { let d = b - a; while(d > Math.PI) d -= 2*Math.PI; while(d < -Math.PI) d += 2*Math.PI; return a + d * t; };
+const lr = (a, b, t) => [lang_(a[0], b[0], t), lerp(a[1], b[1], t)];
+function mix(A, B, t){
+  const o = {H:[lerp(A.H[0], B.H[0], t), lerp(A.H[1], B.H[1], t)], rot:lerp(A.rot, B.rot, t), face:lerp(A.face, B.face, t), S:lr(A.S, B.S, t), head:lr(A.head, B.head, t)};
+  for(const k of ["armB","armF","legB","legF","footB","footF"]) o[k] = A[k].map((r, i) => lr(r, B[k][i], t));
+  return o;
+}
+const ease = t => t < .5 ? 4*t*t*t : 1 - Math.pow(-2*t + 2, 3) / 2;
+
+/* ---------- Figur zeichnen ---------- */
+function figInner(p, g, ex){
+  const L = LOOK[g], girl = g === "girl", f = (n) => n.toFixed(1);
+  const pl = pts => "M" + pts.map(q => f(q[0]) + " " + f(q[1])).join(" L");
+  const limb = (pts, col, w) => `<path d="${pl(pts)}" fill="none" stroke="${col}" stroke-width="${w}" stroke-linecap="round" stroke-linejoin="round"/>`;
+  const legW = girl ? 17 : 14;
+  const arm = (pts, col, sk) => limb(pts, col, 10) + `<circle cx="${f(pts[2][0])}" cy="${f(pts[2][1])}" r="5" fill="${sk}"/>`;
+  const leg = (pts, foot, col, sk) => limb(foot, sk, 8) + limb(pts, col, legW);
+  const [hx, hy] = p.head, fc = p.face || 0;
+  let head;
+  if(girl){
+    const off = fc >= 0 ? 6 - 6*fc : 6 + 6*(-fc), rx = fc >= 0 ? 6.5 + 1.5*fc : 6.5*(1 + fc);
+    head = `<g transform="rotate(${f(p.rot)} ${f(hx)} ${f(hy)})"><path d="M${f(hx-15)} ${f(hy)} L${f(hx-13)} ${f(hy+21)} L${f(hx+11)} ${f(hy+19)} L${f(hx+13)} ${f(hy+6)} Z" fill="${L.scarfb}"/><circle cx="${f(hx-1)}" cy="${f(hy)}" r="15" fill="${L.scarf}"/>${rx > .3 ? `<ellipse cx="${f(hx+off)}" cy="${f(hy+1.5)}" rx="${f(rx)}" ry="8.5" fill="${L.sk}"/>` : ""}</g>`;
+  } else {
+    head = `<g transform="rotate(${f(p.rot)} ${f(hx)} ${f(hy)})"><circle cx="${f(hx)}" cy="${f(hy)}" r="13" fill="${L.sk}"/><circle cx="${f(hx-2-9*fc)}" cy="${f(hy+2)}" r="3" fill="${L.skb}"/><path d="M${f(hx-13.5)} ${f(hy-2)} A13.5 13.5 0 0 1 ${f(hx+13.5)} ${f(hy-2)} Z" fill="#FFFFFF" stroke="#D5DCE6" stroke-width="1.2"/></g>`;
+  }
+  let extra = "";
+  const a2 = p.armF[2];
+  if(ex.finger > .01) extra += `<g opacity="${f(ex.finger)}"><path d="M${f(a2[0]+3)} ${f(a2[1]-2)} L${f(a2[0]+12)} ${f(a2[1]-7)}" stroke="${L.sk}" stroke-width="3.5" stroke-linecap="round"/><circle cx="${f(a2[0]+18)}" cy="${f(a2[1]-11)}" r="3" fill="#F2B64C"/></g>`;
+  if(ex.r > .01) extra += `<g opacity="${f(ex.r)}" fill="none" stroke="#F2B64C" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><path d="M${f(hx+20)} ${f(hy-12)} Q${f(hx+30)} ${f(hy)} ${f(hx+20)} ${f(hy+12)}"/><path d="M${f(hx+20)} ${f(hy+12)} l7 -1 M${f(hx+20)} ${f(hy+12)} l1 -7"/></g>`;
+  if(ex.l > .01) extra += `<g opacity="${f(ex.l)}" fill="none" stroke="#F2B64C" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><path d="M${f(hx-20)} ${f(hy-12)} Q${f(hx-30)} ${f(hy)} ${f(hx-20)} ${f(hy+12)}"/><path d="M${f(hx-20)} ${f(hy+12)} l-7 -1 M${f(hx-20)} ${f(hy+12)} l-1 -7"/></g>`;
+  if(ex.spark > .01) extra += `<g opacity="${f(ex.spark)}" fill="#FFD27A">${[[hx-26,hy-22,2.4],[hx+24,hy-26,3],[hx+32,hy-6,2],[hx-34,hy-4,2]].map(([x,y,r]) => `<path d="M${f(x)} ${f(y-r*2)} L${f(x+r*.6)} ${f(y-r*.6)} L${f(x+r*2)} ${f(y)} L${f(x+r*.6)} ${f(y+r*.6)} L${f(x)} ${f(y+r*2)} L${f(x-r*.6)} ${f(y+r*.6)} L${f(x-r*2)} ${f(y)} L${f(x-r*.6)} ${f(y-r*.6)} Z"/>`).join("")}</g>`;
+  return `<ellipse cx="80" cy="139" rx="40" ry="3.2" fill="rgba(0,0,0,.28)"/>` + arm(p.armB, L.cb, L.skb) + leg(p.legB, p.footB, L.cb, L.skb) + limb([p.S, p.H], L.c, 25) + leg(p.legF, p.footF, L.c, L.sk) + head + arm(p.armF, L.c, L.sk) + extra;
+}
+
+/* ---------- Bühne ---------- */
+function stageSVG(){
+  const q = EN() ? "Qibla" : "Qibla";
+  const stars = [[22,30],[60,62],[18,96],[250,22],[292,52],[276,96],[230,60],[110,14],[300,130],[34,140]];
+  return `<svg class="lm-sv" viewBox="0 0 320 210" aria-hidden="true">
+  <defs>
+    <linearGradient id="lmBg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#0F3B3D"/><stop offset="1" stop-color="#0A2426"/></linearGradient>
+    <linearGradient id="lmMih" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#1E5A57"/><stop offset="1" stop-color="#14403F"/></linearGradient>
+    <radialGradient id="lmLight" cx=".5" cy=".35" r=".6"><stop offset="0" stop-color="#FFE3A6" stop-opacity=".35"/><stop offset="1" stop-color="#FFE3A6" stop-opacity="0"/></radialGradient>
+    <pattern id="lmRug" width="10" height="8" patternUnits="userSpaceOnUse"><rect width="10" height="8" fill="#B8453A"/><path d="M0 4 L5 0 L10 4 L5 8 Z" fill="#CF5E48"/><circle cx="5" cy="4" r="1" fill="#F2B64C"/></pattern>
+  </defs>
+  <rect width="320" height="210" fill="url(#lmBg)"/>
+  ${stars.map(([x,y],i) => `<circle class="lm-tw" style="animation-delay:${(i*.37).toFixed(2)}s" cx="${x}" cy="${y}" r="${i%3?1.1:1.6}" fill="#FFE9B8"/>`).join("")}
+  <path d="M72 192 V86 Q72 46 138 14 Q204 46 204 86 V192 Z" fill="url(#lmMih)" stroke="#F2B04A" stroke-width="2.2"/>
+  <path d="M82 192 V90 Q82 58 138 28 Q194 58 194 90 V192" fill="none" stroke="#F2B04A" stroke-opacity=".35" stroke-width="1" stroke-dasharray="2 4"/>
+  <ellipse class="lm-glow" cx="138" cy="100" rx="90" ry="90" fill="url(#lmLight)"/>
+  <g class="lm-lantern"><path d="M40 0 V26" stroke="#F2B04A" stroke-width="1.2"/><path d="M33 30 h14 l-2 -4 h-10 Z" fill="#F2B04A"/><path d="M33 30 Q30 42 35 52 H45 Q50 42 47 30 Z" fill="#FFCF73" opacity=".95"/><path d="M36 52 h8 l-1 4 h-6 Z" fill="#F2B04A"/><circle class="lm-glow" cx="40" cy="41" r="14" fill="#FFD27A" opacity=".25"/></g>
+  <rect y="192" width="320" height="18" fill="#082022"/>
+  <rect x="62" y="191.5" width="154" height="9" rx="2.5" fill="url(#lmRug)" stroke="#F2B64C" stroke-width="1.2"/>
+  <path d="M62 201 v3 M67 201 v3 M72 201 v3 M206 201 v3 M211 201 v3 M216 201 v3" stroke="#F2B64C" stroke-width="1.1"/>
+  <g transform="translate(266 158)"><path d="M0 8 L12 0 L36 0 L24 8 Z" fill="#2A2A2A"/><rect x="0" y="8" width="24" height="26" fill="#121212"/><path d="M24 8 L36 0 V26 L24 34 Z" fill="#1D1D1D"/><rect x="0" y="13" width="24" height="3.4" fill="#E2B04F"/><path d="M24 13 L36 5 V8.4 L24 16.4 Z" fill="#C99A3E"/><rect x="9" y="21" width="7" height="13" fill="#C99A3E" opacity=".75"/></g>
+  <path d="M222 182 H258" stroke="#F2B04A" stroke-width="1.6" stroke-dasharray="3 4" stroke-linecap="round" opacity=".7"/><path d="M254 178 l5 4 l-5 4" fill="none" stroke="#F2B04A" stroke-width="1.6" stroke-linecap="round" opacity=".7"/>
+  <text x="284" y="205" text-anchor="middle" font-size="9" font-weight="700" fill="#F2B04A" letter-spacing=".08em">${q.toUpperCase()}</text>
+  <g id="lmFig" transform="translate(52 40) scale(1.1)"></g>
+  </svg>`;
+}
+
+/* ---------- Was beim Bewegen gesagt wird ---------- */
+const SAY = {
+  akbar:{ar:"اللَّهُ أَكْبَرُ", tl:"Allāhu akbar"},
+  fatiha:{ar:"الْحَمْدُ لِلَّهِ رَبِّ الْعَالَمِينَ", tl:"Al-ḥamdu lillāhi rabbil-ʿālamīn …"},
+  azim:{ar:"سُبْحَانَ رَبِّيَ الْعَظِيمِ", tl:"Subḥāna rabbiyal-ʿaẓīm", n:"3×"},
+  samia:{ar:"سَمِعَ اللَّهُ لِمَنْ حَمِدَهُ", tl:"Samiʿallāhu liman ḥamidah"},
+  rabbana:{ar:"رَبَّنَا وَلَكَ الْحَمْدُ", tl:"Rabbanā wa lakal-ḥamd"},
+  ala:{ar:"سُبْحَانَ رَبِّيَ الْأَعْلَى", tl:"Subḥāna rabbiyal-aʿlā", n:"3×"},
+  ighfir:{ar:"رَبِّ اغْفِرْ لِي", tl:"Rabbighfir lī", n:"2×"},
+  tahiyyat:{ar:"التَّحِيَّاتُ لِلَّهِ …", tl:"At-taḥiyyātu lillāh …"},
+  salawat:{ar:"اللَّهُمَّ صَلِّ عَلَى مُحَمَّدٍ …", tl:"Allāhumma ṣalli ʿalā Muḥammad …"},
+  salamR:{ar:"السَّلَامُ عَلَيْكُمْ وَرَحْمَةُ اللَّهِ", tl:"As-salāmu ʿalaikum wa raḥmatullāh", n:{de:"→ rechts", en:"→ right"}},
+  salamL:{ar:"السَّلَامُ عَلَيْكُمْ وَرَحْمَةُ اللَّهِ", tl:"As-salāmu ʿalaikum wa raḥmatullāh", n:{de:"← links", en:"← left"}}
+};
+const UP = {base:"_stand", armB:[[78,58],[92,58],[90,38]], armF:[[82,58],[98,57],[95,36]]};
+/* pre = Ausgangshaltung; dann Phasen: to = Ziel, d = Dauer, say = Sprechblase, ex = Extras, h = Pause danach */
+const SEQ = [
+  {pre:"itidal", ph:[{to:"takbir", d:750, say:"akbar", ex:{spark:1}, h:500}, {to:"takbir", d:400, ex:{spark:0}}]},
+  {pre:"takbir", ph:[{to:"qiyam", d:750, say:"fatiha"}]},
+  {pre:"qiyam", ph:[{to:UP, d:450, say:"akbar"}, {to:"ruku", d:900, h:250}, {to:"ruku", d:1, say:"azim"}]},
+  {pre:"ruku", ph:[{to:UP, d:950, say:"samia", h:200}, {to:"itidal", d:450, h:500}, {to:"itidal", d:1, say:"rabbana"}]},
+  {pre:"itidal", ph:[{to:KNEEL, d:700, say:"akbar"}, {to:"sujud", d:700, h:350}, {to:"sujud", d:1, say:"ala"}]},
+  {pre:"sujud", ph:[{to:"jalsa", d:900, say:"akbar", h:350}, {to:"jalsa", d:1, say:"ighfir"}]},
+  {pre:"jalsa", ph:[{to:"sujud", d:900, say:"akbar", h:350}, {to:"sujud", d:1, say:"ala"}]},
+  {pre:"sujud", ph:[{to:"_sit", d:900, say:"akbar", h:250}, {to:"_sit", d:450, ex:{finger:1}, say:"tahiyyat"}]},
+  {pre:"tashahhud", pex:{finger:1}, ph:[{to:"tashahhud", d:500, ex:{finger:1, spark:1}, say:"salawat", h:900}, {to:"tashahhud", d:600, ex:{finger:1, spark:0}}]},
+  {pre:"_sit", ph:[{to:Object.assign({}, POSES._sit, {face:1}), d:650, ex:{r:1}, say:"salamR", h:1100}, {to:Object.assign({}, POSES._sit, {face:-1}), d:900, ex:{r:0, l:1}, say:"salamL", h:1100}, {to:"_sit", d:600, ex:{l:0}}]}
+];
+const DEF_EX = {finger:0, r:0, l:0, spark:0};
+
+let curPol = toPol(resolve("itidal")), curEx = Object.assign({}, DEF_EX), token = 0;
+function paint(){ const g = document.getElementById("lmFig"); if(g) g.innerHTML = figInner(fromPol(curPol), figGender, curEx); }
+function bubble(k){
+  const b = document.getElementById("lmBub"); if(!b) return;
+  if(!k){ b.classList.add("off"); return; }
+  const s = SAY[k], n = s.n ? (typeof s.n === "string" ? s.n : s.n[lang]) : "";
+  b.classList.add("off");
+  setTimeout(() => { b.innerHTML = `<span class="a" lang="ar">${s.ar}</span><span class="t">${s.tl}</span>${n ? `<span class="n">${n}</span>` : ""}`; b.classList.remove("off"); }, reduceMotion ? 0 : 120);
+}
+function tween(toP, toEx, d, my){
+  const A = curPol, B = toPol(resolve(toP)), EA = Object.assign({}, curEx), EB = Object.assign({}, curEx, toEx || {});
+  return new Promise(res => {
+    if(reduceMotion || d <= 1){ curPol = B; curEx = EB; paint(); res(); return; }
+    const t0 = performance.now();
+    const fr = now => {
+      if(my !== token) return res();
+      const t = Math.min(1, (now - t0) / d), e = ease(t);
+      curPol = mix(A, B, e);
+      curEx = {}; for(const k in EB) curEx[k] = lerp(EA[k] || 0, EB[k], e);
+      paint();
+      if(t < 1) requestAnimationFrame(fr); else { curPol = B; res(); }
+    };
+    requestAnimationFrame(fr);
+  });
+}
+const wait = (ms, my) => new Promise(r => setTimeout(r, reduceMotion ? 0 : ms));
+async function play(i, fromPrev){
+  const my = ++token, s = SEQ[i];
+  bubble(null);
+  if(reduceMotion){
+    const last = s.ph[s.ph.length - 1];
+    let ex = Object.assign({}, DEF_EX, s.pex || {}); s.ph.forEach(p => Object.assign(ex, p.ex || {}));
+    const sayK = [...s.ph].reverse().find(p => p.say);
+    curPol = toPol(resolve(last.to)); curEx = ex; paint(); bubble(sayK && sayK.say); return;
+  }
+  await tween(s.pre, Object.assign({}, DEF_EX, s.pex || {}), fromPrev ? 350 : 450, my);
+  if(my !== token) return;
+  await wait(250, my);
+  for(const p of s.ph){
+    if(my !== token) return;
+    if(p.say) bubble(p.say);
+    await tween(p.to, p.ex, p.d, my);
+    if(p.h) await wait(p.h, my);
+  }
+}
+
+/* ---------- Namen der Schritte & Duas ---------- */
+const STEP_AR = ["تَكْبِيرَةُ الإِحْرَامِ","القِيَامُ وَالفَاتِحَةُ","الرُّكُوعُ","الاِعْتِدَالُ","السُّجُودُ","الجِلْسَةُ","السَّجْدَةُ الثَّانِيَةُ","التَّشَهُّدُ","الصَّلَاةُ عَلَى النَّبِيِّ ﷺ","التَّسْلِيمُ"];
+const DN = {
+  istiftah1:{ar:"دُعَاءُ الاسْتِفْتَاحِ", de:"Eröffnungs-Dua (Istiftāḥ) – Form 1", en:"Opening duʿāʾ (istiftāḥ) – form 1", w:{de:"Leise nach dem ersten Takbīr, vor der Fātiḥa", en:"Quietly after the first takbīr, before al-Fātiḥa"}},
+  istiftah2:{ar:"دُعَاءُ الاسْتِفْتَاحِ", de:"Eröffnungs-Dua (Istiftāḥ) – Form 2", en:"Opening duʿāʾ (istiftāḥ) – form 2", w:{de:"Eine der beiden Formen reicht", en:"One of the two forms is enough"}},
+  taawwudh:{ar:"الاسْتِعَاذَةُ", de:"Taʿawwudh – Zuflucht suchen", en:"Taʿawwudh – seeking refuge", w:{de:"Vor der Fātiḥa", en:"Before al-Fātiḥa"}},
+  amin:{ar:"التَّأْمِينُ", de:"Āmīn", en:"Āmīn", w:{de:"Direkt nach der Fātiḥa", en:"Right after al-Fātiḥa"}},
+  azim:{ar:"تَسْبِيحُ الرُّكُوعِ", de:"Lobpreis im Rukūʿ", en:"Glorification in rukūʿ"},
+  subhanaka:{ar:"سُبْحَانَكَ اللَّهُمَّ", de:"Dua im Rukūʿ und Sudschūd", en:"Duʿāʾ in rukūʿ and sujūd"},
+  subbuh:{ar:"سُبُّوحٌ قُدُّوسٌ", de:"Weiterer Lobpreis", en:"Further glorification"},
+  samia:{ar:"التَّسْمِيعُ وَالتَّحْمِيدُ", de:"Beim Aufrichten", en:"When rising"},
+  hamdan:{ar:"حَمْدًا كَثِيرًا", de:"Viel gesegnetes Lob", en:"Abundant, blessed praise"},
+  mila:{ar:"مِلْءَ السَّمَاوَاتِ", de:"Lob, das die Himmel füllt", en:"Praise filling the heavens"},
+  ala:{ar:"تَسْبِيحُ السُّجُودِ", de:"Lobpreis im Sudschūd", en:"Glorification in sujūd"},
+  kullah:{ar:"اغْفِرْ لِي ذَنْبِي كُلَّهُ", de:"Vergebung für alle Sünden", en:"Forgiveness for all sins"},
+  ridak:{ar:"أَعُوذُ بِرِضَاكَ", de:"Zuflucht bei Allahs Wohlgefallen", en:"Refuge in Allah’s pleasure"},
+  rabbighfir:{ar:"رَبِّ اغْفِرْ لِي", de:"Zwischen den Niederwerfungen", en:"Between the prostrations"},
+  jalsa2:{ar:"اللَّهُمَّ اغْفِرْ لِي وَارْحَمْنِي", de:"Längere Dua beim Sitzen", en:"Longer duʿāʾ while sitting"},
+  tashahhud:{ar:"التَّشَهُّدُ", de:"Taschahhud", en:"Tashahhud"},
+  salawat:{ar:"الصَّلَاةُ الإِبْرَاهِيمِيَّةُ", de:"Segenswunsch für den Propheten ﷺ", en:"Blessing upon the Prophet ﷺ"},
+  arba:{ar:"الاسْتِعَاذَةُ مِنْ أَرْبَعٍ", de:"Zuflucht vor vier Dingen", en:"Refuge from four things", w:{de:"Nach dem Segenswunsch, vor dem Salām", en:"After the blessing, before the salām"}},
+  abubakr:{ar:"دُعَاءُ أَبِي بَكْرٍ", de:"Dua, die Abū Bakr gelehrt wurde", en:"The duʿāʾ taught to Abū Bakr", w:{de:"Vor dem Salām", en:"Before the salām"}},
+  salamAfter:{ar:"بَعْدَ السَّلَامِ", de:"Direkt nach dem Salām", en:"Right after the salām"},
+  tasbih:{ar:"التَّسْبِيحُ", de:"Tasbīḥ: 33 · 33 · 33 + 1", en:"Tasbīḥ: 33 · 33 · 33 + 1"},
+  ainni:{ar:"أَعِنِّي عَلَى ذِكْرِكَ", de:"Hilf mir, Dich zu gedenken", en:"Help me to remember You"},
+  kursi:{ar:"آيَةُ الكُرْسِيِّ", de:"Āyat al-Kursī", en:"Āyat al-Kursī"},
+  wuduDua:{ar:"دُعَاءٌ بَعْدَ الوُضُوءِ", de:"Dua nach dem Wudūʾ", en:"Duʿāʾ after wudūʾ"},
+  schahada:{ar:"الشَّهَادَةُ", de:"Schahāda", en:"Shahāda"}
+};
+const L = {
+  de:{step:"Schritt", of:"von", again:"Nochmal", tap:"Tippe auf die Karte für Duas, Sunna und Mustaḥabbāt", cta:"Duas & Sunna ansehen", ctaN:"Was du hier sagen und machen kannst",
+      duasH:"Duas – das kannst du sagen", duasS:"Arabisch · Umschrift · Deutsch · Englisch", sunH:"Sunna & Mustaḥabbāt", sunS:"Empfohlen – bringt Belohnung", farH:"Pflichtteile", farS:"Fard und Wādschib – das muss sein",
+      intro:"So betest du – Schritt für Schritt", intro2:"Wische über die Figur oder tippe auf die Pfeile. Die Figur macht dir jede Bewegung vor.", prev:"Zurück", next:"Weiter", legend:"Was bedeutet Fard, Wādschib, Sunna?"},
+  en:{step:"Step", of:"of", again:"Again", tap:"Tap the card for duʿāʾ, sunnah and mustaḥabbāt", cta:"See duʿāʾ & sunnah", ctaN:"What you can say and do here",
+      duasH:"Duʿāʾ – what you can say", duasS:"Arabic · transliteration · English · German", sunH:"Sunnah & mustaḥabbāt", sunS:"Recommended – brings reward", farH:"Obligatory parts", farS:"Farḍ and wājib – these are required",
+      intro:"How to pray – step by step", intro2:"Swipe across the figure or tap the arrows. The figure shows you every movement.", prev:"Back", next:"Next", legend:"What do farḍ, wājib and sunnah mean?"}
+};
+
+/* ---------- Gebet-Tab rendern ---------- */
+const _renderGebet = renderGebet;
+function infoHTML(i){
+  const x = STEPS[i], key = STEP_POS[i], P = POS[key], T = L[lang];
+  const nD = P.duas.length, nS = P.items.filter(r => r[0] === S).length;
+  const other = EN() ? x.de.n : x.en.n;
+  return `<div class="lm-info" data-more="p:${i}" role="button" tabindex="0" aria-label="${T.cta}">
+    <p class="lm-ar" lang="ar">${STEP_AR[i]}</p>
+    <div class="lm-ttl"><h3>${x[lang].n}</h3>${other !== x[lang].n ? `<span>${other}</span>` : ""}</div>
+    ${two(x.de.t, x.en.t)}
+    ${x.r ? `<div class="lm-rec"><p class="ar" lang="ar" dir="rtl">${x.r.ar}</p><p class="tr">${x.r.tl}</p>${two(x.r.de, x.r.en, "de")}</div>` : ""}
+    <div class="lm-chips">${posCounts(P)}</div>
+    <button class="lm-cta" data-more="p:${i}"><span>${T.cta}${nD ? ` · ${nD} ${EN() ? "duʿāʾ" : (nD > 1 ? "Duas" : "Dua")}` : ""}${nS ? ` · ${nS} ${EN() ? "sunnah" : "Sunna"}` : ""}<small>${T.ctaN}</small></span><span class="go">›</span></button>
+    <p class="src">${GT[lang].src}: ${srcLinks(x.s)}</p>
+  </div>`;
+}
+renderGebet = function(){
+  if(gTab !== 2) return _renderGebet();
+  const T = GT[lang], U = L[lang];
+  $("#gTitle").textContent = T.title;
+  $("#gNavT").textContent = EN() ? "Prayer" : "Gebet";
+  document.querySelectorAll(".lang button").forEach(b => b.setAttribute("aria-pressed", b.dataset.lang === lang));
+  $("#gNav").innerHTML = T.nav.map((n,i) => `<button data-g="${i}" aria-pressed="${i===gTab}">${n}</button>`).join("");
+  gStep = Math.max(0, Math.min(STEPS.length - 1, gStep || 0));
+  $("#gBody").innerHTML = `
+    <div class="lm-gintro"><span class="ic">🕌</span><div><p><b>${U.intro}</b> – ${T.introP[0].replace(/^So betest du |^This is how you pray /,"")}</p><p>${U.intro2}</p><p>${T.introP[1]}</p></div></div>
+    <section class="lm-pl" id="lmPlayer">
+      <div class="lm-top"><span class="lm-count" id="lmCount"></span>${genderToggle(EN())}</div>
+      <div class="lm-stage" id="lmStage" tabindex="0" aria-label="${EN() ? "Animated figure – swipe to change step" : "Animierte Figur – wischen für den nächsten Schritt"}">
+        ${stageSVG()}
+        <div class="lm-bub off" id="lmBub" aria-live="polite"></div>
+        <button class="lm-nav p" data-lm="-1" aria-label="${U.prev}">‹</button>
+        <button class="lm-nav n" data-lm="1" aria-label="${U.next}">›</button>
+        <button class="lm-re" data-lm="re"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg>${U.again}</button>
+      </div>
+      <div class="lm-strip" id="lmStrip" role="tablist">${STEPS.map((x, i) => `<button role="tab" data-lmgo="${i}" aria-label="${U.step} ${i+1}: ${x[lang].n}"><i>${i+1}</i>${drawFig(x.fig)}</button>`).join("")}</div>
+      <div id="lmInfo"></div>
+    </section>
+    <p class="lm-tiny">${U.tap}</p>`;
+  paint();
+  show(gStep, false, true);
+};
+function show(i, fromPrev, first){
+  gStep = i; const U = L[lang];
+  $("#lmCount").innerHTML = `${U.step} <b>${i+1}</b> ${U.of} ${STEPS.length}`;
+  $("#lmInfo").innerHTML = infoHTML(i);
+  document.querySelectorAll("#lmStrip [data-lmgo]").forEach((b, k) => { b.setAttribute("aria-current", k === i ? "step" : "false"); b.setAttribute("aria-selected", k === i); });
+  const cb = document.querySelector(`#lmStrip [data-lmgo="${i}"]`), sp = $("#lmStrip");
+  if(cb && sp) sp.scrollTo({left: cb.offsetLeft - sp.clientWidth/2 + cb.clientWidth/2, behavior: first || reduceMotion ? "auto" : "smooth"});
+  $('[data-lm="-1"]').disabled = i === 0; $('[data-lm="1"]').disabled = i === STEPS.length - 1;
+  play(i, fromPrev);
+}
+function go(d){ const n = gStep + d; if(n < 0 || n >= STEPS.length) return; show(n, d === 1); }
+$("#gBody").addEventListener("click", e => {
+  if(gTab !== 2) return;
+  const b = e.target.closest("[data-lm]");
+  if(b){ e.stopPropagation(); const v = b.dataset.lm; if(v === "re") play(gStep, false); else go(+v); return; }
+  const s = e.target.closest("[data-lmgo]"); if(s){ const n = +s.dataset.lmgo; show(n, n === gStep + 1); return; }
+  if(e.target.closest("#lmStage")) play(gStep, false);
+}, true);
+let sx = null, sy = null;
+$("#gBody").addEventListener("touchstart", e => { if(gTab === 2 && e.target.closest("#lmStage")){ sx = e.touches[0].clientX; sy = e.touches[0].clientY; } }, {passive:true});
+$("#gBody").addEventListener("touchend", e => {
+  if(sx === null) return; const dx = e.changedTouches[0].clientX - sx, dy = e.changedTouches[0].clientY - sy; sx = null;
+  if(Math.abs(dx) > 40 && Math.abs(dx) > Math.abs(dy)){ e.preventDefault(); go(dx < 0 ? 1 : -1); }
+});
+$("#gBody").addEventListener("keydown", e => {
+  if(gTab !== 2) return;
+  if(e.target.closest("#lmStage") && (e.key === "ArrowRight" || e.key === "ArrowLeft")){ e.preventDefault(); go(e.key === "ArrowRight" ? 1 : -1); }
+  if(e.target.classList && e.target.classList.contains("lm-info") && (e.key === "Enter" || e.key === " ")){ e.preventDefault(); openMore("p", gStep); }
+});
+
+/* ---------- Detail-Blatt: Duas zuerst, dann Sunna, dann Pflicht – alles dreisprachig ---------- */
+function duaCards(keys){
+  return keys.map(k => { const d = D[k], n = DN[k] || {}, w = n.w;
+    return `<article class="lm-dua">${d.n ? `<span class="rep">${d.n}</span>` : ""}
+      <div class="h"><b>${n[lang] || ""}</b>${n.ar ? `<span class="ar2" lang="ar">${n.ar}</span>` : ""}</div>
+      ${w ? `<p class="when">${w[lang]}</p>` : ""}
+      <p class="ar" lang="ar" dir="rtl">${d.ar}</p><p class="tr">${d.tl}</p>${two(d.de, d.en, "de")}
+      <p class="src">${GT[lang].src}: ${srcLinks(d.s)}</p></article>`; }).join("");
+}
+function itemCards(items){
+  return items.map(([t, de, en, s]) => { const [p, q] = EN() ? [en, de] : [de, en];
+    return `<div class="lm-it">${bdg(t)}<div><p>${p}</p>${q !== p ? `<p class="s2"><span class="lm-lt">${EN() ? "DE" : "EN"}</span>${q}</p>` : ""}${s ? `<span class="src">${srcLinks(s)}</span>` : ""}</div></div>`; }).join("");
+}
+const sec = (cls, icon, h, sub, ar) => `<div class="lm-sec ${cls}"><span class="i">${icon}</span><div><b>${h}</b><small>${sub}</small></div>${ar ? `<span class="ar" lang="ar">${ar}</span>` : ""}</div>`;
+const _openMore = openMore;
+openMore = function(kind, i){
+  if(kind === "s") return _openMore(kind, i);
+  const U = L[lang], key = kind === "a" ? ARKAN_POS[i] : STEP_POS[i], p = POS[key];
+  const fig = kind === "p" ? STEPS[i].fig : (ARKAN[i].fig || "");
+  const arName = kind === "p" ? STEP_AR[i] : ARKAN[i].ar;
+  let html = `<div class="lm-hero">${fig ? drawFig(fig) : ""}<div><p class="lm-ar" lang="ar">${arName}</p><p>${EN() ? p.de : p.en}</p><div class="lm-chips">${posCounts(p)}</div></div></div>`;
+  if(kind === "a"){ const x = ARKAN[i]; html += two(x.de.t, x.en.t); }
+  if(p.duas.length) html += sec("d", "🤲", U.duasH, U.duasS, "الأَدْعِيَة") + duaCards(p.duas);
+  const sun = p.items.filter(r => r[0] === S), far = p.items.filter(r => r[0] === F || r[0] === W);
+  if(sun.length) html += sec("s", "✨", U.sunH, U.sunS, "السُّنَنُ وَالمُسْتَحَبَّاتُ") + itemCards(sun);
+  if(far.length) html += sec("f", "🧱", U.farH, U.farS, "الأَرْكَانُ وَالوَاجِبَاتُ") + itemCards(far);
+  if(p.tip) html += `<div class="lm-tip"><b>${MT[lang].tip}</b>${two(p.tip.de, p.tip.en)}<p class="src">${GT[lang].src}: ${srcLinks(p.tip.s)}</p></div>`;
+  html += `<details class="lm-leg"><summary>${U.legend}</summary>${legendBlock()}</details>`;
+  $("#moreT").textContent = p[lang];
+  $("#moreBody").innerHTML = html;
+  $("#more").hidden = false; $("#moreBg").hidden = false; $("#more").scrollTop = 0;
+  $("#more").classList.toggle("hide-tr", !prefs.tr); $("#more").classList.toggle("hide-de", !prefs.de);
+  requestAnimationFrame(() => document.body.classList.add("more-open"));
+};
+})();
+
 /* ---------- init ---------- */
 localize(); applyTheme(); applyPrefs(); renderHome(); renderGebet(); renderQuran(); renderQuiz(); renderKids(); renderNames();
 document.querySelectorAll("[data-learn]").forEach(b => b.setAttribute("aria-pressed", b.dataset.learn === learnSub));
