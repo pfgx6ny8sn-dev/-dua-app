@@ -1,4 +1,4 @@
-# Dua – Bittgebete, Gebet, Qur'an & Geschichten
+# Little Muslim – Duas, Gebet, Qur'an & Geschichten für Kinder
 
 Islamische Lern-App (Deutsch/Englisch) mit Bittgebeten, Gebet, Qur'an, Quiz und Prophetengeschichten als Film.
 

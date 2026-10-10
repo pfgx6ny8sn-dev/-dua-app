@@ -7,12 +7,12 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="Dua">
+<meta name="apple-mobile-web-app-title" content="Little Muslim">
 <meta name="mobile-web-app-capable" content="yes">
 <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="manifest" href="manifest.webmanifest">
-<title>Dua – Bittgebete, Gebet, Qur'an, Kinder & Quiz</title>
+<title>Little Muslim – Duas, Gebet, Qur'an & Geschichten für Kinder</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Scheherazade+New:wght@400;700&display=swap" rel="stylesheet">
@@ -4302,7 +4302,7 @@ function setLang(l){
   if(l === "en") translateTree(document.body);
   document.querySelectorAll("[data-lang-set]").forEach(b => b.setAttribute("aria-pressed", b.dataset.langSet === l));
   document.querySelectorAll(".lang button").forEach(b => b.setAttribute("aria-pressed", b.dataset.lang === l));
-  document.title = L("Dua – Bittgebete, Gebet, Qur'an, Kinder & Quiz", "Dua – Supplications, Prayer, Qur'an, Kids & Quiz");
+  document.title = L("Little Muslim – Duas, Gebet, Qur'an & Geschichten für Kinder", "Little Muslim – Duas, prayer, Qur'an & stories for children");
 }
 document.addEventListener("click", e => { const b = e.target.closest("[data-lang-set]"); if(b) setLang(b.dataset.langSet); }, true);
 
@@ -5692,6 +5692,248 @@ setLang = function(l){
   _setLang(l);
   const v = document.querySelector(".view.active"); if(!v) return;
   if(v.id === "v-hadith") renderHadith(); if(v.id === "v-faq") renderFaq(); if(v.id === "v-videos") renderVideos();
+};
+
+/* =================== LITTLE MUSLIM – neues Erscheinungsbild =================== */
+/* Startseite mit Himmel nach Tageszeit, auffällige Überschriften, Filme in „Geschichten“, Vorlesen im Grundwissen. */
+(function(){
+  const fl = document.createElement("link");
+  fl.rel = "stylesheet";
+  fl.href = "https://fonts.googleapis.com/css2?family=Baloo+Bhaijaan+2:wght@600;700;800&display=swap";
+  document.head.appendChild(fl);
+  const st = document.createElement("style");
+  st.textContent = `
+  :root{--display:"Baloo Bhaijaan 2","Baloo 2",ui-rounded,"SF Pro Rounded",var(--font);
+    --c-film:#7CC4FF; --c-kids:#FF8FA3; --c-know:#B7A6FF; --c-day:#FFC86A; --c-mint:#3CC2AE; --tile-ink:#16263A}
+  /* Überschriften in der ganzen App */
+  .ltitle{font-family:var(--display);font-weight:800;font-size:38px;letter-spacing:0;line-height:1.05;margin:6px 0 8px;padding-bottom:10px;
+    background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='72' height='10' viewBox='0 0 72 10'%3E%3Cpath d='M2 6 Q11 0 20 6 T38 6 T56 6 T74 6' fill='none' stroke='%23F2B04A' stroke-width='3.4' stroke-linecap='round'/%3E%3C/svg%3E") left bottom/72px 10px no-repeat}
+  .ghead{font-family:var(--display);font-size:20px;font-weight:700;color:var(--ink);margin:26px 2px 10px;display:flex;align-items:center;gap:10px;line-height:1.2}
+  .ghead::before{content:"";width:12px;height:12px;border-radius:4px;background:var(--gold);transform:rotate(45deg);flex:none}
+  /* Startseite */
+  #homeV.lm{padding-top:0}
+  .lm-sky{position:relative;margin:0 -16px;height:300px;border-radius:0 0 34px 34px;overflow:hidden;isolation:isolate;color:#fff}
+  .lm-sky svg.scene{position:absolute;inset:0;width:100%;height:100%;z-index:-1}
+  .lm-top{display:flex;align-items:center;gap:12px;padding:16px 18px 0}
+  .lm-badge{width:46px;height:46px;border-radius:15px;background:rgba(255,255,255,.16);display:grid;place-items:center;backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);flex:none}
+  .lm-word{flex:1;min-width:0}
+  .lm-word b{display:block;font-family:var(--display);font-weight:800;font-size:31px;line-height:1;letter-spacing:.005em;text-shadow:0 2px 10px rgba(0,0,0,.25)}
+  .lm-word span{display:block;font-family:var(--display);font-weight:700;font-size:17px;color:#FFE7A8;direction:rtl;text-align:left;margin-top:2px}
+  .lm-top .nav-btn{background:rgba(255,255,255,.18);color:#fff}
+  .lm-hello{position:absolute;left:18px;right:18px;bottom:66px}
+  .lm-hello strong{display:block;font-family:var(--display);font-size:28px;font-weight:800;line-height:1.1;text-shadow:0 2px 12px rgba(0,0,0,.35)}
+  .lm-hello em{display:block;font-style:normal;font-family:var(--display);font-size:18px;font-weight:700;margin-top:2px;text-shadow:0 1px 8px rgba(0,0,0,.35)}
+  .lm-hello span{display:block;font-size:14px;opacity:.92;margin-top:3px;text-shadow:0 1px 6px rgba(0,0,0,.4)}
+  .lm-sky::after{content:"";position:absolute;inset:auto 0 0 0;height:60%;background:linear-gradient(180deg,transparent,rgba(5,20,30,.45));z-index:-1;pointer-events:none}
+  .lm-sky .lantern{transform-origin:50% 0;animation:lm-swing 5s ease-in-out infinite}
+  .lm-sky .lantern.l2{animation-duration:6.4s;animation-delay:-2s}
+  @keyframes lm-swing{0%,100%{transform:rotate(3deg)}50%{transform:rotate(-3deg)}}
+  @media (prefers-reduced-motion:reduce){.lm-sky .lantern{animation:none}}
+  #homeV.lm .pt-card{position:relative;margin-top:-46px;z-index:2}
+  .sh{font-family:var(--display);font-size:23px;font-weight:800;line-height:1.15;margin:28px 2px 12px;display:flex;align-items:center;gap:10px}
+  .sh .sh-i{width:38px;height:38px;border-radius:13px;background:var(--c);display:grid;place-items:center;font-size:20px;flex:none;box-shadow:0 6px 16px -6px var(--c)}
+  .sh small{margin-left:auto;font-family:var(--font);font-size:14px;font-weight:600;color:var(--muted)}
+  .lm-films{display:flex;gap:12px;overflow-x:auto;scroll-snap-type:x mandatory;margin:0 -16px;padding:2px 16px 6px;scrollbar-width:none}
+  .lm-films::-webkit-scrollbar{display:none}
+  .lm-film{flex:0 0 78%;max-width:340px;scroll-snap-align:start;border:0;padding:0;background:var(--surface);border-radius:22px;overflow:hidden;text-align:left;color:var(--ink);cursor:pointer;box-shadow:inset 0 0 0 .5px var(--sep)}
+  .lm-film .pv{display:block;position:relative;aspect-ratio:16/9;background:#0b2a3a center/cover no-repeat}
+  .lm-film .pv i{position:absolute;right:12px;bottom:12px;width:44px;height:44px;border-radius:50%;background:var(--c-film);display:grid;place-items:center;color:#0b2233;font-style:normal;font-size:17px;box-shadow:0 6px 18px rgba(0,0,0,.35)}
+  .lm-film .tx{display:block;padding:11px 14px 13px}
+  .lm-film .tx b{display:block;font-family:var(--display);font-size:19px;font-weight:700;line-height:1.2}
+  .lm-film .tx span{display:block;font-size:13.5px;color:var(--muted);margin-top:2px}
+  .lm-kids{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .lm-k{position:relative;border:0;border-radius:24px;padding:16px 14px 14px;text-align:left;cursor:pointer;color:var(--tile-ink);background:var(--c);min-height:132px;display:flex;flex-direction:column;justify-content:flex-end;overflow:hidden}
+  .lm-k .em{position:absolute;top:10px;right:10px;font-size:40px;line-height:1;filter:drop-shadow(0 4px 6px rgba(0,0,0,.15))}
+  .lm-k b{font-family:var(--display);font-size:21px;font-weight:800;line-height:1.1}
+  .lm-k span{font-size:13.5px;font-weight:600;opacity:.78;margin-top:3px;line-height:1.25}
+  .lm-k::after{content:"";position:absolute;width:120px;height:120px;border-radius:50%;background:rgba(255,255,255,.22);right:-40px;bottom:-50px}
+  .lm-k:active,.lm-film:active,.lm-d:active{transform:scale(.97)}
+  .lm-prog{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0 0}
+  .lm-prog button{border:0;border-radius:999px;padding:7px 12px;background:var(--surface);color:var(--ink);font:inherit;font-size:14px;font-weight:600;cursor:pointer;box-shadow:inset 0 0 0 .5px var(--sep)}
+  .lm-prog b{color:var(--gold)}
+  .lm-day{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+  .lm-d{border:0;background:var(--surface);border-radius:20px;padding:12px 4px 10px;display:flex;flex-direction:column;align-items:center;gap:7px;cursor:pointer;color:var(--ink);box-shadow:inset 0 0 0 .5px var(--sep)}
+  .lm-d .em{width:46px;height:46px;border-radius:16px;display:grid;place-items:center;font-size:24px;background:color-mix(in srgb,var(--c) 26%,transparent)}
+  .lm-d span{font-size:12.5px;font-weight:600;line-height:1.2;text-align:center}
+  @media (max-width:360px){.lm-day{grid-template-columns:repeat(3,1fr)}}
+  /* Geschichten: Filme oben */
+  .st-films{margin:6px 0 4px}
+  /* Vorlesen */
+  .say{border:0;border-radius:999px;background:var(--gold);color:#1d1606;font:inherit;font-size:14px;font-weight:700;padding:8px 14px 8px 12px;display:inline-flex;align-items:center;gap:6px;cursor:pointer;margin-top:10px;position:relative;z-index:3}
+  .say svg{width:18px;height:18px;fill:currentColor}
+  .say.playing{background:var(--c-mint);color:#062b26}
+  .say.playing svg{animation:lm-pulse .9s ease-in-out infinite}
+  @keyframes lm-pulse{50%{transform:scale(1.18)}}
+  @media (prefers-reduced-motion:reduce){.say.playing svg{animation:none}}
+  `;
+  document.head.appendChild(st);
+})();
+
+/* ---------- Himmel nach Tageszeit ---------- */
+function lmPhase(){
+  const h = new Date().getHours() + new Date().getMinutes() / 60;
+  if(h >= 4.5 && h < 7) return "dawn";
+  if(h >= 7 && h < 17) return "day";
+  if(h >= 17 && h < 19.5) return "dusk";
+  return "night";
+}
+function lmSky(){
+  const ph = lmPhase();
+  const G = {dawn:["#2B3F78","#B97FA8","#FFC98F"], day:["#3FA3E8","#8FD0F5","#D9F1FF"], dusk:["#2C2A6B","#C2618A","#FFB070"], night:["#071530","#13285A","#25407A"]}[ph];
+  const stars = (ph === "night" || ph === "dawn") ? [...Array(26)].map((_,i) => {
+    const x = (i * 137) % 400, y = 10 + (i * 71) % 150, r = 0.8 + (i % 3) * 0.6;
+    return `<circle cx="${x}" cy="${y}" r="${r}" fill="#fff" opacity="${ph === "dawn" ? .45 : .85}"/>`; }).join("") : "";
+  const sky = ph === "day"
+    ? `<circle cx="232" cy="104" r="30" fill="#FFE27A"/><circle cx="232" cy="104" r="48" fill="#FFE27A" opacity=".25"/>
+       <g fill="#fff" opacity=".9"><ellipse cx="90" cy="96" rx="40" ry="14"/><ellipse cx="112" cy="86" rx="24" ry="16"/><ellipse cx="250" cy="140" rx="32" ry="11"/></g>`
+    : ph === "dusk" ? `<circle cx="226" cy="118" r="34" fill="#FFD27A" opacity=".95"/><circle cx="226" cy="118" r="52" fill="#FFD27A" opacity=".22"/>`
+    : `<mask id="lmm"><rect width="400" height="300" fill="#fff"/><circle cx="234" cy="104" r="24" fill="#000"/></mask><circle cx="220" cy="112" r="26" fill="#FFE7A8" mask="url(#lmm)"/>`;
+  const sil = ph === "day" ? "#2E6C8F" : ph === "dusk" ? "#33244E" : ph === "dawn" ? "#2A2F5E" : "#0A1A38";
+  const lantern = (x, len, cls) => `<g class="lantern ${cls}" style="transform-box:fill-box">
+      <line x1="${x}" y1="0" x2="${x}" y2="${len}" stroke="#FFE7A8" stroke-opacity=".6" stroke-width="1.4"/>
+      <g transform="translate(${x} ${len})"><path d="M-6 0h12l-2 5h-8z" fill="#E7A83A"/>
+      <path d="M-11 5 Q-15 20 -8 34 H8 Q15 20 11 5Z" fill="#F2B04A"/><path d="M-6 9 Q-9 20 -4 30 H4 Q9 20 6 9Z" fill="#FFF1B8"/>
+      <path d="M-8 34h16l-3 5h-10z" fill="#E7A83A"/><circle cx="0" cy="19" r="18" fill="#FFE7A8" opacity=".22"/></g></g>`;
+  return `<svg class="scene" viewBox="0 0 400 300" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+    <defs><linearGradient id="lmg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${G[0]}"/><stop offset=".62" stop-color="${G[1]}"/><stop offset="1" stop-color="${G[2]}"/></linearGradient></defs>
+    <rect width="400" height="300" fill="url(#lmg)"/>${stars}${sky}
+    ${lantern(300, 70, "")}${lantern(338, 104, "l2")}
+    <g fill="${sil}">
+      <path d="M0 300 V250 Q60 236 120 246 T240 242 T400 248 V300Z" opacity=".55"/>
+      <rect x="52" y="186" width="12" height="80"/><path d="M50 188 h16 l-8 -16z"/><circle cx="58" cy="168" r="3"/>
+      <path d="M78 266 V232 Q78 196 120 186 Q162 196 162 232 V266Z"/><rect x="117" y="170" width="6" height="18"/><path d="M120 162 a5 5 0 1 0 0.1 0" />
+      <rect x="168" y="214" width="58" height="52"/><path d="M168 216 Q197 186 226 216Z"/>
+      <rect x="232" y="196" width="11" height="70"/><path d="M230 198 h15 l-7.5 -14z"/>
+      <path d="M0 300 V266 H400 V300Z"/>
+    </g>
+  </svg>`;
+}
+
+/* ---------- Neue Startseite ---------- */
+renderStart = function(){
+  const today = new Date();
+  const greg = new Intl.DateTimeFormat(LOC(), {weekday:"long", day:"numeric", month:"long"}).format(today);
+  const hij = hijriToday();
+  const week = weekData(), total = week.reduce((a,x) => a + x.n, 0), max = Math.max(33, ...week.map(x => x.n));
+  const wd = [0,1,2,3,4,5,6].map(i => new Intl.DateTimeFormat(LOC(), {weekday:"short"}).format(new Date(2024,0,7+i)).replace(".","").slice(0,2));
+  const day = Math.floor((Date.now() - new Date(today.getFullYear(),0,0)) / 864e5);
+  const dd = DUAS[day % DUAS.length];
+  const learnedN = (typeof learned !== "undefined") ? learned.size : 0;
+  const bestQ = Math.max(0, ...Object.values(store.get("quiz-best", {})));
+  const kidStars = Object.values(store.get("kids-stars", {})).reduce((a,b) => a + b, 0);
+  const films = (typeof VIDEO_LIST !== "undefined" ? VIDEO_LIST : []).filter(v => v.versions);
+  const lateNight = new Date().getHours() >= 22 || new Date().getHours() < 4;
+  const hello = lateNight ? L("Schlaf gut", "Sleep well") : {dawn:L("Guten Morgen", "Good morning"), day:L("Schön, dass du da bist", "Nice to see you"), dusk:L("Schönen Abend", "Good evening"), night:L("Schönen Abend", "Good evening")}[lmPhase()];
+  const sh = (em, c, t, more) => `<h2 class="sh" style="--c:var(${c})"><span class="sh-i" aria-hidden="true">${em}</span>${t}${more ? `<small>${more}</small>` : ""}</h2>`;
+  const kid = (go, em, c, t, s) => `<button class="lm-k" data-go="${go}" style="--c:var(${c})"><span class="em" aria-hidden="true">${em}</span><b>${t}</b><span>${s}</span></button>`;
+  const dt = (go, em, c, t) => `<button class="lm-d" data-go="${go}" style="--c:var(${c})"><span class="em" aria-hidden="true">${em}</span><span>${t}</span></button>`;
+  const hd = (typeof HADITHS !== "undefined" && HADITHS.length) ? HADITHS[day % HADITHS.length] : null;
+  const home = $("#homeV"); home.classList.add("lm");
+  home.innerHTML = `
+    <header class="lm-sky">${lmSky()}
+      <div class="lm-top">
+        <span class="lm-badge" aria-hidden="true"><svg viewBox="0 0 24 24" width="26" height="26"><path d="M15.5 4.5a8 8 0 1 0 4 13.6A8.5 8.5 0 0 1 15.5 4.5z" fill="#FFE7A8"/><path d="M18.6 6.2l.7 1.6 1.7.2-1.3 1.1.4 1.7-1.5-.9-1.5.9.4-1.7-1.3-1.1 1.7-.2z" fill="#FFE7A8"/></svg></span>
+        <div class="lm-word"><b>Little Muslim</b><span lang="ar">المُسْلِمُ الصَّغِير</span></div>
+        <button class="nav-btn" data-open-settings aria-label="${L("Einstellungen", "Settings")}">Aa</button>
+      </div>
+      <div class="lm-hello"><strong>As-salāmu ʿalaikum!</strong><em>${hello}</em><span>${greg}${hij ? " · " + hij : ""}</span></div>
+    </header>
+
+    ${typeof ptHomeCard === "function" ? ptHomeCard() : ""}
+
+    ${films.length ? `${sh("🎬", "--c-film", L("Filme", "Films"), "")}
+    <div class="lm-films">${films.map(v => `<button class="lm-film" data-open-story="${v.id}">
+      <span class="pv" style="background-image:url('${vPoster(v.id, "de", "169")}')"><i aria-hidden="true">▶</i></span>
+      <span class="tx"><b>${v.title[lang] || v.title.de}</b><span>${L("Deutsch und Arabisch · mit Rezitation", "German and Arabic · with recitation")}</span></span></button>`).join("")}</div>` : ""}
+
+    ${sh("🧸", "--c-kids", L("Für Kinder", "For children"))}
+    <div class="lm-kids">
+      ${kid("kids", "🧩", "--c-kids", L("Spiele", "Games"), L("Puzzle, Memory, Buchstaben", "Puzzles, memory, letters"))}
+      ${kid("wissen", "🔊", "--c-know", L("Grundwissen", "Basics"), L("Fragen zum Anhören", "Questions to listen to"))}
+      ${kid("quiz", "🏆", "--c-day", L("Quiz", "Quiz"), L("Teste dein Wissen", "Test your knowledge"))}
+      ${kid("stories", "📚", "--c-film", L("Geschichten", "Stories"), L("Propheten und Sahaba", "Prophets and companions"))}
+    </div>
+    <div class="lm-prog">
+      <button data-go="kids">⭐ <b>${kidStars}</b> ${L("Sterne", "stars")}</button>
+      <button data-go="quran">📖 <b>${learnedN}/${SURAS.length}</b> ${L("Suren gelernt", "surahs learned")}</button>
+      <button data-go="quiz">🏆 <b>${bestQ ? bestQ + " %" : "–"}</b> ${L("Quiz-Bestwert", "best quiz score")}</button>
+    </div>
+
+    ${sh("☀️", "--c-day", L("Für jeden Tag", "Every day"))}
+    <div class="lm-day">
+      ${dt("dua", "🤲", "--c-day", "Duas")}${dt("gebet", "🕌", "--c-mint", L("Gebet", "Prayer"))}${dt("quran", "📖", "--c-mint", "Qur'an")}${dt("times", "🕰️", "--c-film", L("Gebetszeiten", "Prayer times"))}
+      ${dt("tasbih", "📿", "--c-day", "Tasbīḥ")}${dt("names", "✨", "--c-know", L("99 Namen", "99 Names"))}${dt("hadith", "📜", "--c-kids", L("Hadithe", "Hadiths"))}${dt("faq", "💬", "--c-know", L("Fragen", "Q&A"))}
+    </div>
+
+    ${isFri ? `${sh("🕌", "--c-mint", L("Heute ist Freitag", "It's Friday"))}<button class="fri" data-go="cat:freitag"><div><b>Dschumuʿa Mubāraka</b><span>${L("Die Stunde der Erhörung – zu den Freitags-Duas", "The hour of acceptance – Friday duas")}</span></div><svg class="chev"><use href="#chev"/></svg></button>` : ""}
+
+    ${sh("📿", "--c-day", L("Dein Dhikr diese Woche", "Your dhikr this week"), `${total}`)}
+    <section class="hero-card">${ORN}
+      <div class="bars">${week.map((x,i) => `<div class="bar ${i===6?"today":""}"><i style="height:${Math.max(8, x.n / max * 100)}%"></i><span>${wd[x.d.getDay()]}</span></div>`).join("")}</div>
+      <button class="hc-btn" data-go="tasbih">${L("Zum Tasbīḥ-Zähler", "Open tasbīḥ counter")} <b>→</b></button>
+    </section>
+
+    ${sh("🤲", "--c-day", L("Dua des Tages", "Dua of the day"))}
+    <article class="dday"><h3>${dd.title}</h3><p class="ar" lang="ar" dir="rtl">${dd.ar}</p><p>${dd.de}</p><p class="src">Quelle: ${srcLinks(dd.src)}</p>
+      <button class="link-btn" data-go="dua">${L("Alle Duas ansehen", "See all duas")} →</button></article>
+
+    ${hd ? `${sh("📜", "--c-kids", L("Hadith des Tages", "Hadith of the day"))}
+    <article class="hd-day">${ORN}<p class="ar" lang="ar" dir="rtl">${hd.ar}</p><p>${lang === "en" ? hd.en : hd.de}</p><p class="src">${L("Quelle", "Source")}: ${srcLinks(hd.s)}</p>
+      <button class="link-btn" data-go="hadith">${L("Alle Hadithe ansehen", "See all hadiths")} →</button></article>` : ""}
+    <div style="height:18px"></div>
+  `;
+  home.querySelectorAll("[data-open-settings]").forEach(b => b.addEventListener("click", openSheet));
+};
+
+/* Film-Karte öffnet die Geschichte */
+document.addEventListener("click", e => {
+  const b = e.target.closest("[data-open-story]"); if(!b) return;
+  setTab("stories"); stOpen = b.dataset.openStory; renderStories(); window.scrollTo(0, 0);
+});
+
+/* ---------- Geschichten: Filme als Bildreihe oben ---------- */
+const _lmRenderStories = renderStories;
+renderStories = function(){
+  _lmRenderStories();
+  if(stOpen) return;
+  const films = (typeof VIDEO_LIST !== "undefined" ? VIDEO_LIST : []).filter(v => v.versions);
+  const sub = $("#stV .lsub"); if(!sub || !films.length) return;
+  sub.insertAdjacentHTML("afterend", `<div class="st-films"><h2 class="sh" style="--c:var(--c-film)"><span class="sh-i" aria-hidden="true">🎬</span>${L("Als Film ansehen", "Watch as a film")}</h2>
+    <div class="lm-films">${films.map(v => `<button class="lm-film" data-open-story="${v.id}"><span class="pv" style="background-image:url('${vPoster(v.id, "de", "169")}')"><i aria-hidden="true">▶</i></span>
+      <span class="tx"><b>${v.title[lang] || v.title.de}</b><span>${L("Mit Erzählstimme und Rezitation", "With narrator and recitation")}</span></span></button>`).join("")}</div></div>`);
+};
+
+/* ---------- Grundwissen: Fragen und Antworten anhören ---------- */
+const LM_SPEAK = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9v6h4l5 4V5L8 9H4z"/><path d="M16 8.5a5 5 0 0 1 0 7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M18.5 6a8.5 8.5 0 0 1 0 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>';
+let lmAudio = null, lmBtn = null;
+function lmStop(){ if(lmAudio){ lmAudio.pause(); lmAudio = null; } if("speechSynthesis" in window) speechSynthesis.cancel(); if(lmBtn){ lmBtn.classList.remove("playing"); lmBtn = null; } }
+function lmSay(btn){
+  const same = lmBtn === btn; lmStop(); if(same) return;
+  const key = btn.dataset.say, i = +key.slice(1), x = WISSEN[i]; if(!x) return;
+  const text = key[0] === "q" ? (lang === "en" && typeof WISSEN_EN !== "undefined" ? WISSEN_EN[i][0] : x.q) : (lang === "en" && typeof WISSEN_EN !== "undefined" ? WISSEN_EN[i][1] : x.a);
+  lmBtn = btn; btn.classList.add("playing");
+  const tts = () => { if(!("speechSynthesis" in window)){ lmStop(); return; }
+    const u = new SpeechSynthesisUtterance(text.replace(/ﷺ/g, "")); u.lang = lang === "en" ? "en-GB" : "de-DE"; u.rate = .92;
+    u.onend = () => { if(lmBtn === btn) lmStop(); }; speechSynthesis.speak(u); };
+  if(lang === "en"){ tts(); return; }
+  const a = new Audio(`audio/wissen/${key}.mp3`); lmAudio = a;
+  a.onended = () => { if(lmBtn === btn) lmStop(); };
+  a.onerror = () => { if(lmAudio === a){ lmAudio = null; tts(); } };
+  a.play().catch(() => { if(lmAudio === a){ lmAudio = null; tts(); } });
+}
+document.addEventListener("click", e => {
+  const b = e.target.closest("[data-say]"); if(!b) return;
+  e.stopPropagation(); e.preventDefault(); lmSay(b);
+}, true);
+const _lmRenderWissen = renderWissen;
+renderWissen = function(){
+  lmStop(); _lmRenderWissen();
+  $("#wiV").querySelectorAll("[data-flip]").forEach(card => {
+    const i = card.dataset.flip;
+    const f = card.querySelector(".f-front"), bk = card.querySelector(".f-back .f-a");
+    if(f) f.insertAdjacentHTML("beforeend", `<button type="button" class="say" data-say="q${String(i).padStart(2,"0")}" aria-label="${L("Frage anhören", "Listen to the question")}">${LM_SPEAK}${L("Anhören", "Listen")}</button>`);
+    if(bk) bk.insertAdjacentHTML("afterend", `<button type="button" class="say" data-say="a${String(i).padStart(2,"0")}" aria-label="${L("Antwort anhören", "Listen to the answer")}">${LM_SPEAK}${L("Antwort anhören", "Listen to the answer")}</button>`);
+  });
 };
 
 /* ---------- init ---------- */
