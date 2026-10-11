@@ -7429,14 +7429,12 @@ renderTasbih = function(){
         <button data-tz="reset" aria-label="${L("Zurücksetzen", "Reset")}"><svg viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg></button>
         ${done ? "" : `<button data-tz="skip" aria-label="${L("Überspringen", "Skip")}" style="font-size:13px;font-weight:700">${L("Weiter ›", "Next ›")}</button>`}
       </div>
-      ${todayHTML(ST)}
-      ${weekHTML(ST)}
       <div class="tz-why"><h3>💡 ${L("Warum dieses Tasbīḥ?", "Why this tasbīḥ?")}</h3>
         <div class="ar" lang="ar">${d.h.ar}</div>${two(d.h.de, d.h.en)}
         <div class="tz-gift"><span>🎁</span><div><b>${L("Belohnung", "Reward")}</b><p>${EN() ? d.g.en : d.g.de}</p></div></div>
         <p class="src">${L("Quelle", "Source")}: ${srcLinks(d.h.s)}</p></div>`;
   }
-  if(!d) html += todayHTML(ST) + weekHTML(ST);
+  html += todayHTML(ST) + weekHTML(ST);
   $("#tbV").innerHTML = html;
   const on = document.querySelector(".tz-step.on"); if(on) on.scrollIntoView({inline:"center", block:"nearest"});
 };
