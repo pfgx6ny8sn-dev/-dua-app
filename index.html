@@ -7227,6 +7227,47 @@ const css = `
 .tz-adv b{display:block;font-size:18px;margin-top:4px}
 .tz-adv span{font-size:14px;color:var(--muted)}
 @media (min-width:760px){.tz-bonus{grid-template-columns:repeat(4,1fr)}}
+.tz-today{display:flex;align-items:center;gap:10px;max-width:420px;margin:12px auto 0;background:var(--surface);border:1px solid var(--sep);border-radius:999px;padding:7px 14px 7px 10px;font-size:13.5px;font-weight:700}
+.tz-today .ic{font-size:18px}
+.tz-today .tx{flex:none;font-variant-numeric:tabular-nums}
+.tz-today .tx em{font-style:normal;color:var(--muted);font-weight:600}
+.tz-today .br{flex:1;height:8px;border-radius:9px;background:var(--fill);overflow:hidden;min-width:50px}
+.tz-today .br i{display:block;height:100%;border-radius:9px;background:var(--grad);transition:width .25s}
+.tz-today.rec{border-color:var(--gold);box-shadow:0 0 0 1px var(--gold) inset}
+.tz-week{background:var(--surface);border:1px solid var(--sep);border-radius:22px;padding:14px 14px 12px;margin:18px 0 6px}
+.tz-wk-h{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:10px}
+.tz-wk-h h3{margin:0;font-size:15px;color:var(--gold);display:flex;align-items:center;gap:8px}
+.tz-wk-h .nav{display:flex;align-items:center;gap:4px;font-size:12.5px;color:var(--muted);font-weight:700}
+.tz-wk-h .nav button{border:0;background:var(--fill);color:var(--ink);width:30px;height:30px;border-radius:50%;font:inherit;font-size:16px;cursor:pointer;line-height:1}
+.tz-wk-h .nav button:disabled{opacity:.3;cursor:default}
+.tz-bars{position:relative;display:grid;grid-template-columns:repeat(7,1fr);gap:6px;height:128px;align-items:end;padding-top:16px}
+.tz-bar{display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;min-width:0}
+.tz-bar .v{font-size:11px;font-weight:800;color:var(--muted);margin-bottom:3px;font-variant-numeric:tabular-nums;white-space:nowrap}
+.tz-bar .c{width:100%;max-width:34px;border-radius:9px 9px 5px 5px;background:var(--fill);min-height:4px;transition:height .3s}
+.tz-bar.has .c{background:linear-gradient(180deg,var(--teal),color-mix(in srgb,var(--teal) 55%,transparent))}
+.tz-bar.today .c{background:var(--grad)}
+.tz-bar.today .v{color:var(--gold)}
+.tz-bar.best .v::before{content:"🏆";margin-right:1px}
+.tz-days{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin-top:6px;text-align:center}
+.tz-days span{font-size:11.5px;font-weight:700;color:var(--muted);line-height:1.25}
+.tz-days span.today{color:var(--gold)}
+.tz-days span i{display:block;font-style:normal;font-size:12px;height:15px}
+.tz-recline{position:absolute;left:0;right:0;border-top:2px dashed var(--gold);opacity:.55;pointer-events:none}
+.tz-recline span{position:absolute;right:0;top:-17px;font-size:10.5px;font-weight:800;color:var(--gold);background:var(--surface);padding:0 4px;border-radius:6px}
+.tz-wsum{margin:12px 2px 2px;font-size:14px;font-weight:700}
+.tz-wsum .row{display:flex;justify-content:space-between;gap:8px;font-variant-numeric:tabular-nums}
+.tz-wsum .row em{font-style:normal;color:var(--muted);font-weight:600}
+.tz-wsum .br{height:10px;border-radius:9px;background:var(--fill);overflow:hidden;margin:6px 0 4px}
+.tz-wsum .br i{display:block;height:100%;border-radius:9px;background:var(--grad)}
+.tz-wsum p{margin:0;font-size:13.5px;color:var(--muted);font-weight:600}
+.tz-wsum p.win{color:var(--gold)}
+.tz-recs{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:12px}
+.tz-rec{background:var(--gold-soft);border-radius:16px;padding:10px 6px 9px;text-align:center;min-width:0}
+.tz-rec .i{font-size:22px;line-height:1}
+.tz-rec b{display:block;font-size:22px;margin-top:4px;font-variant-numeric:tabular-nums;color:var(--ink)}
+.tz-rec span{display:block;font-size:11.5px;color:var(--muted);font-weight:700;line-height:1.25}
+.tz-rec small{display:block;font-size:11px;color:var(--gold);font-weight:700;margin-top:2px}
+.tz-adv.gold{border-color:var(--gold);box-shadow:0 0 0 2px var(--gold),0 20px 40px rgba(0,0,0,.4)}
 `;
 const st = document.createElement("style"); st.textContent = css; document.head.appendChild(st);
 const EN = () => lang === "en";
@@ -7280,9 +7321,91 @@ function cur(){ if(!planDone()) return PLAN[S.idx]; return BONUS.find(b => b.id 
 const RING2 = 2 * Math.PI * 46;
 function tbTarget(d){ return d.t; }
 
+
+/* ---------- Woche & Rekorde ---------- */
+const DONE_K = "lm-tz-done";
+const today = () => dayKey(new Date());
+const fmt = n => Number(n || 0).toLocaleString(EN() ? "en-GB" : "de-DE");
+const parse = k => { const [y, m, d] = k.split("-").map(Number); return new Date(y, m - 1, d); };
+const monday = d => { const x = new Date(d.getFullYear(), d.getMonth(), d.getDate()); x.setDate(x.getDate() - ((x.getDay() + 6) % 7)); return x; };
+const weekKey = d => dayKey(monday(d));
+let wOff = 0;
+function stats(){
+  const t = today(), wk = weekKey(new Date());
+  let dayBest = 0, dayBestK = null, weeks = {};
+  for(const k in tbLog){ const v = tbLog[k] || 0; if(!v || !/^\d{4}-\d\d-\d\d$/.test(k)) continue;
+    if(k !== t && v > dayBest){ dayBest = v; dayBestK = k; }
+    const w = weekKey(parse(k)); weeks[w] = (weeks[w] || 0) + v; }
+  let weekBest = 0; for(const w in weeks) if(w !== wk && weeks[w] > weekBest) weekBest = weeks[w];
+  const done = store.get(DONE_K, {}) || {};
+  const keys = Object.keys(done).filter(k => done[k]).sort();
+  let best = 0, run = 0, prev = null;
+  for(const k of keys){ const d = parse(k); run = (prev && Math.round((d - prev) / 864e5) === 1) ? run + 1 : 1; prev = d; if(run > best) best = run; }
+  let curS = 0; const c = new Date(); if(!done[t]) c.setDate(c.getDate() - 1);
+  while(done[dayKey(c)]){ curS++; c.setDate(c.getDate() - 1); }
+  return {t, wk, todayN: tbLog[t] || 0, dayBest, dayBestK, weekN: weeks[wk] || 0, weekBest, weeks, done, streak: curS, streakBest: best};
+}
+function todayHTML(s){
+  const rec = Math.max(s.dayBest, 0), beat = s.dayBest > 0 && s.todayN > s.dayBest;
+  const pct = rec ? Math.min(100, s.todayN / rec * 100) : 100;
+  return `<div class="tz-today${beat ? " rec" : ""}" id="tzToday"><span class="ic">${beat ? "🏆" : "📿"}</span>
+    <span class="tx">${L("Heute", "Today")} ${fmt(s.todayN)}${beat ? ` <em>· ${L("neuer Rekord!", "new record!")}</em>` : rec ? ` <em>/ ${L("Rekord", "record")} ${fmt(rec)}</em>` : ""}</span>
+    <span class="br"><i style="width:${pct}%"></i></span></div>`;
+}
+const WD = {de:["Mo","Di","Mi","Do","Fr","Sa","So"], en:["Mo","Tu","We","Th","Fr","Sa","Su"]};
+function weekHTML(s){
+  const m = monday(new Date()); m.setDate(m.getDate() + 7 * wOff);
+  const days = [...Array(7)].map((_, i) => { const d = new Date(m); d.setDate(m.getDate() + i); const k = dayKey(d); return {k, n: tbLog[k] || 0, d}; });
+  const wN = days.reduce((a, x) => a + x.n, 0);
+  const allBest = Math.max(s.dayBest, s.todayN);
+  const max = Math.max(allBest, ...days.map(x => x.n), 1);
+  const bestK = s.todayN > s.dayBest ? s.t : s.dayBestK;
+  const lbl = wOff === 0 ? L("Diese Woche", "This week") : wOff === -1 ? L("Letzte Woche", "Last week") :
+    `${days[0].d.getDate()}.${days[0].d.getMonth() + 1}. – ${days[6].d.getDate()}.${days[6].d.getMonth() + 1}.`;
+  const recY = allBest ? (1 - allBest / max) : 1;
+  let sum = "";
+  if(wOff === 0){
+    const wb = s.weekBest, beat = wb > 0 && wN > wb;
+    sum = `<div class="tz-wsum"><div class="row"><span>${L("Diese Woche", "This week")}: ${fmt(wN)}</span><em>📅 ${L("Rekord", "Record")} ${fmt(Math.max(wb, wN))}</em></div>
+      <div class="br"><i style="width:${wb ? Math.min(100, wN / wb * 100) : 100}%"></i></div>
+      <p class="${beat || !wb ? "win" : ""}">${!wb ? L("Deine erste Woche – jedes Tasbīḥ zählt für deinen Rekord!", "Your first week – every tasbīḥ counts toward your record!")
+        : beat ? L("🏆 Neuer Wochenrekord! Māschāʾallāh!", "🏆 New weekly record! Māshāʾallāh!")
+        : L(`Noch ${fmt(wb - wN + 1)} bis zum neuen Wochenrekord 💪`, `${fmt(wb - wN + 1)} more for a new weekly record 💪`)}</p></div>`;
+  } else {
+    sum = `<div class="tz-wsum"><div class="row"><span>${L("Gesamt", "Total")}: ${fmt(wN)}</span><em>${days.filter(x => s.done[x.k]).length}/7 ⭐</em></div></div>`;
+  }
+  const dayBestShown = Math.max(s.dayBest, s.todayN), bk = bestK ? parse(bestK) : null;
+  return `<div class="tz-week" id="tzWeek">
+    <div class="tz-wk-h"><h3>📊 ${L("Deine Woche", "Your week")}</h3>
+      <div class="nav"><button data-tzw="-1" aria-label="${L("Woche zurück", "Previous week")}">‹</button><span>${lbl}</span><button data-tzw="1" ${wOff >= 0 ? "disabled" : ""} aria-label="${L("Woche vor", "Next week")}">›</button></div></div>
+    <div class="tz-bars">${allBest && !days.some(x => x.k === bestK) ? `<div class="tz-recline" style="top:calc(16px + ${recY} * (100% - 16px - 18px))"><span>🏆 ${fmt(allBest)}</span></div>` : ""}
+      ${days.map(x => `<div class="tz-bar${x.n ? " has" : ""}${x.k === s.t ? " today" : ""}${x.k === bestK && x.n ? " best" : ""}"><span class="v">${x.n ? fmt(x.n) : ""}</span><span class="c" style="height:${x.n ? Math.max(6, x.n / max * 100) : 0}%"></span></div>`).join("")}</div>
+    <div class="tz-days">${days.map((x, i) => `<span class="${x.k === s.t ? "today" : ""}">${WD[EN() ? "en" : "de"][i]}<i>${s.done[x.k] ? "⭐" : ""}</i></span>`).join("")}</div>
+    ${sum}
+    <div class="tz-recs">
+      <div class="tz-rec"><div class="i">🏆</div><b>${fmt(dayBestShown)}</b><span>${L("Tagesrekord", "Best day")}</span>${bk ? `<small>${bk.getDate()}.${bk.getMonth() + 1}.</small>` : ""}</div>
+      <div class="tz-rec"><div class="i">📅</div><b>${fmt(Math.max(s.weekBest, s.weekN))}</b><span>${L("Wochenrekord", "Best week")}</span></div>
+      <div class="tz-rec"><div class="i">🔥</div><b>${s.streakBest}</b><span>${L("Beste Serie", "Best streak")}</span><small>${L(`jetzt ${s.streak} ${s.streak === 1 ? "Tag" : "Tage"}`, `now ${s.streak} ${s.streak === 1 ? "day" : "days"}`)}</small></div>
+    </div>
+    <p style="margin:10px 2px 0;font-size:12.5px;color:var(--muted)">⭐ = ${L("Tagesprogramm geschafft", "daily programme done")}</p>
+  </div>`;
+}
+function refreshStats(){
+  const s = stats();
+  const a = $("#tzToday"); if(a) a.outerHTML = todayHTML(s);
+  const w = $("#tzWeek"); if(w) w.outerHTML = weekHTML(s);
+  return s;
+}
+let pendFlash = 0;
+function recordCheck(s, delay){
+  const fire = (big, title, sub) => setTimeout(() => { flash(big, title, sub, true); if(typeof confetti === "function") confetti(); }, delay);
+  if(s.dayBest > 0 && s.todayN > s.dayBest && !S.rd){ S.rd = 1; save(); fire("🏆", L("Neuer Tagesrekord!", "New daily record!"), L(`${fmt(s.todayN)} heute – mehr als je zuvor`, `${fmt(s.todayN)} today – more than ever`)); return; }
+  if(s.weekBest > 0 && s.weekN > s.weekBest && store.get("lm-tz-rw", "") !== s.wk){ store.set("lm-tz-rw", s.wk); fire("📅", L("Neuer Wochenrekord!", "New weekly record!"), L(`${fmt(s.weekN)} diese Woche`, `${fmt(s.weekN)} this week`)); }
+}
+
 renderTasbih = function(){
   S = load();
-  const d = cur(), done = planDone();
+  const d = cur(), done = planDone(), ST = stats();
   const plan = `<div class="tz-plan">${PLAN.map((p, i) => `<span class="tz-step ${i < S.idx ? "ok" : i === S.idx ? "on" : ""}"><i>${i < S.idx ? "✓" : i + 1}</i>${p.tl.split(" ").slice(0, 2).join(" ").replace(/,$/, "")}${p.t > 1 ? ` · ${p.t}` : ""}</span>`).join("")}</div>`;
   let html = plan;
   if(done){
@@ -7306,44 +7429,57 @@ renderTasbih = function(){
         <button data-tz="reset" aria-label="${L("Zurücksetzen", "Reset")}"><svg viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg></button>
         ${done ? "" : `<button data-tz="skip" aria-label="${L("Überspringen", "Skip")}" style="font-size:13px;font-weight:700">${L("Weiter ›", "Next ›")}</button>`}
       </div>
+      ${todayHTML(ST)}
+      ${weekHTML(ST)}
       <div class="tz-why"><h3>💡 ${L("Warum dieses Tasbīḥ?", "Why this tasbīḥ?")}</h3>
         <div class="ar" lang="ar">${d.h.ar}</div>${two(d.h.de, d.h.en)}
         <div class="tz-gift"><span>🎁</span><div><b>${L("Belohnung", "Reward")}</b><p>${EN() ? d.g.en : d.g.de}</p></div></div>
         <p class="src">${L("Quelle", "Source")}: ${srcLinks(d.h.s)}</p></div>`;
   }
+  if(!d) html += todayHTML(ST) + weekHTML(ST);
   $("#tbV").innerHTML = html;
   const on = document.querySelector(".tz-step.on"); if(on) on.scrollIntoView({inline:"center", block:"nearest"});
 };
 let advT = 0;
-function flash(big, title, sub){
+function flash(big, title, sub, gold){
   let p = $("#tzAdv"); if(!p){ p = document.createElement("div"); p.id = "tzAdv"; p.className = "tz-adv"; document.body.appendChild(p); }
+  p.classList.toggle("gold", !!gold);
   p.innerHTML = `<div class="big">${big}</div><b>${title}</b><span>${sub || ""}</span>`;
-  p.classList.add("show"); clearTimeout(advT); advT = setTimeout(() => p.classList.remove("show"), 1300);
+  p.classList.add("show"); clearTimeout(advT); advT = setTimeout(() => p.classList.remove("show"), gold ? 2200 : 1300);
 }
 function count(delta){
   const d = cur(); if(!d) return;
   const done = planDone(), bag = done ? S.b : S.c;
-  const n = Math.max(0, (bag[d.id] || 0) + delta); bag[d.id] = n;
-  if(delta > 0){ const k = dayKey(new Date()); tbLog[k] = (tbLog[k] || 0) + 1; store.set("tb-log", tbLog);
+  const lastN = bag[d.id] || 0;
+  const n = Math.max(0, lastN + delta); bag[d.id] = n;
+  const tk = dayKey(new Date());
+  if(delta < 0 && (tbLog[tk] || 0) > 0 && lastN > 0){ tbLog[tk]--; store.set("tb-log", tbLog); }
+  if(delta > 0){ tbLog[tk] = (tbLog[tk] || 0) + 1; store.set("tb-log", tbLog);
     if(d.id === "b-palme"){ const g = store.get("lm-garden", null) || {}; g.p = (g.p || 0) + 1; store.set("lm-garden", g); } }
   save();
   const T = d.t;
   const el = $("#tzN"); if(el) el.textContent = n;
   const ring = $("#tzRing"); if(ring){ const pr = done ? (n % T === 0 && n > 0 ? 1 : (n % T) / T) : Math.min(1, n / T); ring.style.strokeDashoffset = RING2 * (1 - pr); }
   const tap = $("#tzTap"); if(tap){ tap.classList.remove("hit"); void tap.offsetWidth; tap.classList.add("hit"); }
+  const s0 = refreshStats();
   if(delta <= 0) return;
   if(!done && n >= T){
     if(navigator.vibrate) navigator.vibrate([40, 60, 40]);
     S.idx++; save();
-    if(planDone()){ flash("🌟", L("Tagesprogramm geschafft!", "Daily programme done!"), L("Jetzt Bonus sammeln", "Now collect bonus")); if(typeof confetti === "function") confetti(); setTimeout(renderTasbih, 900); }
+    recordCheck(s0, 1400);
+    if(planDone()){
+      const bestBefore = stats().streakBest; const dn = store.get(DONE_K, {}) || {}; dn[tk] = 1; store.set(DONE_K, dn);
+      const s1 = stats(); if(s1.streak > bestBefore && s1.streak > 1) setTimeout(() => flash("🔥", L(`Neue Bestserie: ${s1.streak} Tage!`, `New best streak: ${s1.streak} days!`), L("Jeden Tag geschafft – weiter so!", "Done every day – keep going!"), true), 1500); flash("🌟", L("Tagesprogramm geschafft!", "Daily programme done!"), L("Jetzt Bonus sammeln", "Now collect bonus")); if(typeof confetti === "function") confetti(); setTimeout(renderTasbih, 900); }
     else { flash("✅", L("Geschafft!", "Done!"), L("Weiter mit: ", "Next: ") + PLAN[S.idx].tl.split(",")[0]); setTimeout(renderTasbih, 900); }
     return;
   }
+  recordCheck(s0, done && n % T === 0 ? 1400 : 0);
   if(done && n % T === 0){ if(navigator.vibrate) navigator.vibrate([40, 60, 40]); flash("🎁", L("Bonus-Runde geschafft!", "Bonus round done!"), `${n}× ${d.tl.split(",")[0]}`); }
   else if(navigator.vibrate) navigator.vibrate(12);
 }
 $("#tbV").addEventListener("click", e => {
   if(e.target.closest("#tzTap")){ count(1); return; }
+  const w = e.target.closest("[data-tzw]"); if(w){ wOff = Math.min(0, wOff + Number(w.dataset.tzw)); refreshStats(); return; }
   const b = e.target.closest("[data-tzb]"); if(b){ S.bonus = b.dataset.tzb; save(); renderTasbih(); const t = $("#tzTap"); if(t) t.scrollIntoView({block:"center", behavior:"smooth"}); return; }
   const t = e.target.closest("[data-tz]"); if(!t) return;
   const d = cur(); if(!d) return; const bag = planDone() ? S.b : S.c;
