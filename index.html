@@ -5478,12 +5478,49 @@ const VIDEO_LIST = [
 function storyVideo(id){ return VIDEO_LIST.find(v => v.id === id && v.versions); }
 function videoBox(v){
   const id = v.id, l = "de", f = v.has169 ? "169" : "916";
+  const ck = '<svg class="vm-ck" viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8.5l3 3 7-7" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
   return `<div class="st-video f${f}" data-vid="${id}" data-l="${l}" data-f="${f}">
-    <div class="vd-thumb vid"><video controls playsinline preload="metadata" poster="${vPoster(id, l, f)}" src="${vSrc(id, l, f)}"></video></div>
-    <div class="vd-ver" role="group" aria-label="${L("Stimme wählen", "Choose voice")}">${v.versions.langs.map(x => `<button type="button" class="${x.k === l ? "on" : ""}" data-vl="${x.k}" aria-pressed="${x.k === l}">${x.label[lang] || x.label.de}</button>`).join("")}</div>
-    ${v.has169 ? `<div class="vd-ver vd-fmt" role="group" aria-label="${L("Format", "Format")}"><button type="button" class="on" data-vf="169" aria-pressed="true">▭ ${L("Querformat", "Landscape")}</button><button type="button" data-vf="916" aria-pressed="false">▯ ${L("Hochformat", "Portrait")}</button></div>` : ""}
+    <div class="vd-thumb vid"><video controls playsinline preload="metadata" poster="${vPoster(id, l, f)}" src="${vSrc(id, l, f)}"></video>
+      <button type="button" class="vd-more" aria-label="${L("Stimme und Format", "Voice and format")}" aria-expanded="false"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="5" cy="12" r="2.2"/><circle cx="12" cy="12" r="2.2"/><circle cx="19" cy="12" r="2.2"/></svg></button>
+      <div class="vd-menu" hidden>
+        <p class="vm-h">${L("Stimme", "Voice")}</p>
+        <div class="vm-g">${v.versions.langs.map(x => `<button type="button" class="${x.k === l ? "on" : ""}" data-vl="${x.k}" aria-pressed="${x.k === l}"><span>${x.k === "de" ? (lang === "en" ? "👩 German" : "👩 Deutsch") : "👨 العربية"}</span>${ck}</button>`).join("")}</div>
+        ${v.has169 ? `<p class="vm-h">${L("Format", "Format")}</p>
+        <div class="vm-g"><button type="button" class="on" data-vf="169" aria-pressed="true"><span>▭ ${L("Querformat", "Landscape")}</span>${ck}</button><button type="button" data-vf="916" aria-pressed="false"><span>▯ ${L("Hochformat", "Portrait")}</span>${ck}</button></div>` : ""}
+      </div>
+    </div>
   </div>`;
 }
+(function(){
+  const st = document.createElement("style");
+  st.textContent = `.st-video{overflow:visible!important}
+  .st-video .vd-thumb.vid{position:relative;overflow:visible;background:transparent}
+  .st-video .vd-thumb.vid video{border-radius:18px}
+  .vd-more{position:absolute;top:10px;right:10px;z-index:3;width:38px;height:38px;border-radius:50%;border:0;background:rgba(10,20,24,.55);color:#fff;display:grid;place-items:center;cursor:pointer;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);transition:opacity .25s}
+  .vd-more svg{width:20px;height:20px;fill:currentColor}
+  .st-video.playing .vd-more{opacity:0;pointer-events:none}
+  .vd-menu{position:absolute;top:54px;right:10px;z-index:4;min-width:200px;padding:6px;border-radius:16px;background:rgba(18,30,34,.92);color:#fff;backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);box-shadow:0 14px 34px rgba(0,0,0,.45);border:1px solid rgba(255,255,255,.12)}
+  .vm-h{margin:6px 10px 4px;font-size:11.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;opacity:.6}
+  .vm-g{display:flex;flex-direction:column}
+  .vm-g button{display:flex;align-items:center;justify-content:space-between;gap:12px;width:100%;border:0;background:transparent;color:#fff;font:inherit;font-size:15px;padding:9px 10px;border-radius:10px;cursor:pointer;text-align:left}
+  .vm-g button:active{background:rgba(255,255,255,.1)}
+  .vm-g + .vm-h{border-top:1px solid rgba(255,255,255,.12);padding-top:8px}
+  .vm-ck{width:16px;height:16px;color:#FFC86A;opacity:0}
+  .vm-g button.on .vm-ck{opacity:1}
+  .vm-g button.on{color:#FFC86A;font-weight:700}`;
+  document.head.appendChild(st);
+  const closeAll = except => document.querySelectorAll(".st-video .vd-menu").forEach(m => { if(m !== except){ m.hidden = true; const b = m.parentElement.querySelector(".vd-more"); if(b) b.setAttribute("aria-expanded", "false"); } });
+  document.addEventListener("click", e => {
+    const mb = e.target.closest(".vd-more");
+    if(mb){ const m = mb.parentElement.querySelector(".vd-menu"); closeAll(m); m.hidden = !m.hidden; mb.setAttribute("aria-expanded", String(!m.hidden)); return; }
+    if(e.target.closest("[data-vl],[data-vf]")){ setTimeout(() => closeAll(null), 120); return; }
+    if(!e.target.closest(".vd-menu")) closeAll(null);
+  });
+  const mark = (e, on) => { const box = e.target.closest && e.target.closest(".st-video"); if(box) box.classList.toggle("playing", on); };
+  document.addEventListener("play", e => mark(e, true), true);
+  document.addEventListener("pause", e => mark(e, false), true);
+  document.addEventListener("ended", e => mark(e, false), true);
+})();
 const videoPlayer = v => videoBox(v), voiceChips = () => "";
 document.addEventListener("click", e => {
   const b = e.target.closest("[data-vl],[data-vf]"); if(!b) return;
