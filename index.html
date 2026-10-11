@@ -7487,6 +7487,527 @@ $("#tbV").addEventListener("click", e => {
 });
 })();
 
+/* =================== p32: Familie – Kinder-Profile + Speichern auf allen Geräten =================== */
+(function(){
+const SB = "https://imdyfrmtrotcyhyajwkr.supabase.co/rest/v1/rpc/";
+const KEY = "sb_publishable_6fbssHB71hNV7EgWGWNGBA_FJMlnYar";
+const LS = (() => { try{ return window.localStorage; }catch(e){ return null; } })();
+if(!LS) return;
+const rawGet = Storage.prototype.getItem, rawSet = Storage.prototype.setItem, rawDel = Storage.prototype.removeItem;
+const jget = (k, d) => { try{ const v = rawGet.call(LS, k); return v == null ? d : JSON.parse(v); }catch(e){ return d; } };
+const jset = (k, v) => { try{ rawSet.call(LS, k, JSON.stringify(v)); }catch(e){} };
+const jdel = k => { try{ rawDel.call(LS, k); }catch(e){} };
+const ss = { get(k){ try{ return sessionStorage.getItem(k); }catch(e){ return null; } }, set(k, v){ try{ sessionStorage.setItem(k, v); }catch(e){} } };
+/* Cloud nur in der Web-App (Claude-Artefakte erlauben keine fremden Server) */
+const CLOUD = (location.protocol === "https:" && /\.github\.io$/.test(location.hostname)) || jget("lmf-cloud-test", 0) === 1;
+const WEBAPP = "https://pfgx6ny8sn-dev.github.io/-dua-app/";
+/* Was zu einem Kind gehört (Gebetszeiten-Ort bleibt beim Gerät) */
+const isApp = k => /^(dua-|lm-|tb-|qr-|hd-|quiz-|kids-|wi-|film-)/.test(k);
+const appKeys = () => { const a = []; for(let i = 0; i < LS.length; i++){ const k = LS.key(i); if(k && isApp(k)) a.push(k); } return a; };
+
+let fam = jget("lmf-fam", null);      // {name, code|null}
+let kids = jget("lmf-kids", []);      // [{id,name,avatar,pin,tb,done}]
+let active = jget("lmf-active", null);
+let mt = jget("lmf-mt", {});          // Änderungszeit je Schlüssel (aktives Kind)
+let dirty = jget("lmf-dirty", {});    // noch nicht hochgeladen
+let suspend = false, pushT = 0, metaT = 0, status = fam && fam.code ? "ok" : "local";
+const persistMeta = () => { jset("lmf-mt", mt); jset("lmf-dirty", dirty); };
+const saveFam = () => { jset("lmf-fam", fam); jset("lmf-kids", kids); jset("lmf-active", active); };
+const kidOf = id => kids.find(k => k.id === id);
+
+/* ---------- Änderungen mitschreiben ---------- */
+function touch(k){
+  if(suspend || !fam || !active || !isApp(k)) return;
+  mt[k] = Date.now(); dirty[k] = 1;
+  clearTimeout(metaT); metaT = setTimeout(persistMeta, 300);
+  if(fam.code && CLOUD){ clearTimeout(pushT); pushT = setTimeout(push, 2500); }
+}
+Storage.prototype.setItem = function(k, v){ rawSet.call(this, k, v); if(this === LS) touch(k); };
+Storage.prototype.removeItem = function(k){ rawDel.call(this, k); if(this === LS) touch(k); };
+
+/* ---------- Server ---------- */
+async function rpc(fn, body, keepalive){
+  if(!CLOUD) throw new Error("no_cloud");
+  const ac = new AbortController(); const to = setTimeout(() => ac.abort(), 9000);
+  try{
+    const r = await fetch(SB + fn, {method:"POST", headers:{"apikey":KEY, "Content-Type":"application/json"}, body:JSON.stringify(body), keepalive:!!keepalive, signal:keepalive ? undefined : ac.signal});
+    const t = await r.text(); let j = null; try{ j = t ? JSON.parse(t) : null; }catch(e){}
+    if(!r.ok){ const e = new Error((j && j.message) || ("http " + r.status)); if(/family_not_found|kid_not_found/.test(e.message)) e.code = "nf"; throw e; }
+    return j;
+  } finally { clearTimeout(to); }
+}
+let pushing = null;
+async function push(keepalive){
+  if(!CLOUD || !fam || !fam.code || !active) return;
+  if(pushing) { await pushing.catch(() => {}); }
+  const keys = Object.keys(dirty); if(!keys.length) return;
+  const data = {}, snap = {};
+  keys.forEach(k => { snap[k] = mt[k] || Date.now(); data[k] = {v: rawGet.call(LS, k), t: new Date(snap[k]).toISOString()}; });
+  pushing = (async () => {
+    try{
+      await rpc("push_data", {p_code: fam.code, p_kid: active, p_data: data}, keepalive);
+      keys.forEach(k => { if((mt[k] || 0) <= snap[k]) delete dirty[k]; });
+      persistMeta(); setStatus("ok");
+    } catch(e){ setStatus("off"); if(e.code === "nf") lost(); throw e; }
+  })();
+  try{ await pushing; } finally { pushing = null; }
+}
+/* Zähler-Daten zusammenführen statt überschreiben */
+const P = s => { try{ return JSON.parse(s); }catch(e){ return null; } };
+const maxMap = (a, b) => { const o = {...(a || {})}; for(const k in (b || {})) o[k] = Math.max(o[k] || 0, b[k] || 0); return o; };
+const MERGE = {
+  "tb-log": (a, b) => { const x = P(a), y = P(b); return x && y ? JSON.stringify(maxMap(x, y)) : b; },
+  "lm-tz-done": (a, b) => { const x = P(a), y = P(b); return x && y ? JSON.stringify(maxMap(x, y)) : b; },
+  "lm-garden": (a, b) => { const x = P(a), y = P(b); if(!x || !y) return b;
+    const d = {...(x.d || {})}; for(const k in (y.d || {})) d[k] = [...new Set([...(d[k] || []), ...y.d[k]])];
+    return JSON.stringify({...x, ...y, d, p: Math.max(x.p || 0, y.p || 0), b: Math.max(x.b || 0, y.b || 0), log: ((x.log || []).length >= (y.log || []).length ? x.log : y.log) || []}); }
+};
+async function pull(){
+  const j = await rpc("pull_data", {p_code: fam.code, p_kid: active, p_since: null});
+  const data = (j && j.data) || {}; let changed = false;
+  suspend = true;
+  try{
+    for(const k in data){
+      if(!isApp(k)) continue;
+      const o = data[k], st = Date.parse(o.t) || 0, lt = mt[k] || 0, lv = rawGet.call(LS, k);
+      if(MERGE[k] && lv != null && o.v != null && lv !== o.v){
+        const m = MERGE[k](lv, o.v);
+        if(m !== lv){ rawSet.call(LS, k, m); changed = true; }
+        if(m !== o.v){ mt[k] = Date.now(); dirty[k] = 1; } else { mt[k] = st; delete dirty[k]; }
+        continue;
+      }
+      if(st >= lt){
+        if(o.v !== lv){ if(o.v == null) rawDel.call(LS, k); else rawSet.call(LS, k, o.v); changed = true; }
+        mt[k] = st; delete dirty[k];
+      } else if(o.v !== lv) dirty[k] = 1;
+    }
+    for(const k of appKeys()) if(!(k in data)){ dirty[k] = 1; if(!mt[k]) mt[k] = Date.now(); }
+  } finally { suspend = false; }
+  persistMeta(); setStatus("ok");
+  if(Object.keys(dirty).length) push().catch(() => {});
+  return changed;
+}
+async function refreshFamily(){
+  const j = await rpc("get_family", {p_code: fam.code});
+  fam.name = j.name || fam.name || ""; kids = j.kids || [];
+  if(active && !kidOf(active)){ active = kids[0] ? kids[0].id : null; }
+  saveFam(); return j;
+}
+function lost(){
+  toast(L("Die Familie gibt es nicht mehr – die Daten bleiben auf diesem Gerät.", "This family no longer exists – data stays on this device."));
+  leaveFamily(false);
+}
+function setStatus(s){ status = s; const el = document.querySelector("#lmfStatus"); if(el) el.outerHTML = statusHTML(); }
+
+/* ---------- Profile wechseln ---------- */
+function stash(id){
+  const v = {}; appKeys().forEach(k => v[k] = rawGet.call(LS, k));
+  jset("lmf-blob:" + id, {v, mt, dirty});
+}
+function clearApp(){ suspend = true; appKeys().forEach(k => rawDel.call(LS, k)); suspend = false; }
+function unstash(id){
+  const b = jget("lmf-blob:" + id, null); suspend = true;
+  if(b && b.v) for(const k in b.v) if(b.v[k] != null) rawSet.call(LS, k, b.v[k]);
+  suspend = false; mt = (b && b.mt) || {}; dirty = (b && b.dirty) || {}; jdel("lmf-blob:" + id); persistMeta();
+}
+async function switchTo(id){
+  showLoading();
+  if(active && id !== active){ try{ await push(); }catch(e){} stash(active); clearApp(); unstash(id); }
+  active = id; saveFam(); ss.set("lmf-picked", id);
+  if(fam.code && CLOUD){ try{ await pull(); }catch(e){} }
+  location.reload();
+}
+function leaveFamily(alsoBlobs){
+  clearTimeout(pushT);
+  for(let i = LS.length - 1; i >= 0; i--){ const k = LS.key(i); if(k && /^lmf-/.test(k) && (alsoBlobs || k !== "lmf-cloud-test")) jdel(k); }
+  fam = null; kids = []; active = null; mt = {}; dirty = {};
+}
+
+/* ---------- Oberfläche ---------- */
+const css = `
+.lmf{position:fixed;inset:0;z-index:120;display:flex;align-items:flex-end;justify-content:center;background:rgba(4,14,20,.55);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);animation:lmfIn .2s ease}
+@keyframes lmfIn{from{opacity:0}}
+.lmf-sheet{width:100%;max-width:560px;max-height:92vh;overflow:auto;background:var(--bg2,var(--bg));color:var(--ink);border-radius:28px 28px 0 0;padding:18px 18px calc(22px + env(safe-area-inset-bottom,0px));box-shadow:0 -10px 40px rgba(0,0,0,.35);animation:lmfUp .28s cubic-bezier(.2,1,.3,1)}
+@keyframes lmfUp{from{transform:translateY(40px);opacity:.4}}
+@media (min-width:700px){.lmf{align-items:center}.lmf-sheet{border-radius:28px}}
+.lmf-h{display:flex;align-items:center;gap:10px;margin-bottom:6px}
+.lmf-h h2{flex:1;margin:0;font-family:var(--display);font-size:24px;font-weight:800;line-height:1.15}
+.lmf-x{border:0;background:var(--fill);color:var(--ink);width:36px;height:36px;border-radius:50%;font-size:18px;cursor:pointer;flex:none}
+.lmf-back{border:0;background:none;color:var(--gold);font:inherit;font-weight:700;font-size:15px;padding:4px 0;cursor:pointer}
+.lmf p{margin:6px 0;font-size:15.5px;line-height:1.45}
+.lmf p.mut{color:var(--muted);font-size:14px}
+.lmf-btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;border:0;border-radius:18px;padding:15px 16px;margin-top:10px;font:inherit;font-size:16.5px;font-weight:800;cursor:pointer;background:var(--grad);color:var(--on-acc,#1b1300);box-shadow:0 10px 22px -10px rgba(242,176,74,.7)}
+.lmf-btn.sec{background:var(--surface);color:var(--ink);box-shadow:inset 0 0 0 1px var(--sep)}
+.lmf-btn.warn{background:none;color:#e5675a;box-shadow:inset 0 0 0 1.5px #e5675a}
+.lmf-btn:disabled{opacity:.5}
+.lmf label{display:block;font-size:13px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);margin:16px 2px 6px}
+.lmf input{width:100%;box-sizing:border-box;border:1.5px solid var(--sep);background:var(--surface);color:var(--ink);border-radius:16px;padding:13px 14px;font:inherit;font-size:17px;outline:none}
+.lmf input:focus{border-color:var(--gold)}
+.lmf input.code{font-family:ui-monospace,Menlo,monospace;letter-spacing:.12em;text-transform:uppercase;text-align:center;font-size:21px;font-weight:700}
+.lmf-av{display:grid;grid-template-columns:repeat(8,1fr);gap:6px}
+.lmf-av button{aspect-ratio:1;border:0;border-radius:14px;background:var(--surface);font-size:24px;cursor:pointer;box-shadow:inset 0 0 0 1px var(--sep);padding:0}
+.lmf-av button[aria-pressed="true"]{box-shadow:inset 0 0 0 2.5px var(--gold);background:var(--gold-soft)}
+.lmf-code{font-family:ui-monospace,Menlo,monospace;font-size:30px;font-weight:800;letter-spacing:.1em;text-align:center;background:var(--gold-soft);color:var(--gold);border-radius:20px;padding:18px 8px;margin:12px 0 4px;user-select:all;-webkit-user-select:all}
+.lmf-kids{display:grid;gap:8px;margin-top:12px}
+.lmf-kid{display:flex;align-items:center;gap:12px;width:100%;text-align:left;border:0;border-radius:20px;padding:10px 12px;background:var(--surface);color:var(--ink);font:inherit;cursor:pointer;box-shadow:inset 0 0 0 1px var(--sep)}
+.lmf-kid.on{box-shadow:inset 0 0 0 2px var(--gold)}
+.lmf-kid .a{width:50px;height:50px;border-radius:16px;display:grid;place-items:center;font-size:30px;background:var(--kc,var(--fill));flex:none}
+.lmf-kid .t{flex:1;min-width:0}
+.lmf-kid .t b{display:block;font-size:17px}
+.lmf-kid .t span{display:block;font-size:13px;color:var(--muted);font-weight:600;font-variant-numeric:tabular-nums}
+.lmf-kid .tag{font-size:12px;font-weight:800;color:var(--gold);background:var(--gold-soft);border-radius:999px;padding:3px 9px;flex:none}
+.lmf-kid .ed{font-size:13px;font-weight:800;color:var(--gold);flex:none}
+.lmf-stat{display:flex;align-items:center;gap:8px;font-size:13.5px;font-weight:700;color:var(--muted);background:var(--fill);border-radius:999px;padding:7px 12px;margin:10px 0 2px;width:max-content;max-width:100%}
+.lmf-stat.ok{color:var(--teal)}
+.lmf-row{display:flex;gap:8px}.lmf-row>*{flex:1}
+.lmf-gate{font-size:30px;font-weight:800;text-align:center;margin:14px 0 6px;font-variant-numeric:tabular-nums}
+/* Wer bist du? */
+.lmf-pick{position:fixed;inset:0;z-index:130;overflow:auto;color:#fff;background:linear-gradient(180deg,#2C2A6B 0%,#7a3f7f 55%,#C2618A 85%,#FFB070 120%);padding:calc(28px + env(safe-area-inset-top,0px)) 18px calc(28px + env(safe-area-inset-bottom,0px));display:flex;flex-direction:column;align-items:center}
+.lmf-pick .hi{font-family:var(--display);font-size:30px;font-weight:800;text-align:center;margin-top:18px;text-shadow:0 2px 12px rgba(0,0,0,.3)}
+.lmf-pick .ar{font-family:"Scheherazade New",serif;font-size:28px;color:#FFE7A8;margin-top:2px}
+.lmf-pick .q{font-size:18px;font-weight:700;opacity:.92;margin-top:4px}
+.lmf-tiles{display:grid;grid-template-columns:repeat(2,minmax(0,150px));gap:14px;margin:26px 0 18px;justify-content:center;width:100%}
+@media (min-width:600px){.lmf-tiles{grid-template-columns:repeat(3,150px)}}
+.lmf-tile{border:0;border-radius:28px;padding:16px 8px 14px;background:rgba(255,255,255,.14);color:#fff;font:inherit;cursor:pointer;box-shadow:inset 0 0 0 1.5px rgba(255,255,255,.25);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);transition:transform .15s}
+.lmf-tile:active{transform:scale(.95)}
+.lmf-tile .a{width:84px;height:84px;margin:0 auto;border-radius:26px;display:grid;place-items:center;font-size:50px;background:var(--kc)}
+.lmf-tile b{display:block;font-size:19px;margin-top:10px}
+.lmf-tile small{display:block;font-size:12.5px;opacity:.8;margin-top:2px}
+.lmf-pick .lnk{border:0;background:none;color:#fff;opacity:.85;font:inherit;font-weight:700;text-decoration:underline;cursor:pointer;margin-top:auto;padding:10px}
+.lmf-pin{display:flex;flex-direction:column;align-items:center}
+.lmf-dots{display:flex;gap:14px;margin:18px 0}
+.lmf-dots i{width:16px;height:16px;border-radius:50%;border:2px solid currentColor;opacity:.9}
+.lmf-dots i.f{background:currentColor}
+.lmf-dots.bad{animation:lmfShake .4s}
+@keyframes lmfShake{20%,60%{transform:translateX(-8px)}40%,80%{transform:translateX(8px)}}
+.lmf-pad{display:grid;grid-template-columns:repeat(3,72px);gap:12px}
+.lmf-pad button{height:72px;border-radius:50%;border:0;background:rgba(255,255,255,.16);color:inherit;font:inherit;font-size:26px;font-weight:700;cursor:pointer}
+.lmf-pad button:active{background:rgba(255,255,255,.3)}
+.lmf-load{position:fixed;inset:0;z-index:140;display:grid;place-items:center;background:rgba(4,14,20,.6);color:#fff;font-weight:700;font-size:16px}
+.lmf-load span{display:flex;flex-direction:column;align-items:center;gap:12px}
+.lmf-load i{width:38px;height:38px;border-radius:50%;border:4px solid rgba(255,255,255,.25);border-top-color:#FFD27A;animation:lmfSpin .8s linear infinite}
+@keyframes lmfSpin{to{transform:rotate(360deg)}}
+.lmf-toast{position:fixed;left:50%;bottom:calc(100px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);z-index:150;background:var(--bg2,#123);color:var(--ink);border:1px solid var(--line,var(--sep));border-radius:16px;padding:11px 16px;font-size:14.5px;font-weight:700;box-shadow:0 12px 30px rgba(0,0,0,.35);max-width:calc(100% - 32px);text-align:center;animation:lmfIn .2s}
+.lm-top .lmf-me{width:46px;height:46px;border-radius:50%;border:0;background:rgba(255,255,255,.18);font-size:26px;line-height:1;display:grid;place-items:center;cursor:pointer;flex:none;padding:0;box-shadow:inset 0 0 0 2px rgba(255,231,168,.55)}
+.lm-top .lmf-me.none{font-size:22px;box-shadow:none}
+`;
+const st = document.createElement("style"); st.textContent = css; document.head.appendChild(st);
+
+const AV = ["👧🏻","👦🏻","🧒🏻","👶🏻","🧕🏼","🧔🏻‍♂️","👧🏽","👦🏽","🦁","🐪","🐱","🐢","🦋","🐝","🌙","⭐"];
+const KC = ["#F2B04A","#4FB3A9","#E58FB4","#7FA7F5","#B48CF2","#8BD17C","#F28C6B","#6CC5E8"];
+const kc = id => { const i = kids.findIndex(k => k.id === id); return KC[(i < 0 ? 0 : i) % KC.length]; };
+const esc2 = s => String(s == null ? "" : s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const fmtN = n => Number(n || 0).toLocaleString(lang === "en" ? "en-GB" : "de-DE");
+function weekOf(tbStr, doneStr){
+  const tb = typeof tbStr === "string" ? (P(tbStr) || {}) : (tbStr || {}), dn = typeof doneStr === "string" ? (P(doneStr) || {}) : (doneStr || {});
+  const m = new Date(); m.setHours(0,0,0,0); m.setDate(m.getDate() - ((m.getDay() + 6) % 7));
+  let n = 0, s = 0;
+  for(let i = 0; i < 7; i++){ const d = new Date(m); d.setDate(m.getDate() + i); const k = dayKey(d); n += tb[k] || 0; if(dn[k]) s++; }
+  return {n, s};
+}
+function kidWeek(k){
+  if(k.id === active) return weekOf(rawGet.call(LS, "tb-log"), rawGet.call(LS, "lm-tz-done"));
+  const b = jget("lmf-blob:" + k.id, null);
+  if(b && b.v && (b.v["tb-log"] || !k.tb)) return weekOf(b.v["tb-log"], b.v["lm-tz-done"]);
+  return weekOf(k.tb, k.done);
+}
+function statusHTML(){
+  if(!fam || !fam.code) return `<div class="lmf-stat" id="lmfStatus">📱 ${L("Nur auf diesem Gerät gespeichert", "Saved on this device only")}</div>`;
+  return status === "off"
+    ? `<div class="lmf-stat" id="lmfStatus">📴 ${L("Offline – wird gespeichert, sobald Internet da ist", "Offline – will save when online")}</div>`
+    : `<div class="lmf-stat ok" id="lmfStatus">☁️ ${L("Gespeichert – auf allen Geräten gleich", "Saved – the same on all devices")}</div>`;
+}
+function toast(t){ const d = document.createElement("div"); d.className = "lmf-toast"; d.textContent = t; document.body.appendChild(d); setTimeout(() => d.remove(), 3200); }
+function showLoading(t){ let d = document.querySelector(".lmf-load"); if(!d){ d = document.createElement("div"); d.className = "lmf-load"; document.body.appendChild(d); } d.innerHTML = `<span><i></i>${t || L("Einen Moment …", "One moment …")}</span>`; }
+const hideLoading = () => { const d = document.querySelector(".lmf-load"); if(d) d.remove(); };
+
+/* ---------- Familien-Fenster ---------- */
+let V = {s:"intro"}, root = null;
+function open(s, extra){ V = Object.assign({s}, extra || {}); if(!root){ root = document.createElement("div"); root.className = "lmf"; root.setAttribute("role", "dialog"); root.setAttribute("aria-modal", "true"); document.body.appendChild(root); root.addEventListener("click", onClick); root.addEventListener("input", onInput); } draw(); }
+function close(){ if(root){ root.remove(); root = null; } }
+const head = (t, back) => `<div class="lmf-h">${back ? `<button class="lmf-back" data-f="go" data-to="${back}">‹ ${L("Zurück", "Back")}</button><h2></h2>` : `<h2>${t}</h2>`}<button class="lmf-x" data-f="close" aria-label="${L("Schließen", "Close")}">✕</button></div>${back ? `<h2 style="margin:0 0 6px;font-family:var(--display);font-size:24px">${t}</h2>` : ""}`;
+const avGrid = sel => `<div class="lmf-av">${AV.map(a => `<button data-f="av" data-av="${a}" aria-pressed="${a === sel}">${a}</button>`).join("")}</div>`;
+function kidForm(k){
+  return `<label>${L("Name", "Name")}</label><input id="lmfName" maxlength="30" value="${esc2(k ? k.name : V.name || "")}" placeholder="${L("z. B. Amina", "e.g. Amina")}" autocomplete="off">
+    <label>${L("Bild", "Picture")}</label>${avGrid(V.av)}
+    <label>${L("PIN (freiwillig, 4 Ziffern)", "PIN (optional, 4 digits)")}</label><input id="lmfPin" inputmode="numeric" maxlength="4" value="${esc2(k ? k.pin || "" : V.pin || "")}" placeholder="– – – –" autocomplete="off">`;
+}
+function draw(){
+  if(!root) return;
+  let h = "";
+  const s = V.s;
+  if(s === "intro"){
+    h = head("👨‍👩‍👧 " + L("Familie", "Family")) +
+      `<p>${L("Jedes Kind bekommt sein eigenes Profil – mit eigenen Rekorden, eigenem Garten und eigenen Sternen.", "Every child gets their own profile – with their own records, garden and stars.")}</p>` +
+      (CLOUD ? `<p>${L("Mit eurem <b>Familien-Code</b> sind die Ergebnisse auf allen Geräten gleich – Handy, Tablet oder bei Oma.", "With your <b>family code</b> the results are the same on every device – phone, tablet or at grandma’s.")}</p>`
+             : `<p class="mut">${L("In dieser Version bleiben die Profile auf diesem Gerät. Für alle Geräte gemeinsam die Web-App benutzen:", "In this version profiles stay on this device. To share across devices use the web app:")} <a href="${WEBAPP}" target="_blank" rel="noopener" style="color:var(--gold)">${WEBAPP.replace("https://", "")}</a></p>`) +
+      `<button class="lmf-btn" data-f="go" data-to="create">✨ ${L("Familie anlegen", "Create family")}</button>` +
+      (CLOUD ? `<button class="lmf-btn sec" data-f="go" data-to="join">🔑 ${L("Ich habe schon einen Familien-Code", "I already have a family code")}</button>` : "");
+  }
+  else if(s === "create"){
+    h = head(L("Familie anlegen", "Create family"), "intro") +
+      `<label>${L("Familienname (freiwillig)", "Family name (optional)")}</label><input id="lmfFam" maxlength="40" value="${esc2(V.fam || "")}" placeholder="${L("z. B. Familie Yılmaz", "e.g. The Yılmaz family")}" autocomplete="off">
+       <p style="margin-top:18px;font-weight:800;font-size:17px">👶 ${L("Erstes Kind", "First child")}</p>` + kidForm(null) +
+      `<p class="mut" style="margin-top:12px">${L("Die bisherigen Ergebnisse auf diesem Gerät bekommt dieses Kind.", "The results already on this device go to this child.")}</p>
+       <button class="lmf-btn" data-f="create">${L("Anlegen", "Create")}</button>${V.err ? `<p style="color:#e5675a">${V.err}</p>` : ""}`;
+  }
+  else if(s === "code"){
+    h = head("🔑 " + L("Euer Familien-Code", "Your family code")) +
+      `<div class="lmf-code" id="lmfCode">${esc2(fam.code)}</div>
+       <button class="lmf-btn sec" data-f="copy">📋 ${L("Code kopieren", "Copy code")}</button>
+       <p>${L("<b>Schreibt den Code auf!</b> Auf einem anderen Gerät: Familie → „Ich habe schon einen Familien-Code“. Den Code findet ihr später auch im Eltern-Bereich.", "<b>Write the code down!</b> On another device: Family → “I already have a family code”. You can also find it later in the parents’ area.")}</p>
+       <button class="lmf-btn" data-f="done">${L("Fertig", "Done")}</button>`;
+  }
+  else if(s === "join"){
+    h = head(L("Mit Familien-Code verbinden", "Join with family code"), "intro") +
+      `<label>${L("Familien-Code", "Family code")}</label><input id="lmfJoin" class="code" maxlength="14" value="${esc2(V.code || "")}" placeholder="XXXX-XXXX-XXXX" autocomplete="off" autocapitalize="characters">
+       <button class="lmf-btn" data-f="join">${L("Verbinden", "Connect")}</button>${V.err ? `<p style="color:#e5675a">${V.err}</p>` : ""}`;
+  }
+  else if(s === "joinpick"){
+    h = head(L("Wer benutzt dieses Gerät?", "Who uses this device?"), "join") +
+      `<p class="mut">${esc2(V.j.name || "")}</p><div class="lmf-kids">${V.j.kids.map(k => `<button class="lmf-kid" data-f="joinkid" data-id="${k.id}"><span class="a" style="--kc:${KC[V.j.kids.indexOf(k) % KC.length]}">${esc2(k.avatar)}</span><span class="t"><b>${esc2(k.name)}</b></span></button>`).join("")}</div>
+       <p class="mut" style="margin-top:12px">${L("Die Ergebnisse, die bisher auf diesem Gerät waren, werden zur Sicherheit aufgehoben.", "Results already on this device are kept as a backup.")}</p>`;
+  }
+  else if(s === "fam"){
+    h = head("👨‍👩‍👧 " + esc2(fam.name || L("Unsere Familie", "Our family"))) + statusHTML() +
+      `<div class="lmf-kids">${kids.map(k => { const w = kidWeek(k); return `<button class="lmf-kid${k.id === active ? " on" : ""}" data-f="pickkid" data-id="${k.id}"><span class="a" style="--kc:${kc(k.id)}">${esc2(k.avatar)}</span><span class="t"><b>${esc2(k.name)}</b><span>${L("Diese Woche", "This week")}: 📿 ${fmtN(w.n)} · ⭐ ${w.s}/7</span></span>${k.id === active ? `<span class="tag">${L("Ich", "Me")}</span>` : ""}</button>`; }).join("")}</div>
+       <button class="lmf-btn sec" data-f="gate" data-then="addkid">➕ ${L("Kind hinzufügen", "Add child")}</button>
+       <button class="lmf-btn sec" data-f="gate" data-then="parent">🔒 ${L("Eltern-Bereich", "Parents’ area")}</button>`;
+  }
+  else if(s === "gate"){
+    h = head("🔒 " + L("Frage für Eltern", "Question for parents"), "fam") +
+      `<p class="mut">${L("Damit nur Erwachsene hier etwas ändern.", "So only grown-ups can change things here.")}</p>
+       <div class="lmf-gate">${V.a} × ${V.b} = ?</div><input id="lmfGate" inputmode="numeric" maxlength="3" autocomplete="off" style="text-align:center;font-size:24px">
+       <button class="lmf-btn" data-f="gateok">OK</button>${V.err ? `<p style="color:#e5675a;text-align:center">${V.err}</p>` : ""}`;
+  }
+  else if(s === "parent"){
+    h = head("🔒 " + L("Eltern-Bereich", "Parents’ area"), "fam") +
+      (fam.code ? `<label>${L("Familien-Code", "Family code")}</label><div class="lmf-code" style="font-size:24px;margin-top:0">${esc2(fam.code)}</div><button class="lmf-btn sec" data-f="copy">📋 ${L("Code kopieren", "Copy code")}</button>` : statusHTML()) +
+      `<label>${L("Familienname", "Family name")}</label><div class="lmf-row"><input id="lmfFam" maxlength="40" value="${esc2(fam.name || "")}"><button class="lmf-btn sec" style="margin:0;flex:0 0 auto;width:auto" data-f="rename">${L("Speichern", "Save")}</button></div>
+       <label>${L("Kinder", "Children")}</label><div class="lmf-kids" style="margin-top:0">${kids.map(k => `<button class="lmf-kid" data-f="editkid" data-id="${k.id}"><span class="a" style="--kc:${kc(k.id)}">${esc2(k.avatar)}</span><span class="t"><b>${esc2(k.name)}</b><span>${k.pin ? "🔐 PIN" : L("ohne PIN", "no PIN")}</span></span><span class="ed">${L("Ändern", "Edit")} ›</span></button>`).join("")}</div>
+       <button class="lmf-btn sec" data-f="go" data-to="addkid">➕ ${L("Kind hinzufügen", "Add child")}</button>
+       <label>${L("Gerät", "Device")}</label>
+       <button class="lmf-btn warn" data-f="go" data-to="leave">${L("Dieses Gerät abmelden", "Sign out this device")}</button>
+       ${fam.code ? `<button class="lmf-btn warn" data-f="go" data-to="delfam">${L("Familie und alle Daten löschen", "Delete family and all data")}</button>` : ""}`;
+  }
+  else if(s === "addkid" || s === "editkid"){
+    const k = s === "editkid" ? kidOf(V.id) : null;
+    h = head(k ? L("Profil ändern", "Edit profile") : L("Kind hinzufügen", "Add child"), V.from || "parent") + kidForm(k) +
+      `<button class="lmf-btn" data-f="savekid">${L("Speichern", "Save")}</button>${V.err ? `<p style="color:#e5675a">${V.err}</p>` : ""}` +
+      (k ? (V.confirm ? `<p style="margin-top:16px">${L(`Wirklich löschen? Alle Ergebnisse von <b>${esc2(k.name)}</b> gehen verloren.`, `Really delete? All of <b>${esc2(k.name)}</b>’s results will be lost.`)}</p><div class="lmf-row"><button class="lmf-btn sec" data-f="go" data-to="parent">${L("Nein", "No")}</button><button class="lmf-btn warn" data-f="delkid">${L("Ja, löschen", "Yes, delete")}</button></div>`
+                      : (kids.length > 1 ? `<button class="lmf-btn warn" data-f="askdel">${L("Profil löschen", "Delete profile")}</button>` : "")) : "");
+  }
+  else if(s === "leave"){
+    h = head(L("Gerät abmelden?", "Sign out device?"), "parent") +
+      `<p>${L("Die Profile verschwinden von diesem Gerät. Die Ergebnisse des aktuellen Kindes bleiben hier.", "Profiles disappear from this device. The current child’s results stay here.")}${fam.code ? " " + L("In der Cloud bleibt alles gespeichert – mit dem Familien-Code kommt ihr jederzeit zurück.", "Everything stays saved in the cloud – use the family code to come back anytime.") : ""}</p>
+       <div class="lmf-row"><button class="lmf-btn sec" data-f="go" data-to="parent">${L("Abbrechen", "Cancel")}</button><button class="lmf-btn warn" data-f="leave">${L("Abmelden", "Sign out")}</button></div>`;
+  }
+  else if(s === "delfam"){
+    h = head(L("Familie löschen?", "Delete family?"), "parent") +
+      `<p>${L("Alle Profile und alle gespeicherten Ergebnisse werden auf dem Server <b>endgültig gelöscht</b> – für alle Geräte. Das kann man nicht rückgängig machen.", "All profiles and all saved results will be <b>permanently deleted</b> from the server – for all devices. This cannot be undone.")}</p>
+       <div class="lmf-row"><button class="lmf-btn sec" data-f="go" data-to="parent">${L("Abbrechen", "Cancel")}</button><button class="lmf-btn warn" data-f="delfam">${L("Endgültig löschen", "Delete forever")}</button></div>${V.err ? `<p style="color:#e5675a">${V.err}</p>` : ""}`;
+  }
+  root.innerHTML = `<div class="lmf-sheet">${h}</div>`;
+}
+function onInput(e){
+  if(e.target.id === "lmfJoin"){ const raw = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 12); e.target.value = raw.replace(/(.{4})(?=.)/g, "$1-"); }
+  if(e.target.id === "lmfPin" || e.target.id === "lmfGate") e.target.value = e.target.value.replace(/\D/g, "");
+}
+const val = id => { const el = document.getElementById(id); return el ? el.value.trim() : ""; };
+const keepForm = () => { if(document.getElementById("lmfName")) V.name = val("lmfName"); if(document.getElementById("lmfPin")) V.pin = val("lmfPin"); if(document.getElementById("lmfFam")) V.fam = val("lmfFam"); };
+const errText = e => !CLOUD ? "" : (e && e.code === "nf") ? L("Diesen Familien-Code gibt es nicht. Bitte prüfen.", "This family code doesn’t exist. Please check.") : L("Keine Verbindung. Bitte Internet prüfen und nochmal versuchen.", "No connection. Please check the internet and try again.");
+const newId = () => "l" + Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+
+async function onClick(e){
+  if(e.target === root){ close(); return; }
+  const b = e.target.closest("[data-f]"); if(!b) return;
+  const f = b.dataset.f;
+  if(f === "close") return close();
+  if(f === "go"){ keepForm(); const to = b.dataset.to; V = {s: to, av: to === "create" || to === "addkid" ? AV[0] : V.av, name: to === "create" ? V.name : "", fam: V.fam, code: V.code, j: V.j}; if(to === "addkid") V.from = "parent"; draw(); return; }
+  if(f === "av"){ keepForm(); V.av = b.dataset.av; draw(); return; }
+  if(f === "copy"){ const c = fam.code; try{ await navigator.clipboard.writeText(c); toast(L("Code kopiert ✓", "Code copied ✓")); }catch(_){ const el = root.querySelector(".lmf-code"); if(el){ const r = document.createRange(); r.selectNodeContents(el); const s = getSelection(); s.removeAllRanges(); s.addRange(r); } toast(L("Code markiert – jetzt kopieren", "Code selected – copy it now")); } return; }
+  if(f === "done"){ close(); if(typeof renderStart === "function") renderStart(); return; }
+  if(f === "create"){
+    keepForm(); const name = V.name, pin = V.pin;
+    if(!name){ V.err = L("Bitte einen Namen eingeben.", "Please enter a name."); draw(); return; }
+    if(pin && pin.length !== 4){ V.err = L("Die PIN braucht genau 4 Ziffern.", "The PIN needs exactly 4 digits."); draw(); return; }
+    b.disabled = true;
+    try{
+      let code = null, kid;
+      if(CLOUD){ code = (await rpc("create_family", {p_name: V.fam || ""})).code; kid = await rpc("save_kid", {p_code: code, p_id: null, p_name: name, p_avatar: V.av, p_pin: pin || null}); }
+      else kid = {id: newId(), name, avatar: V.av, pin: pin || null};
+      fam = {name: V.fam || "", code}; kids = [kid]; active = kid.id; ss.set("lmf-picked", kid.id);
+      mt = {}; dirty = {}; const now = Date.now(); appKeys().forEach(k => { mt[k] = now; dirty[k] = 1; });
+      saveFam(); persistMeta();
+      if(code){ push().catch(() => {}); V = {s:"code"}; draw(); } else { close(); toast(L("Familie angelegt ✓", "Family created ✓")); if(typeof renderStart === "function") renderStart(); }
+    }catch(err){ V.err = errText(err); draw(); }
+    return;
+  }
+  if(f === "join"){
+    V.code = val("lmfJoin"); if(V.code.replace(/-/g, "").length !== 12){ V.err = L("Der Code hat 12 Zeichen.", "The code has 12 characters."); draw(); return; }
+    b.disabled = true;
+    try{ const j = await rpc("get_family", {p_code: V.code}); if(!j.kids || !j.kids.length){ V.err = L("In dieser Familie gibt es noch kein Kind.", "This family has no children yet."); draw(); return; } V = {s:"joinpick", j, code: V.code}; draw(); }
+    catch(err){ V.err = errText(err); draw(); }
+    return;
+  }
+  if(f === "joinkid"){
+    const j = V.j, k = j.kids.find(x => x.id === b.dataset.id); if(!k) return;
+    const go = async () => {
+      showLoading(L("Ergebnisse werden geladen …", "Loading results …"));
+      const backup = {}; appKeys().forEach(x => backup[x] = rawGet.call(LS, x)); if(Object.keys(backup).length) jset("lmf-backup", {at: Date.now(), v: backup});
+      clearApp(); fam = {name: j.name || "", code: V.code.toUpperCase()}; kids = j.kids; active = k.id; mt = {}; dirty = {}; saveFam(); persistMeta(); ss.set("lmf-picked", k.id);
+      try{ await pull(); }catch(_){}
+      location.reload();
+    };
+    if(k.pin){ close(); pinPad(k, go); } else go();
+    return;
+  }
+  if(f === "pickkid"){
+    const k = kidOf(b.dataset.id); if(!k) return;
+    if(k.id === active){ close(); return; }
+    close(); if(k.pin) pinPad(k, () => switchTo(k.id)); else switchTo(k.id);
+    return;
+  }
+  if(f === "gate"){ V = {s:"gate", then: b.dataset.then, a: 3 + Math.floor(Math.random() * 7), b: 3 + Math.floor(Math.random() * 7), av: AV[0], from: "fam"}; draw(); setTimeout(() => { const i = document.getElementById("lmfGate"); if(i) i.focus(); }, 50); return; }
+  if(f === "gateok"){
+    if(Number(val("lmfGate")) === V.a * V.b){ const t = V.then; V = {s: t, av: AV[0], from: t === "addkid" ? "fam" : undefined}; draw(); }
+    else { V.err = L("Leider falsch.", "Sorry, wrong."); V.a = 3 + Math.floor(Math.random() * 7); V.b = 3 + Math.floor(Math.random() * 7); draw(); }
+    return;
+  }
+  if(f === "editkid"){ const k = kidOf(b.dataset.id); if(!k) return; V = {s:"editkid", id: k.id, av: k.avatar, from: "parent"}; draw(); return; }
+  if(f === "askdel"){ keepForm(); V.confirm = true; draw(); return; }
+  if(f === "savekid"){
+    keepForm(); const k = V.s === "editkid" ? kidOf(V.id) : null, name = V.name, pin = V.pin;
+    if(!name){ V.err = L("Bitte einen Namen eingeben.", "Please enter a name."); draw(); return; }
+    if(pin && pin.length !== 4){ V.err = L("Die PIN braucht genau 4 Ziffern.", "The PIN needs exactly 4 digits."); draw(); return; }
+    b.disabled = true;
+    try{
+      let r;
+      if(fam.code) r = await rpc("save_kid", {p_code: fam.code, p_id: k ? k.id : null, p_name: name, p_avatar: V.av, p_pin: pin || null});
+      else r = {id: k ? k.id : newId(), name, avatar: V.av, pin: pin || null};
+      if(k) Object.assign(k, r); else kids.push(r);
+      saveFam(); toast(L("Gespeichert ✓", "Saved ✓"));
+      V = {s: V.from === "fam" ? "fam" : "parent"}; draw(); if(typeof renderStart === "function") renderStart();
+    }catch(err){ V.err = errText(err); draw(); }
+    return;
+  }
+  if(f === "delkid"){
+    const k = kidOf(V.id); if(!k) return;
+    try{
+      if(fam.code) await rpc("delete_kid", {p_code: fam.code, p_id: k.id});
+      kids = kids.filter(x => x.id !== k.id); jdel("lmf-blob:" + k.id);
+      if(active === k.id){ clearApp(); active = kids[0].id; unstash(active); saveFam(); ss.set("lmf-picked", active); location.reload(); return; }
+      saveFam(); V = {s:"parent"}; draw();
+    }catch(err){ V.err = errText(err); draw(); }
+    return;
+  }
+  if(f === "rename"){
+    const n = val("lmfFam");
+    try{ if(fam.code) await rpc("rename_family", {p_code: fam.code, p_name: n}); fam.name = n; saveFam(); toast(L("Gespeichert ✓", "Saved ✓")); }catch(err){ toast(errText(err)); }
+    return;
+  }
+  if(f === "leave"){ try{ await push(); }catch(_){} leaveFamily(false); close(); toast(L("Gerät abgemeldet", "Device signed out")); if(typeof renderStart === "function") renderStart(); return; }
+  if(f === "delfam"){
+    b.disabled = true;
+    try{ await rpc("delete_family", {p_code: fam.code}); leaveFamily(false); close(); toast(L("Familie gelöscht", "Family deleted")); if(typeof renderStart === "function") renderStart(); }
+    catch(err){ V.err = errText(err); draw(); }
+    return;
+  }
+}
+
+/* ---------- PIN ---------- */
+function pinPad(k, ok, host){
+  const wrap = host || (() => { const d = document.createElement("div"); d.className = "lmf-pick"; document.body.appendChild(d); return d; })();
+  let v = "";
+  const drawP = bad => {
+    wrap.innerHTML = `<div class="lmf-pin" style="margin-top:6vh"><div class="lmf-tile" style="pointer-events:none;--kc:${kc(k.id)}"><span class="a" style="--kc:${kc(k.id)}">${esc2(k.avatar)}</span><b>${esc2(k.name)}</b></div>
+      <div class="q" style="margin-top:14px;font-weight:700">${L("Deine PIN", "Your PIN")}</div>
+      <div class="lmf-dots${bad ? " bad" : ""}">${[0,1,2,3].map(i => `<i class="${i < v.length ? "f" : ""}"></i>`).join("")}</div>
+      <div class="lmf-pad">${[1,2,3,4,5,6,7,8,9].map(n => `<button data-p="${n}">${n}</button>`).join("")}<button data-p="x" aria-label="${L("Zurück", "Back")}">✕</button><button data-p="0">0</button><button data-p="del" aria-label="${L("Löschen", "Delete")}">⌫</button></div></div>`;
+  };
+  drawP();
+  wrap.onclick = e => {
+    const b = e.target.closest("[data-p]"); if(!b) return;
+    const p = b.dataset.p;
+    if(p === "x"){ wrap.onclick = null; if(host) showPicker(); else wrap.remove(); return; }
+    if(p === "del"){ v = v.slice(0, -1); drawP(); return; }
+    if(v.length < 4) v += p;
+    if(v.length === 4){
+      if(v === String(k.pin)){ wrap.onclick = null; if(!host) wrap.remove(); ok(); return; }
+      v = ""; drawP(true); if(navigator.vibrate) navigator.vibrate(120); return;
+    }
+    drawP();
+  };
+}
+
+/* ---------- Wer bist du? ---------- */
+let pickEl = null;
+function showPicker(){
+  if(!pickEl){ pickEl = document.createElement("div"); pickEl.className = "lmf-pick"; document.body.appendChild(pickEl); }
+  pickEl.onclick = null;
+  pickEl.innerHTML = `<div class="hi">As-salāmu ʿalaikum!</div><div class="ar" lang="ar">مَنْ أَنْتَ؟</div><div class="q">${L("Wer bist du?", "Who are you?")}</div>
+    <div class="lmf-tiles">${kids.map(k => { const w = kidWeek(k); return `<button class="lmf-tile" data-k="${k.id}"><span class="a" style="--kc:${kc(k.id)}">${esc2(k.avatar)}</span><b>${esc2(k.name)}</b><small>📿 ${fmtN(w.n)} · ⭐ ${w.s}</small></button>`; }).join("")}</div>
+    <button class="lnk" data-k="_fam">👨‍👩‍👧 ${L("Familie verwalten", "Manage family")}</button>`;
+  pickEl.onclick = e => {
+    const b = e.target.closest("[data-k]"); if(!b) return;
+    if(b.dataset.k === "_fam"){ hidePicker(); ss.set("lmf-picked", active || ""); open("fam"); return; }
+    const k = kidOf(b.dataset.k); if(!k) return;
+    const go = () => { if(k.id === active){ ss.set("lmf-picked", k.id); hidePicker(); bgPull(); if(typeof renderStart === "function") renderStart(); } else { hidePicker(); switchTo(k.id); } };
+    if(k.pin) pinPad(k, go, pickEl); else go();
+  };
+}
+const hidePicker = () => { if(pickEl){ pickEl.remove(); pickEl = null; } };
+
+/* ---------- Hintergrund-Abgleich ---------- */
+let lastPull = 0;
+async function bgPull(){
+  if(!CLOUD || !fam || !fam.code || !active) return;
+  lastPull = Date.now();
+  try{
+    const changed = await pull();
+    refreshFamily().catch(() => {});
+    if(changed){ showLoading(L("Neue Ergebnisse von einem anderen Gerät …", "New results from another device …")); setTimeout(() => location.reload(), 500); }
+  }catch(e){ setStatus("off"); if(e.code === "nf") lost(); }
+}
+document.addEventListener("visibilitychange", () => {
+  if(!fam || !fam.code || !CLOUD) return;
+  if(document.visibilityState === "hidden"){ persistMeta(); push(true).catch(() => {}); }
+  else if(Date.now() - lastPull > 20000) bgPull();
+});
+window.addEventListener("pagehide", () => { persistMeta(); if(fam && fam.code && CLOUD) push(true).catch(() => {}); });
+window.addEventListener("online", () => { if(fam && fam.code) push().catch(() => {}); });
+
+/* ---------- Startseite: Profil-Knopf + Begrüßung mit Namen ---------- */
+const _rs = renderStart;
+renderStart = function(){
+  _rs.apply(this, arguments);
+  const top = document.querySelector("#homeV .lm-top"); if(!top) return;
+  const me = fam && active ? kidOf(active) : null;
+  const btn = document.createElement("button");
+  btn.className = "lmf-me" + (me ? "" : " none"); btn.setAttribute("data-lmf", "me");
+  btn.setAttribute("aria-label", me ? L(`Profil: ${me.name}`, `Profile: ${me.name}`) : L("Familie & Profile", "Family & profiles"));
+  btn.textContent = me ? me.avatar : "👨‍👩‍👧";
+  const aa = top.querySelector("[data-open-settings]"); top.insertBefore(btn, aa);
+  if(me){ const s = document.querySelector("#homeV .lm-hello strong"); if(s) s.textContent = `As-salāmu ʿalaikum, ${me.name}!`; }
+};
+document.addEventListener("click", e => {
+  const b = e.target.closest("[data-lmf='me']"); if(!b) return;
+  if(!fam) open("intro");
+  else if(kids.length > 1) showPicker();
+  else open("fam");
+});
+window.lmFamily = {open: () => open(fam ? "fam" : "intro")};
+
+/* ---------- Start ---------- */
+if(fam && kids.length && !kidOf(active)){ active = kids[0].id; saveFam(); }
+if(fam && kids.length){
+  const picked = ss.get("lmf-picked");
+  if(picked !== active && (kids.length > 1 || kids[0].pin)) showPicker();
+  else { ss.set("lmf-picked", active); setTimeout(bgPull, 600); }
+  if(CLOUD && fam.code && picked === active) setTimeout(() => refreshFamily().then(() => { if(typeof renderStart === "function" && document.querySelector("#v-home.active")) renderStart(); }).catch(() => {}), 1200);
+}
+})();
+
 /* ---------- init ---------- */
 localize(); applyTheme(); applyPrefs(); renderHome(); renderGebet(); renderQuran(); renderQuiz(); renderKids(); renderNames();
 document.querySelectorAll("[data-learn]").forEach(b => b.setAttribute("aria-pressed", b.dataset.learn === learnSub));
