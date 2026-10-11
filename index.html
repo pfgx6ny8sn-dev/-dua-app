@@ -10007,6 +10007,101 @@ document.addEventListener("click", e => {
 window.lmRecite = {norm, same, align};
 })();
 
+/* =================== p36: Qur'an-Sure aufgeräumt – Text oben, Bedienung darunter, Einstellungen gebündelt =================== */
+(function(){
+const css = `
+#v-quran.qx #qrSub{display:none!important}
+#v-quran.qx .s-head{padding:0 0 4px}
+#v-quran.qx .s-head .s-ar{font-size:34px;line-height:1.3}
+#v-quran.qx .s-head .ltitle{font-size:26px!important}
+#v-quran.qx .s-head p{font-size:14px}
+#v-quran.qx .basmala{margin:6px 0 4px}
+.qx-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:14px 0 0}
+.qx-actions>*{display:flex!important;align-items:center;justify-content:center;gap:8px;margin:0!important;min-height:54px;border-radius:18px!important;font-size:15.5px!important;font-weight:800!important;padding:10px 8px!important;text-align:center;line-height:1.2;box-sizing:border-box}
+.qx-actions a.primary{text-decoration:none}
+.qx-last{grid-column:1 / -1;text-align:center;font-size:13px;color:var(--muted);margin:2px 0 0!important;min-height:0!important;padding:0!important;font-weight:600!important}
+.qx-card{background:var(--surface);border-radius:22px;box-shadow:inset 0 0 0 1px var(--sep);margin-top:12px;overflow:hidden}
+.qx-card>.in{padding:12px 14px 14px}
+.qx-lbl{display:block;font-size:12px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin:0 2px 8px}
+.qx-mode{display:grid;grid-template-columns:repeat(3,1fr);gap:4px;background:var(--fill);border-radius:14px;padding:4px}
+.qx-mode button{border:0;border-radius:11px;padding:9px 4px;background:none;color:var(--muted);font:inherit;font-size:14px;font-weight:800;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:1px}
+.qx-mode button small{font-size:11px;font-weight:600;opacity:.8}
+.qx-mode button[aria-pressed="true"]{background:var(--bg2,var(--bg));color:var(--ink);box-shadow:0 2px 8px rgba(0,0,0,.14)}
+.qx-set summary{list-style:none;display:flex;align-items:center;gap:10px;padding:14px;cursor:pointer;user-select:none}
+.qx-set summary::-webkit-details-marker{display:none}
+.qx-set summary .ic{width:36px;height:36px;border-radius:12px;background:var(--fill);display:grid;place-items:center;font-size:18px;flex:none}
+.qx-set summary .tx{flex:1;min-width:0}
+.qx-set summary b{display:block;font-size:15.5px}
+.qx-set summary span.v{display:block;font-size:12.5px;color:var(--muted);font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.qx-set summary .chev{width:12px;height:12px;border-right:2.5px solid var(--muted);border-bottom:2.5px solid var(--muted);transform:rotate(45deg);transition:transform .2s;margin-right:4px}
+.qx-set[open] summary .chev{transform:rotate(-135deg)}
+.qx-set .in{border-top:1px solid var(--sep)}
+.qx-set .reciters{margin:0 -14px;padding-left:14px;padding-right:14px}
+.qx-set .rc{background:var(--fill)}
+.qx-set .rc[aria-pressed="true"]{background:var(--lapis)}
+.qx-set .seg{margin:0}
+.qx-row{margin-top:14px}
+.qx-set .audio-note{margin:10px 2px 0}
+.qx-info{display:flex;gap:12px;align-items:flex-start}
+.qx-info .ic{font-size:22px;line-height:1.3}
+.qx-info p{margin:0!important;font-size:14.5px;line-height:1.5}
+#v-quran.qx .learned-btn{margin-top:14px}
+#v-quran.qx .hint{font-size:12.5px}
+`;
+const st = document.createElement("style"); st.textContent = css; document.head.appendChild(st);
+const lsGet = (k, d) => { try{ const v = localStorage.getItem(k); return v == null ? d : JSON.parse(v); }catch(e){ return d; } };
+const lsSet = (k, v) => { try{ localStorage.setItem(k, JSON.stringify(v)); }catch(e){} };
+const MODES = [["read", ["Lesen", "Read"], ["alles sichtbar", "all visible"]], ["mask", ["Verdecken", "Hide"], ["zum Auswendiglernen", "to memorise"]], ["first", ["Erstes Wort", "First word"], ["als Hilfe", "as a hint"]]];
+
+const _rq = renderQuran;
+renderQuran = function(){
+  _rq.apply(this, arguments);
+  const view = document.getElementById("v-quran");
+  view.classList.toggle("qx", !!qr.sura);
+  if(!qr.sura) return;
+  const body = document.getElementById("qrBody"); if(!body) return;
+  const q = sel => body.querySelector(sel);
+  const tools = q(".s-tools"), playAll = tools && tools.querySelector("[data-playall]"), repSeg = tools && tools.querySelector(".seg");
+  const rcBtn = q(".rc-btn"), last = rcBtn && rcBtn.nextElementSibling && rcBtn.nextElementSibling.matches("p.audio-note") ? rcBtn.nextElementSibling : null;
+  const reciters = q(".reciters"), notes = [...body.querySelectorAll(":scope > p.audio-note")].filter(x => x !== last);
+  const info = q(":scope > p.note"), basm = q(":scope > p.basmala"), textBox = [...body.children].find(x => x.tagName === "DIV" && x.querySelector(".ayah")), learnedBtn = q(".learned-btn"), hint = q(":scope > p.hint");
+  const frag = document.createDocumentFragment();
+  if(basm) frag.appendChild(basm);
+  if(textBox) frag.appendChild(textBox);
+  /* Hauptknöpfe direkt unter dem Text */
+  const act = document.createElement("div"); act.className = "qx-actions";
+  if(playAll){ playAll.textContent = "▶ " + L("Anhören", "Listen"); act.appendChild(playAll); }
+  if(rcBtn){ rcBtn.textContent = "🎙️ " + L("Vorlesen & prüfen", "Recite & check"); act.appendChild(rcBtn); }
+  if(last){ last.className = "qx-last"; act.appendChild(last); }
+  frag.appendChild(act);
+  /* Lernmodus */
+  const mode = document.createElement("div"); mode.className = "qx-card";
+  mode.innerHTML = `<div class="in"><span class="qx-lbl">${L("Lernmodus", "Learning mode")}</span><div class="qx-mode" role="group">${MODES.map(([k, n, d]) => `<button data-qm="${k}" aria-pressed="${qr.mode === k}">${n[lang === "en" ? 1 : 0]}<small>${d[lang === "en" ? 1 : 0]}</small></button>`).join("")}</div></div>`;
+  frag.appendChild(mode);
+  /* Einstellungen (aufklappbar) */
+  const r = (typeof reciter === "function") ? reciter() : null;
+  const set = document.createElement("details"); set.className = "qx-card qx-set"; if(lsGet("lm-qx-set", false)) set.open = true;
+  set.innerHTML = `<summary><span class="ic">⚙️</span><span class="tx"><b>${L("Einstellungen", "Settings")}</b><span class="v">🎧 ${r ? r.n : ""}${repSeg ? ` · 🔁 ${qr.rep}×` : ""}</span></span><span class="chev"></span></summary><div class="in"></div>`;
+  const inner = set.querySelector(".in");
+  if(reciters){ const l = document.createElement("span"); l.className = "qx-lbl"; l.textContent = L("Rezitator", "Reciter"); inner.appendChild(l); inner.appendChild(reciters); }
+  if(repSeg){ const row = document.createElement("div"); row.className = "qx-row"; row.innerHTML = `<span class="qx-lbl">${L("Jeden Vers wiederholen", "Repeat each verse")}</span>`; row.appendChild(repSeg); inner.appendChild(row); }
+  notes.forEach(n => inner.appendChild(n));
+  set.addEventListener("toggle", () => lsSet("lm-qx-set", set.open));
+  frag.appendChild(set);
+  /* Über die Sure */
+  if(info){ const c = document.createElement("div"); c.className = "qx-card"; c.innerHTML = `<div class="in qx-info"><span class="ic">ℹ️</span></div>`; info.className = ""; c.querySelector(".qx-info").appendChild(info); frag.appendChild(c); }
+  if(learnedBtn) frag.appendChild(learnedBtn);
+  if(hint){ hint.innerHTML = hint.innerHTML.replace(/^(Lernmodus|Learning mode):[^<]*?\.\s*/, ""); frag.appendChild(hint); }
+  if(tools) tools.remove();
+  body.innerHTML = ""; body.appendChild(frag);
+};
+document.getElementById("qrBody").addEventListener("click", e => {
+  const b = e.target.closest("[data-qm]"); if(!b) return;
+  qr.mode = b.dataset.qm; qr.revealed = new Set(); store.set("qr-mode", qr.mode);
+  const y = window.scrollY; renderQuran(); window.scrollTo(0, y);
+});
+})();
+
 /* ---------- init ---------- */
 localize(); applyTheme(); applyPrefs(); renderHome(); renderGebet(); renderQuran(); renderQuiz(); renderKids(); renderNames();
 document.querySelectorAll("[data-learn]").forEach(b => b.setAttribute("aria-pressed", b.dataset.learn === learnSub));
