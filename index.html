@@ -779,7 +779,7 @@ body.film-open{overflow:hidden}
   <!-- ============ DUA ============ -->
   <section class="view" id="v-dua">
     <header class="nav"><div class="nav-row">
-      <div class="nav-l"><button class="nav-back" id="back" hidden><svg><use href="#back"/></svg>Dua</button></div>
+      <div class="nav-l"><button class="nav-back" id="duaBack" hidden><svg><use href="#back"/></svg>Dua</button></div>
       <div class="nav-t" id="duaNavT">Bittgebete</div>
       <div class="nav-r"><button class="nav-btn" data-open-settings aria-label="Einstellungen">Aa</button></div>
     </div></header>
@@ -1878,17 +1878,17 @@ function renderList(){
 function refreshDua(){ duaCat ? renderList() : renderHome(); }
 function openCat(id){
   duaCat = id;
-  $("#duaHome").hidden = true; $("#duaList").hidden = false; $("#back").hidden = false;
+  $("#duaHome").hidden = true; $("#duaList").hidden = false; $("#duaBack").hidden = false;
   renderList(); window.scrollTo(0, 0); onScroll();
 }
 function closeCat(){
   duaCat = null;
-  $("#duaList").hidden = true; $("#duaHome").hidden = false; $("#back").hidden = true;
+  $("#duaList").hidden = true; $("#duaHome").hidden = false; $("#duaBack").hidden = true;
   $("#duaNavT").textContent = "Bittgebete";
   renderHome(); window.scrollTo(0, 0); onScroll();
 }
 $("#homeBody").addEventListener("click", e => { const t = e.target.closest("[data-cat]"); if(t) openCat(t.dataset.cat); });
-$("#back").addEventListener("click", closeCat);
+$("#duaBack").addEventListener("click", closeCat);
 $("#q").addEventListener("input", e => { query = e.target.value; renderHome(); });
 
 $("#v-dua").addEventListener("click", e => {
@@ -10545,6 +10545,33 @@ document.addEventListener("click", e => {
   const s = SURAS.find(x => x.slug === qr.sura); if(s) start(s);
 });
 window.lmWrite = {wn, align};
+})();
+
+/* =================== p39: Navigation – immer zurück zur Hauptseite =================== */
+(function(){
+/* 1. Dua von außerhalb geöffnet → immer die Dua-Hauptseite (nicht die zuletzt offene Kategorie) */
+const _st = setTab;
+setTab = function(id){
+  const cur = document.querySelector(".view.active");
+  if(id === "dua" && cur && cur.id !== "v-dua" && typeof duaCat !== "undefined" && duaCat && typeof closeCat === "function"){ try{ closeCat(); }catch(e){} }
+  return _st.apply(this, arguments);
+};
+/* 2. Tippen auf den aktiven Bereich in der unteren Leiste → zur Hauptseite dieses Bereichs */
+function visibleBack(view){
+  return [...view.querySelectorAll("header .nav-back")].find(b => { if(b.hidden || b.dataset.go === "home") return false; const r = b.getBoundingClientRect(); return r.width > 0 && r.height > 0; });
+}
+const bar = document.querySelector(".tabbar");
+if(bar) bar.addEventListener("click", e => {
+  const t = e.target.closest(".tab"); if(!t) return;
+  if(t.getAttribute("aria-current") !== "page") return;              // anderer Bereich: normal wechseln
+  const v = document.querySelector(".view.active"); if(!v) return;
+  setTimeout(() => {
+    const view = document.querySelector(".view.active"); if(!view) return;
+    let guard = 0, b;
+    while((b = visibleBack(view)) && guard++ < 4) b.click();         // ggf. mehrere Ebenen zurück
+    window.scrollTo({top: 0, behavior: "smooth"});
+  }, 0);
+}, true);
 })();
 
 /* ---------- init ---------- */
