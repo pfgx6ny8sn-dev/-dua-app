@@ -10102,6 +10102,37 @@ document.getElementById("qrBody").addEventListener("click", e => {
 });
 })();
 
+/* ---------- Beim Anhören automatisch zum aktuellen Vers wischen ---------- */
+(function(){
+  if(typeof highlightAyah !== "function") return;
+  const _hl = highlightAyah;
+  let lastQ = null;
+  highlightAyah = function(){
+    _hl.apply(this, arguments);
+    try{
+      const it = P.queue && P.queue[P.qi];
+      if(!P.playing || !it) return;
+      const firstOfQueue = lastQ !== P.queue; lastQ = P.queue;
+      const pagerEl = document.querySelector("#qrBody .pager");
+      if(it.ayah == null){                          // Basmala: zum ersten Vers stellen
+        if(pagerEl && firstOfQueue){ const tr = pagerEl.querySelector(".track"); if(tr) tr.scrollTo({left: 0, behavior: "smooth"}); }
+      } else {
+        const el = document.getElementById("ay" + it.ayah); if(!el) return;
+        const slide = el.closest(".slide"), tr = el.closest(".track");
+        if(slide && tr){
+          const slides = [...tr.children], i = slides.indexOf(slide);
+          const step = slides.length > 1 ? (slides[1].offsetLeft - slides[0].offsetLeft) : 0;
+          if(i >= 0 && step) tr.scrollTo({left: i * step, behavior: reduceMotion ? "auto" : "smooth"});
+        }
+      }
+      if(firstOfQueue){                             // beim Start den Text ins Bild holen
+        const target = document.querySelector("#qrBody .basmala") || pagerEl;
+        if(target){ const r = target.getBoundingClientRect(), navH = 70; if(r.top < navH || r.top > innerHeight * .5) window.scrollTo({top: scrollY + r.top - navH - 8, behavior: "smooth"}); }
+      }
+    }catch(e){}
+  };
+})();
+
 /* ---------- init ---------- */
 localize(); applyTheme(); applyPrefs(); renderHome(); renderGebet(); renderQuran(); renderQuiz(); renderKids(); renderNames();
 document.querySelectorAll("[data-learn]").forEach(b => b.setAttribute("aria-pressed", b.dataset.learn === learnSub));
