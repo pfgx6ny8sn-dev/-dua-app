@@ -10165,34 +10165,44 @@ document.getElementById("qrBody").addEventListener("click", e => {
 });
 })();
 
-/* ---------- Beim Anhören automatisch zum aktuellen Vers wischen ---------- */
+/* ---------- Beim Anhören automatisch zum aktuellen Vers wischen (robust, auch Safari) ---------- */
 (function(){
-  if(typeof highlightAyah !== "function") return;
-  const _hl = highlightAyah;
+  if(typeof startItem !== "function") return;
+  function goSlide(tr, i){
+    const slides = [...tr.children];
+    const step = slides.length > 1 ? (slides[1].offsetLeft - slides[0].offsetLeft) : 0;
+    if(i < 0 || !step) return;
+    const left = i * step;
+    try{ tr.scrollTo({left, behavior: reduceMotion ? "auto" : "smooth"}); }catch(e){ tr.scrollLeft = left; }
+    clearTimeout(tr._lmFix);
+    tr._lmFix = setTimeout(() => { if(Math.abs(tr.scrollLeft - left) > 4) tr.scrollLeft = left; }, 650);   // falls das weiche Scrollen abgebrochen wurde
+  }
   let lastQ = null;
-  highlightAyah = function(){
-    _hl.apply(this, arguments);
+  function sync(){
     try{
       const it = P.queue && P.queue[P.qi];
       if(!P.playing || !it) return;
-      const firstOfQueue = lastQ !== P.queue; lastQ = P.queue;
+      const first = lastQ !== P.queue; lastQ = P.queue;
       const pagerEl = document.querySelector("#qrBody .pager");
-      if(it.ayah == null){                          // Basmala: zum ersten Vers stellen
-        if(pagerEl && firstOfQueue){ const tr = pagerEl.querySelector(".track"); if(tr) tr.scrollTo({left: 0, behavior: "smooth"}); }
-      } else {
+      if(it.ayah == null){ if(pagerEl && first){ const tr = pagerEl.querySelector(".track"); if(tr) goSlide(tr, 0); } }
+      else {
         const el = document.getElementById("ay" + it.ayah); if(!el) return;
         const slide = el.closest(".slide"), tr = el.closest(".track");
-        if(slide && tr){
-          const slides = [...tr.children], i = slides.indexOf(slide);
-          const step = slides.length > 1 ? (slides[1].offsetLeft - slides[0].offsetLeft) : 0;
-          if(i >= 0 && step) tr.scrollTo({left: i * step, behavior: reduceMotion ? "auto" : "smooth"});
-        }
+        if(slide && tr) goSlide(tr, [...tr.children].indexOf(slide));
       }
-      if(firstOfQueue){                             // beim Start den Text ins Bild holen
+      if(first){
         const target = document.querySelector("#qrBody .basmala") || pagerEl;
         if(target){ const r = target.getBoundingClientRect(), navH = 70; if(r.top < navH || r.top > innerHeight * .5) window.scrollTo({top: scrollY + r.top - navH - 8, behavior: "smooth"}); }
       }
     }catch(e){}
+  }
+  const _si = startItem;
+  startItem = function(){
+    /* das eingebaute „scrollIntoView“ im Wisch-Bereich unterdrücken – es bricht sonst unser Blättern ab */
+    const orig = Element.prototype.scrollIntoView;
+    Element.prototype.scrollIntoView = function(o){ if(this.closest && this.closest(".track")) return; return orig.call(this, o); };
+    try{ return _si.apply(this, arguments); }
+    finally{ Element.prototype.scrollIntoView = orig; sync(); }
   };
 })();
 
