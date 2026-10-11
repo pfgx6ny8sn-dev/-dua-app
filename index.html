@@ -5453,7 +5453,7 @@ const AMB = (() => {
 /* Filme in der Geschichten-Ansicht: Yūnus-Story bekommt ebenfalls den Film-Button */
 
 /* Video-Liste (HyperFrames/HeyGen + Filme in der App) */
-const VER = (id) => ({id, langs:[{k:"de", label:{de:"👩 Erzählerin · Deutsch", en:"👩 Female narrator · German"}}, {k:"ar", label:{de:"👨 Erzähler · العربية", en:"👨 Male narrator · العربية"}}]});
+const VER = (id) => ({id, langs:[{k:"de", label:{de:"🧕🏼 Erzählerin · Deutsch", en:"🧕🏼 Female narrator · German"}}, {k:"ar", label:{de:"🧔🏻‍♂️ Erzähler · العربية", en:"🧔🏻‍♂️ Male narrator · العربية"}}]});
 const vSrc = (id, l, f) => `videos/${id}_${l}${f === "169" ? "_169" : ""}.mp4`;
 const vPoster = (id, l, f) => `videos/${id}_poster_${l}${f === "169" ? "_169" : ""}.jpg`;
 const VIDEO_LIST = [
@@ -5484,7 +5484,7 @@ function videoBox(v){
       <button type="button" class="vd-more" aria-label="${L("Stimme und Format", "Voice and format")}" aria-expanded="false"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="5" cy="12" r="2.2"/><circle cx="12" cy="12" r="2.2"/><circle cx="19" cy="12" r="2.2"/></svg></button>
       <div class="vd-menu" hidden>
         <p class="vm-h">${L("Stimme", "Voice")}</p>
-        <div class="vm-g">${v.versions.langs.map(x => `<button type="button" class="${x.k === l ? "on" : ""}" data-vl="${x.k}" aria-pressed="${x.k === l}"><span>${x.k === "de" ? (lang === "en" ? "👩 German" : "👩 Deutsch") : "👨 العربية"}</span>${ck}</button>`).join("")}</div>
+        <div class="vm-g">${v.versions.langs.map(x => `<button type="button" class="${x.k === l ? "on" : ""}" data-vl="${x.k}" aria-pressed="${x.k === l}"><span>${x.k === "de" ? (lang === "en" ? "🧕🏼 German" : "🧕🏼 Deutsch") : "🧔🏻‍♂️ العربية"}</span>${ck}</button>`).join("")}</div>
         ${v.has169 ? `<p class="vm-h">${L("Format", "Format")}</p>
         <div class="vm-g"><button type="button" class="on" data-vf="169" aria-pressed="true"><span>▭ ${L("Querformat", "Landscape")}</span>${ck}</button><button type="button" data-vf="916" aria-pressed="false"><span>▯ ${L("Hochformat", "Portrait")}</span>${ck}</button></div>` : ""}
       </div>
@@ -6947,7 +6947,7 @@ const WORDS = [
      ["🐦","طَائِر","ṭāʾir","Vogel","bird"],["🐄","بَقَرَة","baqara","Kuh","cow"],["🐜","نَمْلَة","namla","Ameise","ant"],["🐘","فِيل","fīl","Elefant","elephant"],["🐝","نَحْلَة","naḥla","Biene","bee"]],
   learn:["Manche Suren tragen Tiernamen: al-Baqara (die Kuh), an-Naḥl (die Biene), an-Naml (die Ameise) und al-Fīl (der Elefant)."], src:"Qur'an 2, 16, 27, 105"},
  {k:"familie", em:"👨‍👩‍👧", ar:"العَائِلَةُ", de:"Familie", en:"Family", a:"#2E9C8A", b:"#5FD3BF",
-  w:[["👨","أَب","ab","Vater","father"],["👩","أُمّ","umm","Mutter","mother"],["👦","أَخ","akh","Bruder","brother"],["👧","أُخْت","ukht","Schwester","sister"],
+  w:[["🧔🏻‍♂️","أَب","ab","Vater","father"],["🧕🏼","أُمّ","umm","Mutter","mother"],["👦","أَخ","akh","Bruder","brother"],["👧","أُخْت","ukht","Schwester","sister"],
      ["👴","جَدّ","dschadd","Großvater","grandfather"],["👵","جَدَّة","dschadda","Großmutter","grandmother"],["👶","طِفْل","ṭifl","Kind","child"]],
   learn:["Allah sagt: Seid gut zu euren Eltern."], src:"Qur'an 17:23"},
  {k:"essen", em:"🍎", ar:"الطَّعَامُ", de:"Essen", en:"Food", a:"#C2415E", b:"#FF8F7A",
