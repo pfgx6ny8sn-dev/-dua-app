@@ -6741,6 +6741,8 @@ const css = `
 .w-card.speaking{box-shadow:0 0 0 3px var(--gold)}
 .w-intro{text-align:center;margin:4px 0 6px;color:var(--muted)}
 #v-kids .lm-hd:has(#kTitle[hidden]){display:none}
+.temple-w{position:relative;width:100%;max-width:420px;margin:0 auto;container-type:inline-size}
+.temple-ar{position:absolute;left:0;right:0;top:18.5%;text-align:center;direction:rtl;font-family:"Scheherazade New",serif;font-weight:700;font-size:clamp(15px,6.6cqw,28px);line-height:1;color:var(--surface);pointer-events:none}
 .k-h{font-family:var(--font)!important}
 `;
 const st = document.createElement("style"); st.textContent = css; document.head.appendChild(st);
@@ -6912,6 +6914,12 @@ startGame = function(id){
   renderKids(); window.scrollTo(0, 0);
 };
 
+/* ---------- Haus des Islam: Arabisch als echter Text (nicht im SVG – iOS dreht dort die Buchstaben um) ---------- */
+const _temple = temple;
+temple = function(){
+  const svg = _temple().replace(/<text[^>]*>الْإِسْلَامُ<\/text>/, "");
+  return `<div class="temple-w">${svg}<span class="temple-ar" lang="ar" dir="rtl">أَرْكَانُ الإِسْلَامِ</span></div>`;
+};
 /* ---------- Ansichten ---------- */
 const MSG_AR = {"Richtig! ✓":"صَحِيحٌ! ✓","Super! ✓":"رَائِعٌ! ✓","Genau! ✓":"بِالضَّبْطِ! ✓","Weiter so! ✓":"اِسْتَمِرَّ! ✓","Noch nicht! Überleg mal, was davor kommt.":"لَيْسَ بَعْدُ! فَكِّرْ: مَاذَا يَأْتِي قَبْلَهُ؟","Kleiner Tipp: Die leuchtende Karte ist die richtige.":"تَلْمِيحٌ: البِطَاقَةُ المُضِيئَةُ هِيَ الصَّحِيحَةُ.","Das gehört nicht dazu – versuch es nochmal!":"هَذَا لَيْسَ مِنْهَا، حَاوِلْ مَرَّةً أُخْرَى!"};
 const rk = n => n === 2 ? "رَكْعَتَانِ" : AR(n) + " رَكَعَاتٍ";
