@@ -8021,9 +8021,9 @@ const esc = F.esc, fmt = F.fmtN;
 const today = () => dayKey(new Date());
 
 /* ---------- 1. Punkte-Tagebuch (lm-pts) ---------- */
-const PTS = "lm-pts";
+const PTS = "lm-pts", SAL = "lm-salah";
 const CAP = {t:50, q:40, g:50};
-const calc = d => Math.min(CAP.t, Math.floor((d.t || 0) / 10)) + 20 * (d.p ? 1 : 0) + 5 * (d.d || 0) + Math.min(CAP.q, 2 * (d.q || 0)) + Math.min(CAP.g, 5 * (d.g || 0)) + 10 * (d.l || 0);
+const calc = d => (d.s || 0) + Math.min(CAP.t, Math.floor((d.t || 0) / 10)) + 20 * (d.p ? 1 : 0) + 5 * (d.d || 0) + Math.min(CAP.q, 2 * (d.q || 0)) + Math.min(CAP.g, 5 * (d.g || 0)) + 10 * (d.l || 0);
 let busy = false;
 function refresh(field, inc){
   if(busy) return 0; busy = true;
@@ -8033,6 +8033,8 @@ function refresh(field, inc){
     d.t = (store.get("tb-log", {}) || {})[t] || 0;
     d.p = (store.get("lm-tz-done", {}) || {})[t] ? 1 : 0;
     const g = store.get("lm-garden", null); d.d = g && g.d && g.d[t] ? g.d[t].length : 0;
+    const sl = (store.get(SAL, {}) || {})[t] || {}; d.s = Object.values(sl).reduce((a, x) => a + (x.p || 0), 0); d.sn = Object.keys(sl).length;
+    if(!d.s) delete d.s; if(!d.sn) delete d.sn;
     d.pt = calc(d);
     const delta = d.pt - (old.pt || 0);
     if(JSON.stringify(old) !== JSON.stringify(d)){ all[t] = d; store.set(PTS, all); }
@@ -8091,6 +8093,79 @@ if(typeof renderKids === "function"){
 }
 refresh();
 
+
+/* ---------- Gebet eintragen: pünktlich 10, später weniger, nachgeholt 1 ---------- */
+const SP = ["fajr", "dhuhr", "asr", "maghrib", "isha"];
+const SN = {fajr:["Fadschr", "Fajr", "الْفَجْر"], dhuhr:["Dhuhr", "Dhuhr", "الظُّهْر"], asr:["ʿAṣr", "ʿAṣr", "الْعَصْر"], maghrib:["Maghrib", "Maghrib", "الْمَغْرِب"], isha:["ʿIschāʾ", "ʿIshāʾ", "الْعِشَاء"]};
+const sName = k => SN[k][EN() ? 1 : 0];
+const ON_TIME = 30;   // Minuten nach dem Adhān = volle Punkte
+function salWin(){
+  try{
+    const T = ptTimes(0), N = ptTimes(1), t = T.t;
+    const mid = new Date(t.maghrib.getTime() + (N.t.fajr.getTime() - t.maghrib.getTime()) / 2);
+    return {w:{fajr:[t.fajr, t.sunrise], dhuhr:[t.dhuhr, t.asr], asr:[t.asr, t.maghrib], maghrib:[t.maghrib, t.isha], isha:[t.isha, mid]}, tz:T.place.tz};
+  }catch(e){ return null; }
+}
+function salPts(k, now, W){
+  const a = W[k][0].getTime(), b = W[k][1].getTime();
+  if(now < a) return 0;
+  if(now >= b) return 1;
+  const late = now - a - ON_TIME * 60000;
+  if(late <= 0) return 10;
+  return Math.max(3, Math.round(9 - 6 * late / Math.max(1, b - a - ON_TIME * 60000)));
+}
+const salToday = () => ((store.get(SAL, {}) || {})[today()]) || {};
+function salOpen(){
+  const SW = salWin(); if(!SW) return null; const now = Date.now(), done = salToday();
+  for(const k of SP){ const [a, b] = SW.w[k]; if(now >= a && now < b && !done[k]) return {k, p: salPts(k, now, SW.w)}; }
+  return null;
+}
+function salLog(k){
+  const SW = salWin(); if(!SW) return;
+  const now = Date.now(), pts = salPts(k, now, SW.w); if(!pts) return;
+  const all = store.get(SAL, {}) || {}, t = today(); all[t] = all[t] || {};
+  if(all[t][k]) return;
+  all[t][k] = {p: pts, at: now};
+  for(const d of Object.keys(all)) if(d < dayKey(new Date(Date.now() - 60 * 864e5))) delete all[d];
+  store.set(SAL, all);
+  gain(refresh(), "🕌");
+  F.toast(pts === 10 ? L(`${sName(k)} pünktlich gebetet – Māschāʾallāh! 🌟`, `${sName(k)} prayed on time – Māshāʾallāh! 🌟`)
+        : pts > 1 ? L(`${sName(k)} noch in der Zeit gebetet ✓`, `${sName(k)} prayed within its time ✓`)
+        : L(`${sName(k)} nachgeholt ✓ – nächstes Mal pünktlich 💪`, `${sName(k)} made up ✓ – on time next time 💪`));
+  if(pts === 10 && typeof confetti === "function") confetti();
+}
+function salUndo(k){
+  const all = store.get(SAL, {}) || {}, t = today();
+  if(all[t] && all[t][k]){ delete all[t][k]; store.set(SAL, all); refresh(); }
+}
+let salAsk = null;
+function salHTML(){
+  const SW = salWin(); if(!SW) return "";
+  const now = Date.now(), done = salToday();
+  const sum = Object.values(done).reduce((a, x) => a + (x.p || 0), 0), n = Object.keys(done).length;
+  const fmtT = d => new Intl.DateTimeFormat(EN() ? "en-GB" : "de-DE", {timeZone: SW.tz, hour:"2-digit", minute:"2-digit", hour12:false}).format(d);
+  const tiles = SP.map(k => {
+    const [a, b] = SW.w[k], x = done[k];
+    let cls, pp;
+    if(x){ cls = "done"; pp = `✓ +${x.p}`; }
+    else if(now < a.getTime()){ cls = "soon"; pp = `🔒 ${fmtT(a)}`; }
+    else if(now < b.getTime()){ const v = salPts(k, now, SW.w); cls = v === 10 ? "now top" : "now"; pp = L(`Jetzt +${v}`, `Now +${v}`); }
+    else { cls = "miss"; pp = L("Nachholen +1", "Make up +1"); }
+    return `<button class="sa-t ${cls}" data-c="sal" data-k="${k}" ${cls === "soon" ? `aria-disabled="true"` : ""}><span class="ar" lang="ar">${SN[k][2]}</span><b>${sName(k)}</b><span class="pp">${pp}</span></button>`;
+  }).join("");
+  const open = SP.find(k => !done[k] && now >= SW.w[k][0].getTime() && now < SW.w[k][1].getTime());
+  let tip;
+  if(salAsk) tip = `<div class="sa-ask"><span>${L(`Eintrag für ${sName(salAsk)} löschen?`, `Remove entry for ${sName(salAsk)}?`)}</span><button data-c="salundo">${L("Ja", "Yes")}</button><button data-c="salkeep">${L("Nein", "No")}</button></div>`;
+  else if(open){ const v = salPts(open, now, SW.w), end = SW.w[open][1], left = Math.round((end.getTime() - now) / 60000), on = SW.w[open][0].getTime() + ON_TIME * 60000 - now;
+    tip = `<p class="sa-tip">${v === 10 ? L(`🌟 Jetzt ist ${sName(open)}-Zeit – bete pünktlich für die vollen 10 Punkte! Noch ${Math.max(1, Math.round(on / 60000))} Min.`, `🌟 It’s ${sName(open)} time – pray now for the full 10 points! ${Math.max(1, Math.round(on / 60000))} min left.`)
+      : L(`⏳ ${sName(open)} ist noch ${left >= 60 ? Math.floor(left / 60) + " Std. " : ""}${left % 60} Min. in der Zeit – je früher, desto mehr Punkte.`, `⏳ ${sName(open)} is still on time for ${left >= 60 ? Math.floor(left / 60) + " h " : ""}${left % 60} min – the earlier, the more points.`)}</p>`; }
+  else tip = n === 5 ? `<p class="sa-tip">${L("🏆 Alle fünf Gebete heute – Māschāʾallāh!", "🏆 All five prayers today – Māshāʾallāh!")}</p>` : "";
+  return `<div class="sa-card" id="saCard"><div class="sa-h"><h4>🕌 ${L("Meine Gebete heute", "My prayers today")}</h4><span>${n}/5 · ${sum} ${L("Punkte", "points")}</span></div>
+    <div class="sa-row">${tiles}</div>${tip}
+    <p class="sa-hd">„${L("Die liebste Tat bei Allah ist das Gebet zu seiner Zeit.", "The deed most beloved to Allah is prayer at its time.")}“ <span>– ${srcLinks("Buchārī 527, Muslim 85")}</span></p>
+    <p class="sa-hon">${L("Trag nur ein, was du wirklich gebetet hast – Allah sieht alles 🤍", "Only log what you really prayed – Allah sees everything 🤍")}</p></div>`;
+}
+
 /* ---------- 2. Zeitspannen ---------- */
 const monday = (off) => { const d = new Date(); d.setHours(0, 0, 0, 0); d.setDate(d.getDate() - ((d.getDay() + 6) % 7) + 7 * (off || 0)); return d; };
 function range(r){
@@ -8099,7 +8174,7 @@ function range(r){
   return {from: dayKey(m), to: dayKey(s), wk: dayKey(m)};
 }
 function localSum(r){
-  const R = range(r), all = store.get(PTS, {}) || {}, o = {pt:0, t:0, q:0, g:0, d:0, l:0, p:0};
+  const R = range(r), all = store.get(PTS, {}) || {}, o = {pt:0, s:0, sn:0, t:0, q:0, g:0, d:0, l:0, p:0};
   for(const k in all) if(k >= R.from && k <= R.to) for(const f in o) o[f] += all[k][f] || 0;
   return o;
 }
@@ -8154,6 +8229,7 @@ async function load(force){
 /* ---------- 4. Ansicht ---------- */
 const KINDS = {
   pt:{ic:"🏆", de:"Punkte", en:"Points"},
+  s:{ic:"🕌", de:"Gebets-Punkte", en:"Prayer points"},
   t:{ic:"📿", de:"Tasbīḥ", en:"Tasbīḥ"},
   q:{ic:"❓", de:"Quiz-Antworten", en:"Quiz answers"},
   g:{ic:"🎮", de:"Spiele", en:"Games"},
@@ -8272,6 +8348,36 @@ const css = `
 .lm-chcard .tp i{font-style:normal;width:34px;height:34px;border-radius:50%;display:grid;place-items:center;font-size:20px;background:rgba(255,255,255,.2);margin-left:-8px;box-shadow:0 0 0 2px rgba(255,255,255,.35)}
 .lm-chcard .rk{flex:none;text-align:center;background:rgba(255,255,255,.18);border-radius:16px;padding:6px 10px;font-weight:800;font-size:12px;line-height:1.1}
 .lm-chcard .rk big{display:block;font-size:24px;font-family:var(--display)}
+
+.sa-card{background:var(--surface);border-radius:22px;padding:14px 14px 12px;box-shadow:inset 0 0 0 1px var(--sep);margin-top:12px}
+.sa-h{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:10px}
+.sa-h h4{margin:0;font-size:16px;color:var(--gold)}
+.sa-h span{font-size:13px;font-weight:800;color:var(--muted);font-variant-numeric:tabular-nums}
+.sa-row{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:6px}
+.sa-t{display:flex;flex-direction:column;align-items:center;gap:1px;border:0;border-radius:16px;padding:8px 2px 7px;background:var(--fill);color:var(--ink);font:inherit;cursor:pointer;min-width:0;transition:transform .15s}
+.sa-t:active{transform:scale(.94)}
+.sa-t .ar{font-family:"Scheherazade New",serif;font-size:16px;line-height:1.3;color:var(--muted)}
+.sa-t b{font-size:12.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+.sa-t .pp{font-size:11px;font-weight:800;white-space:nowrap;color:var(--muted);font-variant-numeric:tabular-nums}
+.sa-t.soon{opacity:.55;cursor:default}
+.sa-t.now{background:var(--gold-soft);box-shadow:inset 0 0 0 2px var(--gold)}
+.sa-t.now .pp,.sa-t.now .ar{color:var(--gold)}
+.sa-t.now.top{animation:saPulse 1.8s ease-in-out infinite}
+@keyframes saPulse{0%,100%{box-shadow:inset 0 0 0 2px var(--gold),0 0 0 0 rgba(242,176,74,.45)}50%{box-shadow:inset 0 0 0 2px var(--gold),0 0 0 7px rgba(242,176,74,0)}}
+@media (prefers-reduced-motion:reduce){.sa-t.now.top{animation:none}}
+.sa-t.done{background:color-mix(in srgb,var(--teal) 18%,transparent);box-shadow:inset 0 0 0 1.5px var(--teal)}
+.sa-t.done .pp,.sa-t.done .ar{color:var(--teal)}
+.sa-t.miss{box-shadow:inset 0 0 0 1.5px dashed var(--sep)}
+.sa-t.miss .pp{color:#e5675a}
+.sa-tip{margin:10px 2px 0;font-size:14px;font-weight:700;line-height:1.4}
+.sa-hd{margin:10px 2px 0;font-size:13.5px;color:var(--muted);line-height:1.45}
+.sa-hd span{white-space:nowrap}
+.sa-hon{margin:4px 2px 0;font-size:12.5px;color:var(--muted)}
+.sa-ask{display:flex;align-items:center;gap:8px;margin-top:10px;font-size:14px;font-weight:700}
+.sa-ask span{flex:1}
+.sa-ask button{border:0;border-radius:12px;padding:8px 14px;font:inherit;font-weight:800;cursor:pointer;background:var(--fill);color:var(--ink)}
+.sa-ask button:first-of-type{background:#e5675a;color:#fff}
+.lm-chcard .sa-home{display:inline-block!important;margin-top:6px;background:rgba(255,255,255,.2);border-radius:999px;padding:3px 10px;font-size:13px!important;font-weight:800;opacity:1!important}
 @media (min-width:760px){.ch-list{grid-template-columns:1fr 1fr}.ch-duels{display:grid;grid-template-columns:1fr 1fr;gap:8px}.ch-duels .ch-duel{margin:0}}
 `;
 const st = document.createElement("style"); st.textContent = css; document.head.appendChild(st);
@@ -8284,11 +8390,12 @@ const kidColor = (id, i) => F.KC[(i < 0 ? 0 : i) % F.KC.length];
 let colorIdx = {};
 function colorsFor(list){ colorIdx = {}; list.forEach((k, i) => colorIdx[k.id] = F.KC[i % F.KC.length]); }
 const kcol = id => colorIdx[id] || F.KC[0];
-const stats = s => [s.t ? `📿 ${fmt(s.t)}` : "", s.q ? `❓ ${s.q}` : "", s.g ? `🎮 ${s.g}` : "", s.d ? `🌸 ${s.d}` : "", s.p ? `⭐ ${s.p}` : "", s.l ? `📖 ${s.l}` : ""].filter(Boolean).join(" · ") || L("noch keine Punkte", "no points yet");
+const stats = s => [s.s ? `🕌 ${s.s}` : "", s.t ? `📿 ${fmt(s.t)}` : "", s.q ? `❓ ${s.q}` : "", s.g ? `🎮 ${s.g}` : "", s.d ? `🌸 ${s.d}` : "", s.p ? `⭐ ${s.p}` : "", s.l ? `📖 ${s.l}` : ""].filter(Boolean).join(" · ") || L("noch keine Punkte", "no points yet");
 const famLbl = k => k.mine ? L("eure Familie", "your family") : (k.fam || L("Familie", "Family"));
 
 function rulesHTML(){
-  const R = [["📿", L("10× Tasbīḥ", "10× tasbīḥ"), L("1 Punkt", "1 point"), L(`bis ${CAP.t}/Tag`, `up to ${CAP.t}/day`)],
+  const R = [["🕌", L("Gebet pünktlich (erste 30 Min.)", "Prayer on time (first 30 min)"), L("10 Punkte", "10 points"), L("später, aber noch in der Zeit: 9 bis 3 · nachgeholt: 1", "later but within its time: 9 to 3 · made up: 1")],
+    ["📿", L("10× Tasbīḥ", "10× tasbīḥ"), L("1 Punkt", "1 point"), L(`bis ${CAP.t}/Tag`, `up to ${CAP.t}/day`)],
     ["⭐", L("Tagesprogramm geschafft", "Daily programme done"), L("20 Punkte", "20 points"), ""],
     ["❓", L("Richtige Quiz-Antwort", "Correct quiz answer"), L("2 Punkte", "2 points"), L(`bis ${CAP.q}/Tag`, `up to ${CAP.q}/day`)],
     ["🎮", L("Spiel geschafft", "Game finished"), L("5 Punkte", "5 points"), L(`bis ${CAP.g}/Tag`, `up to ${CAP.g}/day`)],
@@ -8342,7 +8449,7 @@ function draw(){
   const v = document.getElementById("chV"); if(!v) return;
   const nt = document.getElementById("chNavT"); if(nt) nt.textContent = "Challenge";
   const bk = document.getElementById("chBack"); if(bk) bk.textContent = L("Start", "Home");
-  const hero = sub => `<div class="ch-hero"><span class="tr" aria-hidden="true">🏆</span><div class="ar" lang="ar">التَّحَدِّي</div><h2>Challenge</h2><p>${sub}</p></div>`;
+  const hero = sub => `<div class="ch-hero"><span class="tr" aria-hidden="true">🏆</span><div class="ar" lang="ar">التَّحَدِّي</div><h2>Challenge</h2><p>${sub}</p></div>` + salHTML();
   let h = "";
   if(!F.CLOUD){
     h = hero(L("Wer sammelt die meisten Punkte?", "Who collects the most points?")) +
@@ -8393,6 +8500,9 @@ function draw(){
   v.innerHTML = h;
 }
 
+function drawSal(){ const el = document.getElementById("saCard"); if(el) el.outerHTML = salHTML(); }
+setInterval(() => { if(document.getElementById("v-challenge").classList.contains("active") && !salAsk) drawSal(); }, 30000);
+
 /* ---------- 5. Herausfordern ---------- */
 function vsSheet(id){
   const k = S.board && S.board.kids.find(x => x.id === id), me = S.board && S.board.kids.find(x => x.id === F.active);
@@ -8401,7 +8511,7 @@ function vsSheet(id){
   d.innerHTML = `<div role="dialog" aria-modal="true"><h3>⚔️ ${L(`${esc(k.name)} herausfordern`, `Challenge ${esc(k.name)}`)}</h3>
     <div class="vs"><span>${esc(me.avatar)}</span><span style="font-size:26px">⚔️</span><span>${esc(k.avatar)}</span></div>
     <p style="margin:0;color:var(--muted);font-weight:600;text-align:center">${L("Wer schafft diese Woche mehr …", "Who gets more this week …")}</p>
-    <div class="ch-kinds">${Object.keys(KINDS).map(x => `<button data-kind="${x}"><span>${KINDS[x].ic}</span>${kName(x)}</button>`).join("")}</div>
+    <div class="ch-kinds">${Object.keys(KINDS).filter(x => x !== "s" || "s" in (me.s || {}) && S.board.kids.some(y => y.id !== F.active && "s" in (y.s || {}))).map(x => `<button data-kind="${x}"><span>${KINDS[x].ic}</span>${kName(x)}</button>`).join("")}</div>
     <button class="ch-btn sec" data-kind="_x" style="margin-top:12px">${L("Abbrechen", "Cancel")}</button></div>`;
   document.body.appendChild(d);
   d.addEventListener("click", async e => {
@@ -8427,6 +8537,9 @@ document.getElementById("chV").addEventListener("click", async e => {
   const b = e.target.closest("[data-c]"); if(!b) return;
   const c = b.dataset.c;
   const val = id => { const el = document.getElementById(id); return el ? el.value.trim() : ""; };
+  if(c === "sal"){ const k = b.dataset.k; if(b.classList.contains("soon")){ F.toast(L(`${sName(k)} ist noch nicht dran 🙂`, `It’s not ${sName(k)} time yet 🙂`)); return; } if(b.classList.contains("done")){ salAsk = k; drawSal(); return; } salAsk = null; salLog(k); drawSal(); const me = S.board && S.board.kids.find(x => x.id === F.active); if(me && S.r !== "all"){ me.s = localSum(S.r); draw(); } return; }
+  if(c === "salundo"){ if(salAsk) salUndo(salAsk); salAsk = null; drawSal(); return; }
+  if(c === "salkeep"){ salAsk = null; drawSal(); return; }
   if(c === "fam"){ F.open(); return; }
   if(c === "retry"){ load(true); return; }
   if(c === "r"){ S.r = b.dataset.r; S.board = null; load(); return; }
@@ -8471,12 +8584,13 @@ setLang = function(l){ _setLang(l); if(document.getElementById("v-challenge").cl
 
 function homeCard(){
   if(!F.CLOUD || !F.fam || !F.code || !F.active) return "";
-  const c = lsj(cacheKey(), null);
+  const c = lsj(cacheKey(), null), so = salOpen();
+  const sh = so ? `<span class="sa-home">🕌 ${L(`${sName(so.k)} eintragen · +${so.p}`, `Log ${sName(so.k)} · +${so.p}`)}</span>` : "";
   if(c && c.n){
-    return `<button class="lm-chcard" data-go="challenge"><span class="ic" aria-hidden="true">🏆</span><span class="tx"><b>Challenge</b><span>${esc(c.g || "")} · ${fmt(c.pt)} ${L("Punkte diese Woche", "points this week")}</span></span>
+    return `<button class="lm-chcard" data-go="challenge"><span class="ic" aria-hidden="true">🏆</span><span class="tx"><b>Challenge</b><span>${esc(c.g || "")} · ${fmt(c.pt)} ${L("Punkte diese Woche", "points this week")}</span>${sh}</span>
       ${c.rank ? `<span class="rk">${L("Platz", "Place")}<big>${c.rank}</big>${L("von", "of")} ${c.n}</span>` : `<span class="tp">${(c.top || []).map(a => `<i>${esc(a)}</i>`).join("")}</span>`}</button>`;
   }
-  return `<button class="lm-chcard" data-go="challenge"><span class="ic" aria-hidden="true">🏆</span><span class="tx"><b>Challenge</b><span>${L("Sammle Punkte und fordere andere Familien heraus ⚔️", "Collect points and challenge other families ⚔️")}</span></span><span class="rk" style="font-size:20px">›</span></button>`;
+  return `<button class="lm-chcard" data-go="challenge"><span class="ic" aria-hidden="true">🏆</span><span class="tx"><b>Challenge</b><span>${L("Sammle Punkte und fordere andere Familien heraus ⚔️", "Collect points and challenge other families ⚔️")}</span>${sh}</span><span class="rk" style="font-size:20px">›</span></button>`;
 }
 const _rs = renderStart;
 renderStart = function(){
