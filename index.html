@@ -5820,9 +5820,10 @@ function lmPhase(){
 }
 function lmSky(){
   const ph = lmPhase();
+  const vw = Math.min(window.innerWidth || 400, 1152), vh = vw >= 760 ? 340 : 300, pad = Math.max(0, Math.round((vw / vh * 300 - 400) / 2));
   const G = {dawn:["#2B3F78","#B97FA8","#FFC98F"], day:["#3FA3E8","#8FD0F5","#D9F1FF"], dusk:["#2C2A6B","#C2618A","#FFB070"], night:["#071530","#13285A","#25407A"]}[ph];
-  const stars = (ph === "night" || ph === "dawn") ? [...Array(26)].map((_,i) => {
-    const x = (i * 137) % 400, y = 10 + (i * 71) % 150, r = 0.8 + (i % 3) * 0.6;
+  const stars = (ph === "night" || ph === "dawn") ? [...Array(26 + Math.round(pad / 12))].map((_,i) => {
+    const x = -pad + (i * 137) % (400 + 2 * pad), y = 10 + (i * 71) % 150, r = 0.8 + (i % 3) * 0.6;
     return `<circle cx="${x}" cy="${y}" r="${r}" fill="#fff" opacity="${ph === "dawn" ? .45 : .85}"/>`; }).join("") : "";
   const sky = ph === "day"
     ? `<circle cx="232" cy="104" r="30" fill="#FFE27A"/><circle cx="232" cy="104" r="48" fill="#FFE27A" opacity=".25"/>
@@ -5835,9 +5836,9 @@ function lmSky(){
       <g transform="translate(${x} ${len})"><path d="M-6 0h12l-2 5h-8z" fill="#E7A83A"/>
       <path d="M-11 5 Q-15 20 -8 34 H8 Q15 20 11 5Z" fill="#F2B04A"/><path d="M-6 9 Q-9 20 -4 30 H4 Q9 20 6 9Z" fill="#FFF1B8"/>
       <path d="M-8 34h16l-3 5h-10z" fill="#E7A83A"/><circle cx="0" cy="19" r="18" fill="#FFE7A8" opacity=".22"/></g></g>`;
-  return `<svg class="scene" viewBox="0 0 400 300" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+  return `<svg class="scene" viewBox="${-pad} 0 ${400 + 2 * pad} 300" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
     <defs><linearGradient id="lmg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${G[0]}"/><stop offset=".62" stop-color="${G[1]}"/><stop offset="1" stop-color="${G[2]}"/></linearGradient></defs>
-    <rect width="400" height="300" fill="url(#lmg)"/>${stars}${sky}
+    <rect x="${-pad}" width="${400 + 2 * pad}" height="300" fill="url(#lmg)"/>${stars}${sky}
     ${lantern(300, 70, "")}${lantern(338, 104, "l2")}
     <g fill="${sil}">
       <path d="M0 300 V250 Q60 236 120 246 T240 242 T400 248 V300Z" opacity=".55"/>
@@ -5845,7 +5846,7 @@ function lmSky(){
       <path d="M78 266 V232 Q78 196 120 186 Q162 196 162 232 V266Z"/><rect x="117" y="170" width="6" height="18"/><path d="M120 162 a5 5 0 1 0 0.1 0" />
       <rect x="168" y="214" width="58" height="52"/><path d="M168 216 Q197 186 226 216Z"/>
       <rect x="232" y="196" width="11" height="70"/><path d="M230 198 h15 l-7.5 -14z"/>
-      <path d="M0 300 V266 H400 V300Z"/>
+      <path d="M0 300 V266 H400 V300Z"/>${pad ? `<rect x="${-pad}" y="266" width="${400 + 2 * pad}" height="34"/><path d="M${-pad} 300 V254 Q${-pad / 2} 244 0 250 V300Z M400 300 V248 Q${400 + pad / 2} 240 ${400 + pad} 252 V300Z" opacity=".55"/>` : ""}
     </g>
   </svg>`;
 }
@@ -6676,7 +6677,7 @@ function gaSVG(s, fresh, mini){
   const ph = typeof lmPhase === "function" ? lmPhase() : "day";
   const SK = {dawn:["#7FA6D9","#F7C9A4"], day:["#7EC8F2","#D8F1FF"], dusk:["#4F5EA6","#F2A27A"], night:["#0E1A3A","#2C3F78"]}[ph];
   const night = ph === "night";
-  let svg = `<svg class="ga-svg" viewBox="${mini ? "0 60 400 190" : "0 0 400 250"}" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+  let svg = `<svg class="ga-svg" viewBox="${mini ? "0 80 400 170" : "0 0 400 250"}" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
    <defs><linearGradient id="gaSky${u}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${SK[0]}"/><stop offset="1" stop-color="${SK[1]}"/></linearGradient>
    <linearGradient id="gaRiv${u}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#7fd6ff"/><stop offset="1" stop-color="#3aa8e0"/></linearGradient></defs>
    <rect width="400" height="250" fill="url(#gaSky${u})"/>`;
@@ -7113,6 +7114,64 @@ document.addEventListener("click", e => {
   if(b.classList.contains("w-card")){ b.classList.add("speaking"); setTimeout(() => b.classList.remove("speaking"), 1200); }
   arSpeak(b.dataset.arsay);
 });
+})();
+
+/* =================== p30: Tablet & große Bildschirme – Layout passt sich automatisch an =================== */
+(function(){
+const css = `
+@media (min-width:760px){
+  .wrap,.nav-row,.pg-ui{max-width:940px}
+  body{font-size:18px}
+  .lm-sky{height:340px;border-radius:0 0 40px 40px}
+  .lm-kids{grid-template-columns:repeat(4,1fr)}
+  .lm-day{grid-template-columns:repeat(8,1fr)}
+  .lm-film{flex-basis:44%;max-width:420px}
+  .lm-gcard{aspect-ratio:16/6.2}
+  .tiles{grid-template-columns:repeat(4,minmax(0,1fr))}
+  .games{grid-template-columns:repeat(3,1fr)}
+  .w-sets{grid-template-columns:repeat(6,1fr)}
+  .ga-deeds{grid-template-columns:repeat(4,1fr)}
+  .ga-deed:last-child:nth-child(odd){grid-column:auto;min-height:112px}
+  .ga-plants{grid-template-columns:repeat(4,1fr)}
+  .ga-scene{aspect-ratio:400/190;max-height:48vh;width:100%}
+  .nm-grid{grid-template-columns:repeat(6,minmax(0,1fr))}
+  .lm-gl{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .pager .slide{flex-basis:72%}
+  .w-grid{grid-template-columns:repeat(4,1fr)}
+  .cards{grid-template-columns:repeat(4,minmax(0,1fr))!important}
+  .memo{max-width:620px;margin-left:auto;margin-right:auto}
+  .opts{max-width:640px;margin-left:auto;margin-right:auto}
+  .say{max-width:640px;margin-left:auto;margin-right:auto}
+  .st-video.f916 .vd-thumb.vid video{max-height:78vh;width:auto;margin:0 auto}
+  .st-video.f169{max-width:860px;margin-left:auto;margin-right:auto}
+  .sheet{max-width:760px}
+  .tabbar .in{max-width:620px;margin:0 auto}
+  .lm-hd{min-height:120px;padding:20px 24px}
+  .lm-hd .ltitle{font-size:36px!important}
+  .lm-hd-ic{width:80px;height:80px;font-size:44px}
+}
+@media (min-width:1000px){
+  .wrap,.nav-row,.pg-ui{max-width:1120px}
+  .lm-film{flex-basis:32%}
+  .games{grid-template-columns:repeat(4,1fr)}
+  .nm-grid{grid-template-columns:repeat(8,minmax(0,1fr))}
+  .tiles{grid-template-columns:repeat(5,minmax(0,1fr))}
+  /* Gebet: Figur links, Erklärung rechts */
+  #lmPlayer{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);grid-template-areas:"top info" "stage info" "strip info";column-gap:8px}
+  #lmPlayer .lm-top{grid-area:top}
+  #lmPlayer .lm-stage{grid-area:stage}
+  #lmPlayer .lm-strip{grid-area:strip}
+  #lmPlayer #lmInfo{grid-area:info;align-self:start;padding-top:12px}
+  .lm-gl{grid-template-columns:1fr 1fr 1fr}
+  .ga-wrap2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+}
+`;
+const st = document.createElement("style"); st.textContent = css; document.head.appendChild(st);
+let rt = 0, lastW = window.innerWidth;
+window.addEventListener("resize", () => { clearTimeout(rt); rt = setTimeout(() => {
+  if(Math.abs(window.innerWidth - lastW) < 40) return; lastW = window.innerWidth;
+  const v = document.querySelector(".view.active"); if(v && v.id === "v-home" && typeof renderStart === "function") renderStart();
+}, 250); });
 })();
 
 /* ---------- init ---------- */
