@@ -5763,12 +5763,12 @@ setLang = function(l){
   /* Geschichten: Filme oben */
   .st-films{margin:6px 0 4px}
   /* Vorlesen */
-  .say{border:0;border-radius:999px;background:var(--gold);color:#1d1606;font:inherit;font-size:14px;font-weight:700;padding:8px 14px 8px 12px;display:inline-flex;align-items:center;gap:6px;cursor:pointer;margin-top:10px;position:relative;z-index:3}
-  .say svg{width:18px;height:18px;fill:currentColor}
-  .say.playing{background:var(--c-mint);color:#062b26}
-  .say.playing svg{animation:lm-pulse .9s ease-in-out infinite}
+  .lm-say{border:0;border-radius:999px;background:var(--gold);color:#1d1606;font:inherit;font-size:14px;font-weight:700;padding:8px 14px 8px 12px;display:inline-flex;align-items:center;gap:6px;cursor:pointer;margin-top:10px;position:relative;z-index:3}
+  .lm-say svg{width:18px;height:18px;fill:currentColor}
+  .lm-say.playing{background:var(--c-mint);color:#062b26}
+  .lm-say.playing svg{animation:lm-pulse .9s ease-in-out infinite}
   @keyframes lm-pulse{50%{transform:scale(1.18)}}
-  @media (prefers-reduced-motion:reduce){.say.playing svg{animation:none}}
+  @media (prefers-reduced-motion:reduce){.lm-say.playing svg{animation:none}}
   `;
   document.head.appendChild(st);
 })();
@@ -5904,7 +5904,7 @@ let lmAudio = null, lmBtn = null;
 function lmStop(){ if(lmAudio){ lmAudio.pause(); lmAudio = null; } if("speechSynthesis" in window) speechSynthesis.cancel(); if(lmBtn){ lmBtn.classList.remove("playing"); lmBtn = null; } }
 function lmSay(btn){
   const same = lmBtn === btn; lmStop(); if(same) return;
-  const key = btn.dataset.say, i = +key.slice(1), x = WISSEN[i]; if(!x) return;
+  const key = btn.dataset.speak, i = +key.slice(1), x = WISSEN[i]; if(!x) return;
   const text = key[0] === "q" ? (lang === "en" && typeof WISSEN_EN !== "undefined" ? WISSEN_EN[i][0] : x.q) : (lang === "en" && typeof WISSEN_EN !== "undefined" ? WISSEN_EN[i][1] : x.a);
   lmBtn = btn; btn.classList.add("playing");
   const tts = () => { if(!("speechSynthesis" in window)){ lmStop(); return; }
@@ -5917,7 +5917,7 @@ function lmSay(btn){
   a.play().catch(() => { if(lmAudio === a){ lmAudio = null; tts(); } });
 }
 document.addEventListener("click", e => {
-  const b = e.target.closest("[data-say]"); if(!b) return;
+  const b = e.target.closest("[data-speak]"); if(!b) return;
   e.stopPropagation(); e.preventDefault(); lmSay(b);
 }, true);
 const _lmRenderWissen = renderWissen;
@@ -5926,8 +5926,8 @@ renderWissen = function(){
   $("#wiV").querySelectorAll("[data-flip]").forEach(card => {
     const i = card.dataset.flip;
     const f = card.querySelector(".f-front"), bk = card.querySelector(".f-back .f-a");
-    if(f) f.insertAdjacentHTML("beforeend", `<button type="button" class="say" data-say="q${String(i).padStart(2,"0")}" aria-label="${L("Frage anhören", "Listen to the question")}">${LM_SPEAK}${L("Anhören", "Listen")}</button>`);
-    if(bk) bk.insertAdjacentHTML("afterend", `<button type="button" class="say" data-say="a${String(i).padStart(2,"0")}" aria-label="${L("Antwort anhören", "Listen to the answer")}">${LM_SPEAK}${L("Antwort anhören", "Listen to the answer")}</button>`);
+    if(f) f.insertAdjacentHTML("beforeend", `<button type="button" class="lm-say" data-speak="q${String(i).padStart(2,"0")}" aria-label="${L("Frage anhören", "Listen to the question")}">${LM_SPEAK}${L("Anhören", "Listen")}</button>`);
+    if(bk) bk.insertAdjacentHTML("afterend", `<button type="button" class="lm-say" data-speak="a${String(i).padStart(2,"0")}" aria-label="${L("Antwort anhören", "Listen to the answer")}">${LM_SPEAK}${L("Antwort anhören", "Listen to the answer")}</button>`);
   });
 };
 
@@ -6692,6 +6692,338 @@ setTab = function(id){
 window.renderGarden = renderGarden;
 const _setLang = setLang;
 setLang = function(l){ _setLang(l); if($("#v-garden").classList.contains("active")) renderGarden(); };
+})();
+
+/* =================== p29: Kinder-Spiele auf Arabisch + „Arabisch lernen“ =================== */
+(function(){
+const css = `
+.k-lang{display:flex;justify-content:center;margin:4px 0 14px}
+.k-lang .seg{min-width:260px}
+.k-lang .seg button{font-size:15px}
+.k-sec{display:flex;align-items:center;gap:10px;margin:18px 2px 10px}
+.k-sec .i{width:36px;height:36px;border-radius:12px;display:grid;place-items:center;font-size:20px;background:var(--gold-soft)}
+.k-sec b{font-size:19px;font-family:var(--display,inherit);font-weight:800}
+.k-sec span.ar{margin-inline-start:auto;font-family:"Scheherazade New",serif;font-size:20px;color:var(--gold)}
+.w-sets{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:6px}
+.w-set{position:relative;border:0;border-radius:22px;padding:12px 6px 10px;cursor:pointer;color:#fff;font:inherit;text-align:center;background:linear-gradient(150deg,var(--a),var(--b));box-shadow:0 8px 18px color-mix(in srgb,var(--a) 35%,transparent);transition:transform .15s}
+.w-set:active{transform:scale(.95)}
+.w-set .em{display:block;font-size:34px;line-height:1.1}
+.w-set .ar{display:block;font-family:"Scheherazade New",serif;font-size:21px;line-height:1.3;margin-top:4px}
+.w-set .de{display:block;font-size:12.5px;font-weight:700;opacity:.92}
+.w-set .st{position:absolute;top:6px;right:8px;font-size:10px;letter-spacing:1px;color:#FFE7A8}
+.k-ar{direction:rtl}
+.k-ar .k-h,.k-h{display:block;direction:ltr;unicode-bidi:plaintext;font-size:12.5px;color:var(--muted);font-weight:500;line-height:1.3;margin-top:2px}
+.k-ar .k-prompt,.k-ar .say p,.k-ar .opt,.k-ar .c-t,.k-ar .learn li,.k-ar h3,.k-ar .k-msg,.k-ar .feedback strong{font-family:"Noto Kufi Arabic","Scheherazade New",sans-serif}
+.k-ar .say p{font-size:21px;line-height:1.7}
+.k-ar .opt{font-size:19px;text-align:right}
+.k-ar .opt .k{margin-inline-end:10px}
+.k-ar .opt .k-h{text-align:right}
+.k-ar .c-t{font-size:15px}
+.k-ar .learn ul{padding-right:20px;padding-left:0}
+.k-ar .feedback,.k-ar .learn{text-align:right}
+.ar-say{display:inline-flex;align-items:center;gap:6px;border:0;border-radius:999px;background:var(--gold);color:#1d1606;font:inherit;font-weight:800;font-size:14px;padding:7px 14px;cursor:pointer;margin-top:8px}
+.ar-say svg{width:18px;height:18px;fill:currentColor}
+.w-pic{display:grid;place-items:center;width:150px;height:150px;margin:0 auto;border-radius:36px;background:var(--surface2);font-size:84px;line-height:1;box-shadow:inset 0 0 0 3px var(--gold-soft)}
+.w-pic .num{font-family:"Scheherazade New",serif;font-size:96px;color:var(--gold);line-height:1}
+.w-pic .num small{display:block;font-family:var(--font);font-size:18px;color:var(--muted);text-align:center}
+.w-pic .dot{display:inline-block;width:16px;height:16px;border-radius:50%;margin:2px}
+.w-opts .opt{font-family:"Scheherazade New",serif;font-size:30px;justify-content:center;text-align:center;line-height:1.4;padding-top:10px;padding-bottom:10px}
+.w-opts .opt .k{display:none}
+.w-big{font-family:"Scheherazade New",serif;font-size:44px;color:var(--gold);line-height:1.4;margin:2px 0}
+.w-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin:8px 0 16px}
+.w-card{border:1px solid var(--sep);background:var(--surface);color:var(--ink);border-radius:20px;padding:10px 8px;cursor:pointer;font:inherit;text-align:center;transition:transform .12s}
+.w-card:active{transform:scale(.96)}
+.w-card .e{display:block;font-size:40px;line-height:1.15}
+.w-card .e .num{font-family:"Scheherazade New",serif;color:var(--gold);font-size:40px}
+.w-card .a{display:block;font-family:"Scheherazade New",serif;font-size:28px;color:var(--gold);line-height:1.4}
+.w-card .t{display:block;font-size:13px;font-style:italic;color:var(--muted)}
+.w-card .d{display:block;font-size:14px;font-weight:700}
+.w-card.speaking{box-shadow:0 0 0 3px var(--gold)}
+.w-intro{text-align:center;margin:4px 0 6px;color:var(--muted)}
+#v-kids .lm-hd:has(#kTitle[hidden]){display:none}
+.k-h{font-family:var(--font)!important}
+`;
+const st = document.createElement("style"); st.textContent = css; document.head.appendChild(st);
+
+let kAr = store.get("lm-kids-ar", false);
+const EN = () => lang === "en";
+const AR = n => String(n).replace(/[0-9]/g, d => "٠١٢٣٤٥٦٧٨٩"[d]);
+const UI = (de, en, ar) => kAr ? ar : (EN() ? en : de);
+const SPK = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9v6h4l5 4V5L8 9H4z"/><path d="M16 8.5a5 5 0 0 1 0 7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>';
+
+/* ---------- Arabisch vorlesen (Stimme des Geräts) ---------- */
+let arVoice = null, arWarned = false;
+function pickVoice(){ if(!("speechSynthesis" in window)) return null; const v = speechSynthesis.getVoices(); return v.find(x => /^ar(-|_|$)/i.test(x.lang)) || null; }
+if("speechSynthesis" in window){ arVoice = pickVoice(); speechSynthesis.onvoiceschanged = () => { arVoice = pickVoice(); }; }
+function arSpeak(t){
+  if(!("speechSynthesis" in window)) return;
+  arVoice = arVoice || pickVoice();
+  speechSynthesis.cancel();
+  const u = new SpeechSynthesisUtterance(String(t).replace(/ﷺ/g, "صَلَّى اللَّهُ عَلَيْهِ وَسَلَّمَ").replace(/[…–]/g, " "));
+  u.lang = arVoice ? arVoice.lang : "ar-SA"; if(arVoice) u.voice = arVoice; u.rate = .82;
+  speechSynthesis.speak(u);
+  if(!arVoice && !arWarned && typeof toast === "function"){ arWarned = true; toast(L("Tipp: Für die arabische Stimme in den Geräte-Einstellungen eine arabische Stimme laden.", "Tip: download an Arabic voice in your device settings.")); }
+}
+const sayBtn = t => `<button type="button" class="ar-say" data-arsay="${esc(t)}">${SPK}${UI("Anhören", "Listen", "اِسْتَمِعْ")}</button>`;
+
+/* ---------- Arabische Fassung der Spiele ---------- */
+const OPT_AR = {"Richtig":"صَحِيحٌ","Falsch":"خَطَأٌ","Ja":"نَعَمْ","Nein":"لَا","True":"صَحِيحٌ","False":"خَطَأٌ","Yes":"نَعَمْ","No":"لَا"};
+const LET_AR = {"ا":"أَلِف","ب":"بَاء","ت":"تَاء","ث":"ثَاء","ج":"جِيم","ح":"حَاء","خ":"خَاء","د":"دَال","ذ":"ذَال","ر":"رَاء","ز":"زَاي","س":"سِين","ش":"شِين","ص":"صَاد","ض":"ضَاد","ط":"طَاء","ظ":"ظَاء","ع":"عَيْن","غ":"غَيْن","ف":"فَاء","ق":"قَاف","ك":"كَاف","ل":"لَام","م":"مِيم","ن":"نُون","ه":"هَاء","و":"وَاو","ي":"يَاء"};
+const GA = {
+ gebet:{title:"تَرْتِيبُ الصَّلَاةِ", sub:"رَتِّبْ خُطُوَاتِ الصَّلَاةِ", prompt:"مَاذَا يَأْتِي أَوَّلًا؟ اِضْغَطْ عَلَى الخُطُوَاتِ بِالتَّرْتِيبِ.",
+  items:["اللَّهُ أَكْبَرُ – تَبْدَأُ الصَّلَاةُ","القِيَامُ وَقِرَاءَةُ الفَاتِحَةِ","الرُّكُوعُ","الرَّفْعُ مِنَ الرُّكُوعِ","السُّجُودُ","الجُلُوسُ بَيْنَ السَّجْدَتَيْنِ","التَّشَهُّدُ","التَّسْلِيمُ يَمِينًا وَشِمَالًا"],
+  learn:["بَعْدَ الجُلُوسِ تَأْتِي سَجْدَةٌ ثَانِيَةٌ، فَفِي كُلِّ رَكْعَةٍ سَجْدَتَانِ.","اِطْمَئِنَّ فِي كُلِّ رُكْنٍ وَلَا تَسْتَعْجِلْ.","قَالَ النَّبِيُّ ﷺ: صَلُّوا كَمَا رَأَيْتُمُونِي أُصَلِّي."]},
+ wudu:{title:"تَرْتِيبُ الوُضُوءِ", sub:"كَيْفَ تَتَوَضَّأُ لِلصَّلَاةِ؟", prompt:"تَوَضَّأْ! اِضْغَطْ عَلَى الخُطُوَاتِ بِالتَّرْتِيبِ.",
+  items:["النِّيَّةُ وَالتَّسْمِيَةُ","غَسْلُ الكَفَّيْنِ","المَضْمَضَةُ وَالاسْتِنْشَاقُ","غَسْلُ الوَجْهِ","غَسْلُ اليَدَيْنِ إِلَى المِرْفَقَيْنِ","مَسْحُ الرَّأْسِ وَالأُذُنَيْنِ","غَسْلُ الرِّجْلَيْنِ إِلَى الكَعْبَيْنِ"],
+  learn:["تَغْسِلُ كُلَّ عُضْوٍ ثَلَاثًا، وَتَمْسَحُ الرَّأْسَ مَرَّةً وَاحِدَةً.","اِبْدَأْ بِاليَمِينِ فِي اليَدَيْنِ وَالرِّجْلَيْنِ.","لَا يَقْبَلُ اللَّهُ الصَّلَاةَ بِغَيْرِ وُضُوءٍ."]},
+ saeulen:{title:"أَرْكَانُ الإِسْلَامِ الخَمْسَةُ", sub:"اِبْنِ بَيْتَ الإِسْلَامِ", prompt:"اِبْنِ بَيْتَ الإِسْلَامِ! اِضْغَطْ عَلَى الأَرْكَانِ الخَمْسَةِ بِالتَّرْتِيبِ. اِنْتَبِهْ: لَيْسَ كُلُّ شَيْءٍ رُكْنًا!",
+  items:["الشَّهَادَتَانِ","الصَّلَاةُ","الزَّكَاةُ","صَوْمُ رَمَضَانَ","الحَجُّ"], distract:["لَعِبُ كُرَةِ القَدَمِ","أَكْلُ المُثَلَّجَاتِ","مُشَاهَدَةُ التِّلْفَازِ"],
+  wrongMsg:"هَذَا لَيْسَ رُكْنًا مِنْ أَرْكَانِ الإِسْلَامِ، حَاوِلْ مَرَّةً أُخْرَى!",
+  learn:["قَالَ النَّبِيُّ ﷺ: بُنِيَ الإِسْلَامُ عَلَى خَمْسٍ.","الشَّهَادَةُ: أَشْهَدُ أَنْ لَا إِلٰهَ إِلَّا اللَّهُ وَأَنَّ مُحَمَّدًا رَسُولُ اللَّهِ."]},
+ zeiten:{title:"الصَّلَوَاتُ الخَمْسُ", sub:"مَتَى تَكُونُ كُلُّ صَلَاةٍ؟", prompt:"بَدَأَ اليَوْمُ! اِضْغَطْ عَلَى الصَّلَوَاتِ بِتَرْتِيبِ اليَوْمِ.",
+  items:[["الفَجْرُ","عِنْدَ الفَجْرِ"],["الظُّهْرُ","وَقْتَ الظَّهِيرَةِ"],["العَصْرُ","بَعْدَ الظُّهْرِ"],["المَغْرِبُ","عِنْدَ الغُرُوبِ"],["العِشَاءُ","فِي اللَّيْلِ"]],
+  learn:["الفَجْرُ رَكْعَتَانِ، وَالظُّهْرُ أَرْبَعٌ، وَالعَصْرُ أَرْبَعٌ، وَالمَغْرِبُ ثَلَاثٌ، وَالعِشَاءُ أَرْبَعٌ.","لِكُلِّ صَلَاةٍ وَقْتُهَا."]},
+ memory:{title:"ذَاكِرَةُ الكَلِمَاتِ", sub:"اِبْحَثْ عَنِ الأَزْوَاجِ", learn:["الصَّلَاةُ وَالصَّوْمُ وَالزَّكَاةُ وَالحَجُّ مِنْ أَرْكَانِ الإِسْلَامِ."]},
+ iman:{title:"أَرْكَانُ الإِيمَانِ السِّتَّةُ", sub:"بِمَاذَا يُؤْمِنُ المُسْلِمُ؟", prompt:"اِضْغَطْ عَلَى أَرْكَانِ الإِيمَانِ السِّتَّةِ بِتَرْتِيبِ حَدِيثِ جِبْرِيلَ. اِنْتَبِهْ: بِطَاقَتَانِ لَيْسَتَا مِنْهَا!",
+  items:["الإِيمَانُ بِاللَّهِ","بِالمَلَائِكَةِ","بِالكُتُبِ","بِالرُّسُلِ","بِاليَوْمِ الآخِرِ","بِالقَدَرِ"], distract:["جَالِبُ الحَظِّ","الأَبْرَاجُ"],
+  wrongMsg:"هَذَا لَيْسَ مِنَ الإِيمَانِ، اللَّهُ وَحْدَهُ يُقَدِّرُ كُلَّ شَيْءٍ!",
+  learn:["سَأَلَ جِبْرِيلُ النَّبِيَّ ﷺ عَنِ الإِيمَانِ فَذَكَرَ هَذِهِ الأَرْكَانَ السِّتَّةَ.","نَتَوَكَّلُ عَلَى اللَّهِ وَحْدَهُ."]},
+ buchstaben:{title:"الحُرُوفُ العَرَبِيَّةُ", sub:"اِبْحَثْ عَنِ الحَرْفِ وَاسْمِهِ", learn:["فِي الأَبْجَدِيَّةِ العَرَبِيَّةِ ثَمَانِيَةٌ وَعِشْرُونَ حَرْفًا.","أَنْزَلَ اللَّهُ القُرْآنَ بِلِسَانٍ عَرَبِيٍّ."]},
+ werbinich:{title:"مَنْ أَنَا؟", sub:"خَمِّنِ النَّبِيَّ", ask:"مَنْ أَنَا مِنَ الأَنْبِيَاءِ؟",
+  rounds:[["بَنَيْتُ سَفِينَةً كَبِيرَةً بِأَمْرِ اللَّهِ.","دَعَا نُوحٌ قَوْمَهُ إِلَى اللَّهِ زَمَنًا طَوِيلًا.",["نُوحٌ","مُوسَى","يُوسُفُ"]],
+   ["أُلْقِيتُ فِي النَّارِ فَلَمْ تَحْرِقْنِي.","جَعَلَ اللَّهُ النَّارَ بَارِدَةً عَلَى إِبْرَاهِيمَ.",["إِبْرَاهِيمُ","آدَمُ","هُودٌ"]],
+   ["اِبْتَلَعَنِي حُوتٌ كَبِيرٌ.","دَعَوْتُ اللَّهَ فِي بَطْنِ الحُوتِ فَنَجَّانِي.",["يُونُسُ","أَيُّوبُ","صَالِحٌ"]],
+   ["رَأَيْتُ فِي مَنَامِي نُجُومًا وَالشَّمْسَ وَالقَمَرَ.","أَلْقَانِي إِخْوَتِي فِي البِئْرِ مِنَ الغَيْرَةِ.",["يُوسُفُ","يَعْقُوبُ","دَاوُدُ"]],
+   ["ضَرَبْتُ البَحْرَ بِعَصَايَ فَانْشَقَّ.","نَجَّى اللَّهُ بَنِي إِسْرَائِيلَ مِنْ فِرْعَوْنَ.",["مُوسَى","عِيسَى","نُوحٌ"]],
+   ["تَكَلَّمْتُ وَأَنَا طِفْلٌ صَغِيرٌ فِي المَهْدِ.","قُلْتُ: إِنِّي عَبْدُ اللَّهِ.",["عِيسَى","يَحْيَى","إِسْمَاعِيلُ"]],
+   ["فَهِمْتُ كَلَامَ النَّمْلَةِ.","تَبَسَّمْتُ مِنْ قَوْلِهَا وَشَكَرْتُ اللَّهَ.",["سُلَيْمَانُ","دَاوُدُ","لُوطٌ"]],
+   ["أَنَا أَوَّلُ إِنْسَانٍ.","عَلَّمَنِي اللَّهُ أَسْمَاءَ كُلِّ الأَشْيَاءِ.",["آدَمُ","إِدْرِيسُ","نُوحٌ"]],
+   ["سَاعَدْتُ أَبِي إِبْرَاهِيمَ فِي بِنَاءِ الكَعْبَةِ.","دَعَوْنَا مَعًا أَنْ يَتَقَبَّلَ اللَّهُ مِنَّا.",["إِسْمَاعِيلُ","إِسْحَاقُ","يَعْقُوبُ"]]],
+  learn:["أَرْسَلَ اللَّهُ أَنْبِيَاءَ كَثِيرِينَ، وَكُلُّهُمْ دَعَوْا إِلَى عِبَادَةِ اللَّهِ وَحْدَهُ."]},
+ richtig:{title:"صَحِيحٌ أَمْ خَطَأٌ؟", sub:"اِخْتَبِرْ مَعْلُومَاتِكَ عَنِ الإِسْلَامِ", ask:"صَحِيحٌ أَمْ خَطَأٌ؟",
+  rounds:[["لَيْسَ لِلَّهِ وَلَدٌ.","اللَّهُ لَمْ يَلِدْ وَلَمْ يُولَدْ."],["الصَّلَوَاتُ المَفْرُوضَةُ سِتٌّ فِي اليَوْمِ.","هِيَ خَمْسُ صَلَوَاتٍ فِي اليَوْمِ وَاللَّيْلَةِ."],
+   ["يَجُوزُ لِلصَّحِيحِ أَنْ يَأْكُلَ فِي نَهَارِ رَمَضَانَ.","يَصُومُ مَنْ شَهِدَ الشَّهْرَ، وَالمَرِيضُ وَالمُسَافِرُ يَقْضِيَانِ."],["القُرْآنُ كَلَامُ اللَّهِ.","نَعَمْ، القُرْآنُ كَلَامُ اللَّهِ."],
+   ["خُلِقَتِ المَلَائِكَةُ مِنْ نُورٍ.","خُلِقَتِ المَلَائِكَةُ مِنْ نُورٍ."],["الابْتِسَامَةُ يُمْكِنُ أَنْ تَكُونَ صَدَقَةً.","تَبَسُّمُكَ فِي وَجْهِ أَخِيكَ صَدَقَةٌ."],
+   ["نَتَوَضَّأُ بَعْدَ الصَّلَاةِ.","نَتَوَضَّأُ قَبْلَ الصَّلَاةِ."],["مُحَمَّدٌ ﷺ آخِرُ الأَنْبِيَاءِ.","هُوَ خَاتَمُ النَّبِيِّينَ."],["لَا نَقُولُ لِلْوَالِدَيْنِ حَتَّى: أُفٍّ.","لَا تَقُلْ لَهُمَا أُفٍّ وَلَا تَصْرُخْ عَلَيْهِمَا."]],
+  learn:["العِلْمُ نِعْمَةٌ، كُلَّمَا تَعَلَّمْتَ أَكْثَرَ فَهِمْتَ دِينَكَ أَكْثَرَ."]},
+ wuduCheck:{title:"هَلْ يَنْقُضُ الوُضُوءَ؟", sub:"مَتَى تَتَوَضَّأُ مِنْ جَدِيدٍ؟", ask:"هَلْ يَنْقُضُ هَذَا الوُضُوءَ؟",
+  rounds:[["ذَهَبْتَ إِلَى الحَمَّامِ.","مَا يَخْرُجُ مِنَ السَّبِيلَيْنِ يَنْقُضُ الوُضُوءَ."],["نِمْتَ نَوْمًا عَمِيقًا.","مَنْ نَامَ نَوْمًا عَمِيقًا فَلْيَتَوَضَّأْ."],
+   ["أَكَلْتَ لَحْمَ غَنَمٍ مَطْبُوخًا.","أَكَلَ النَّبِيُّ ﷺ لَحْمَ الغَنَمِ وَصَلَّى وَلَمْ يَتَوَضَّأْ."],["خَرَجَ مِنْكَ رِيحٌ.","بَعْدَهُ يَجِبُ الوُضُوءُ."],
+   ["أَكَلْتَ لَحْمَ جَمَلٍ.","هَذَا قَوْلُ الحَنَابِلَةِ لِهَذَا الحَدِيثِ، وَغَيْرُهُمْ يَرَى خِلَافَهُ."],["شَكَكْتَ هَلْ خَرَجَ رِيحٌ، وَلَمْ تَسْمَعْ وَلَمْ تَشُمَّ شَيْئًا.","الشَّكُّ لَا يَنْقُضُ الوُضُوءَ، بَلِ اليَقِينُ."]],
+  learn:["أَشْيَاءُ مُعَيَّنَةٌ فَقَطْ تَنْقُضُ الوُضُوءَ، لَا كُلُّ شَكٍّ."]},
+ sahabaRaten:{title:"مَنْ أَنَا مِنَ الصَّحَابَةِ؟", sub:"خَمِّنْ أَصْحَابَ النَّبِيِّ ﷺ", ask:"مَنْ أَنَا؟",
+  rounds:[["كُنْتُ أَوَّلَ مُؤَذِّنٍ فِي الإِسْلَامِ.","اخْتَارَنِي النَّبِيُّ ﷺ لِصَوْتِي القَوِيِّ.",["بِلَالٌ","أَنَسٌ","أَبُو هُرَيْرَةَ"]],
+   ["كُنْتُ مَعَ النَّبِيِّ ﷺ فِي غَارِ ثَوْرٍ.","قَالَ لِي: لَا تَحْزَنْ، إِنَّ اللَّهَ مَعَنَا.",["أَبُو بَكْرٍ","عُمَرُ","عَلِيٌّ"]],
+   ["مُنْذُ أَسْلَمْتُ صَارَ المُسْلِمُونَ أَقْوِيَاءَ.","قَالَ ذَلِكَ عَنِّي ابْنُ مَسْعُودٍ.",["عُمَرُ","عُثْمَانُ","خَالِدٌ"]],
+   ["اشْتَرَيْتُ بِئْرَ رُومَةَ لِلْمُسْلِمِينَ.","جَعَلْتُ مَاءَهَا لِكُلِّ النَّاسِ فِي المَدِينَةِ.",["عُثْمَانُ","أَبُو بَكْرٍ","سَعْدٌ"]],
+   ["أَخَذْتُ الرَّايَةَ يَوْمَ خَيْبَرَ.","رَجُلٌ يُحِبُّ اللَّهَ وَرَسُولَهُ.",["عَلِيٌّ","عُمَرُ","زَيْدٌ"]],
+   ["كُنْتُ أَوَّلَ مَنْ آمَنَ بِالنَّبِيِّ ﷺ.","طَمْأَنْتُهُ بَعْدَ أَوَّلِ وَحْيٍ.",["خَدِيجَةُ","عَائِشَةُ","فَاطِمَةُ"]],
+   ["رَوَيْتُ أَكْثَرَ الأَحَادِيثِ.","كُنْتُ دَائِمًا قَرِيبًا مِنَ النَّبِيِّ ﷺ.",["أَبُو هُرَيْرَةَ","بِلَالٌ","مُعَاذٌ"]],
+   ["سُمِّيتُ سَيْفًا مِنْ سُيُوفِ اللَّهِ.","سَمَّانِي النَّبِيُّ ﷺ بِذَلِكَ فِي مُؤْتَةَ.",["خَالِدُ بْنُ الوَلِيدِ","حَمْزَةُ","سَعْدٌ"]],
+   ["خَدَمْتُ النَّبِيَّ ﷺ عَشْرَ سِنِينَ وَأَنَا صَغِيرٌ.","مَا قَالَ لِي أُفٍّ قَطُّ.",["أَنَسُ بْنُ مَالِكٍ","أُسَامَةُ","ابْنُ عَبَّاسٍ"]]],
+  learn:["الصَّحَابَةُ قُدْوَتُنَا بَعْدَ النَّبِيِّ ﷺ."]},
+ sira:{title:"سِيرَةُ النَّبِيِّ ﷺ", sub:"رَتِّبِ الأَحْدَاثَ", prompt:"مَاذَا حَدَثَ أَوَّلًا؟ اِضْغَطْ عَلَى الأَحْدَاثِ بِالتَّرْتِيبِ.",
+  items:[["المَوْلِدُ فِي مَكَّةَ","عَامَ الفِيلِ"],["أَوَّلُ الوَحْيِ","فِي غَارِ حِرَاءَ"],["الدَّعْوَةُ جَهْرًا","عَلَى جَبَلِ الصَّفَا"],["الهِجْرَةُ إِلَى المَدِينَةِ","مَعَ أَبِي بَكْرٍ"],["غَزْوَةُ بَدْرٍ","فِي السَّنَةِ الثَّانِيَةِ"],["فَتْحُ مَكَّةَ","فِي السَّنَةِ الثَّامِنَةِ"],["حَجَّةُ الوَدَاعِ","فِي السَّنَةِ العَاشِرَةِ"],["الوَفَاةُ فِي المَدِينَةِ","وَعُمُرُهُ ثَلَاثٌ وَسِتُّونَ"]],
+  learn:["عَاشَ النَّبِيُّ ﷺ فِي مَكَّةَ ثَلَاثًا وَخَمْسِينَ سَنَةً، وَفِي المَدِينَةِ عَشْرَ سِنِينَ.","يَوْمَ فَتْحِ مَكَّةَ عَفَا عَنْ أَعْدَائِهِ."]},
+ sagen:{title:"مَاذَا نَقُولُ عِنْدَمَا …؟", sub:"الكَلِمَاتُ الصَّحِيحَةُ لِكُلِّ يَوْمٍ", ask:"مَاذَا تَقُولُ؟",
+  rounds:[["تَبْدَأُ بِالأَكْلِ.","بِاسْمِ اللَّهِ نَبْدَأُ.",["بِسْمِ اللَّهِ","الحَمْدُ لِلَّهِ","إِنْ شَاءَ اللَّهُ"]],
+   ["اِنْتَهَيْتَ مِنَ الأَكْلِ.","الحَمْدُ كُلُّهُ لِلَّهِ.",["الحَمْدُ لِلَّهِ","بِسْمِ اللَّهِ","مَا شَاءَ اللَّهُ"]],
+   ["عَطَسْتَ.","وَمَنْ سَمِعَكَ يَقُولُ: يَرْحَمُكَ اللَّهُ.",["الحَمْدُ لِلَّهِ","السَّلَامُ عَلَيْكُمْ","إِنْ شَاءَ اللَّهُ"]],
+   ["تَلْقَى مُسْلِمًا.","السَّلَامُ تَحِيَّةُ المُسْلِمِينَ.",["السَّلَامُ عَلَيْكُمْ","بِسْمِ اللَّهِ","الحَمْدُ لِلَّهِ"]],
+   ["تَقُولُ: غَدًا أَذْهَبُ إِلَى المَسْجِدِ.","أَيْ: إِذَا أَرَادَ اللَّهُ.",["إِنْ شَاءَ اللَّهُ","مَا شَاءَ اللَّهُ","سُبْحَانَ اللَّهِ"]],
+   ["تَرَى شَيْئًا جَمِيلًا جِدًّا.","مَا أَرَادَهُ اللَّهُ كَانَ.",["مَا شَاءَ اللَّهُ","إِنْ شَاءَ اللَّهُ","بِسْمِ اللَّهِ"]],
+   ["تَذْهَبُ إِلَى النَّوْمِ.","بِاسْمِكَ يَا اللَّهُ أَنَامُ وَأَسْتَيْقِظُ.",["بِاسْمِكَ اللَّهُمَّ أَمُوتُ وَأَحْيَا","السَّلَامُ عَلَيْكُمْ","مَا شَاءَ اللَّهُ"]],
+   ["تَخْرُجُ مِنَ البَيْتِ.","أَعْتَمِدُ عَلَى اللَّهِ.",["بِسْمِ اللَّهِ، تَوَكَّلْتُ عَلَى اللَّهِ","الحَمْدُ لِلَّهِ","مَا شَاءَ اللَّهُ"]],
+   ["حَدَثَ شَيْءٌ مُحْزِنٌ.","نَحْنُ مِلْكٌ لِلَّهِ وَإِلَيْهِ نَرْجِعُ.",["إِنَّا لِلَّهِ وَإِنَّا إِلَيْهِ رَاجِعُونَ","مَا شَاءَ اللَّهُ","إِنْ شَاءَ اللَّهُ"]]],
+  learn:["بِهَذِهِ الكَلِمَاتِ الصَّغِيرَةِ تَذْكُرُ اللَّهَ طُولَ اليَوْمِ."]}
+};
+function arGame(g0){
+  const a = GA[g0.id]; if(!a) return g0;
+  const g = {...g0, isAr:true, hintTitle:g0.title, title:a.title, sub:a.sub, prompt:a.prompt || g0.prompt, ask:a.ask || g0.ask, wrongMsg:a.wrongMsg || g0.wrongMsg, learn:a.learn || g0.learn};
+  if(g0.items) g.items = g0.items.map((it, i) => { const x = a.items && a.items[i]; return x ? {...it, t:Array.isArray(x) ? x[0] : x, d:Array.isArray(x) ? x[1] : it.d, h:it.t, hd:it.d} : {...it}; });
+  if(g0.distract) g.distract = g0.distract.map((it, i) => a.distract && a.distract[i] ? {...it, t:a.distract[i], h:it.t} : {...it});
+  if(g0.rounds) g.rounds = g0.rounds.map((r, i) => { const x = a.rounds && a.rounds[i]; if(!x) return {...r};
+    return {...r, q:x[0], m:x[1], o:x[2] || r.o.map(o => OPT_AR[o] || o), hq:r.q, hm:r.m, ho:r.o.slice()}; });
+  if(g0.id === "buchstaben") g.pool = (g0.pool || []).map(p => [p[0], LET_AR[p[0]] || p[1]]);
+  return g;
+}
+
+/* ---------- Arabisch lernen: die einfachsten Wörter ---------- */
+const N = (d, w) => `<span class="num">${AR(d)}<small>${d}</small></span>`;
+const WORDS = [
+ {k:"zahlen", em:"🔢", ar:"الأَعْدَادُ", de:"Zahlen", en:"Numbers", a:"#3F7FD9", b:"#7CB4FF",
+  w:[[N(1),"وَاحِد","wāḥid","eins","one"],[N(2),"اِثْنَان","ithnān","zwei","two"],[N(3),"ثَلَاثَة","thalātha","drei","three"],[N(4),"أَرْبَعَة","arbaʿa","vier","four"],[N(5),"خَمْسَة","khamsa","fünf","five"],
+     [N(6),"سِتَّة","sitta","sechs","six"],[N(7),"سَبْعَة","sabʿa","sieben","seven"],[N(8),"ثَمَانِيَة","thamāniya","acht","eight"],[N(9),"تِسْعَة","tisʿa","neun","nine"],[N(10),"عَشَرَة","ʿaschara","zehn","ten"]],
+  learn:["So schreibt man die Zahlen auf Arabisch: ١ ٢ ٣ ٤ ٥ ٦ ٧ ٨ ٩ ١٠","„Qul huwa llāhu aḥad“ – Sag: Er ist Allah, der Eine."], src:"Qur'an 112:1"},
+ {k:"farben", em:"🎨", ar:"الأَلْوَانُ", de:"Farben", en:"Colours", a:"#D9546F", b:"#FF9BB0",
+  w:[["🔴","أَحْمَر","aḥmar","rot","red"],["🔵","أَزْرَق","azraq","blau","blue"],["🟢","أَخْضَر","akhḍar","grün","green"],["🟡","أَصْفَر","aṣfar","gelb","yellow"],
+     ["⚪","أَبْيَض","abyaḍ","weiß","white"],["⚫","أَسْوَد","aswad","schwarz","black"],["🟠","بُرْتُقَالِيّ","burtuqālī","orange","orange"],["🟣","بَنَفْسَجِيّ","banafsadschī","lila","purple"]],
+  learn:["Allah hat die Welt in vielen Farben erschaffen – Früchte und Berge in Weiß, Rot und Schwarz."], src:"Qur'an 35:27"},
+ {k:"tiere", em:"🐪", ar:"الحَيَوَانَاتُ", de:"Tiere", en:"Animals", a:"#B8741C", b:"#F7BC55",
+  w:[["🐱","قِطَّة","qiṭṭa","Katze","cat"],["🐪","جَمَل","dschamal","Kamel","camel"],["🐴","حِصَان","ḥiṣān","Pferd","horse"],["🦁","أَسَد","asad","Löwe","lion"],["🐟","سَمَكَة","samaka","Fisch","fish"],
+     ["🐦","طَائِر","ṭāʾir","Vogel","bird"],["🐄","بَقَرَة","baqara","Kuh","cow"],["🐜","نَمْلَة","namla","Ameise","ant"],["🐘","فِيل","fīl","Elefant","elephant"],["🐝","نَحْلَة","naḥla","Biene","bee"]],
+  learn:["Manche Suren tragen Tiernamen: al-Baqara (die Kuh), an-Naḥl (die Biene), an-Naml (die Ameise) und al-Fīl (der Elefant)."], src:"Qur'an 2, 16, 27, 105"},
+ {k:"familie", em:"👨‍👩‍👧", ar:"العَائِلَةُ", de:"Familie", en:"Family", a:"#2E9C8A", b:"#5FD3BF",
+  w:[["👨","أَب","ab","Vater","father"],["👩","أُمّ","umm","Mutter","mother"],["👦","أَخ","akh","Bruder","brother"],["👧","أُخْت","ukht","Schwester","sister"],
+     ["👴","جَدّ","dschadd","Großvater","grandfather"],["👵","جَدَّة","dschadda","Großmutter","grandmother"],["👶","طِفْل","ṭifl","Kind","child"]],
+  learn:["Allah sagt: Seid gut zu euren Eltern."], src:"Qur'an 17:23"},
+ {k:"essen", em:"🍎", ar:"الطَّعَامُ", de:"Essen", en:"Food", a:"#C2415E", b:"#FF8F7A",
+  w:[["🍎","تُفَّاحَة","tuffāḥa","Apfel","apple"],["🍌","مَوْز","mauz","Banane","banana"],["💧","مَاء","māʾ","Wasser","water"],["🥛","حَلِيب","ḥalīb","Milch","milk"],
+     ["🍞","خُبْز","khubz","Brot","bread"],["🍯","عَسَل","ʿasal","Honig","honey"],["🍇","عِنَب","ʿinab","Trauben","grapes"],["🥚","بَيْض","baiḍ","Eier","eggs"]],
+  learn:["Vor dem Essen sagen wir „Bismillāh“, danach „Al-ḥamdu lillāh“."], src:"Buchārī 5376; Muslim 2734"},
+ {k:"natur", em:"🌙", ar:"الطَّبِيعَةُ", de:"Natur", en:"Nature", a:"#4F3F9E", b:"#9A86EF",
+  w:[["☀️","شَمْس","schams","Sonne","sun"],["🌙","قَمَر","qamar","Mond","moon"],["⭐","نَجْم","nadschm","Stern","star"],["⛰️","جَبَل","dschabal","Berg","mountain"],
+     ["🌊","بَحْر","baḥr","Meer","sea"],["🌳","شَجَرَة","schadschara","Baum","tree"],["🌹","وَرْدَة","warda","Rose","rose"],["🌧️","مَطَر","maṭar","Regen","rain"]],
+  learn:["Auch Suren heißen so: asch-Schams (die Sonne), al-Qamar (der Mond) und an-Nadschm (der Stern)."], src:"Qur'an 91, 54, 53"}
+];
+const wTr = w => EN() ? tlEn(w[2]) : w[2];
+const wMean = w => EN() ? w[4] : w[3];
+function wordGame(set){
+  return {id:"w-" + set.k, type:"choice", words:true, set, title:(kAr ? set.ar : (EN() ? set.en : set.de)), ask:"",
+    learn:set.learn, src:set.src, rounds:[]};
+}
+function buildWordRounds(set){
+  return shuffle(set.w).map(w => { const others = shuffle(set.w.filter(x => x !== w)).slice(0, 2);
+    const o = [w[1], ...others.map(x => x[1])];
+    return {e:w[0], w, q:"", o, shown:shuffle(o), ar:w[1], m:"", s:""}; });
+}
+
+/* ---------- Spiel starten ---------- */
+const _startGame = startGame;
+startGame = function(id){
+  if(id.startsWith("w-")){
+    const set = WORDS.find(s => "w-" + s.k === id); if(!set) return;
+    K = {g:wordGame(set), done:false, mistakes:0, msg:"", shake:null, phase:"learn", rounds:buildWordRounds(set), i:0, right:0, picked:null};
+    renderKids(); window.scrollTo(0, 0); return;
+  }
+  if(!kAr || !GA[id]) return _startGame(id);
+  const g = arGame(GAMES.find(x => x.id === id));
+  K = {g, done:false, mistakes:0, msg:"", shake:null};
+  if(g.type === "order"){
+    const all = g.items.map((it, i) => ({...it, key:"i" + i, idx:i})).concat((g.distract || []).map((it, i) => ({...it, key:"d" + i, idx:-1})));
+    K.cards = shuffle(all); K.placed = 0; K.stepMiss = 0;
+  }
+  if(g.type === "memory"){
+    K.pairs = g.pool ? shuffle(g.pool).slice(0, 8) : g.pairs;
+    K.cards = shuffle(K.pairs.flatMap((p, i) => [{pair:i, txt:p[0], ar:true}, {pair:i, txt:p[1], ar:g.id === "buchstaben"}])).map((c, k) => ({...c, k, open:false, found:false}));
+    K.open = []; K.moves = 0; K.lock = false;
+  }
+  if(g.type === "choice"){ K.rounds = shuffle(g.rounds).map(r => ({...r, shown:shuffle(r.o)})); K.i = 0; K.right = 0; K.picked = null; }
+  renderKids(); window.scrollTo(0, 0);
+};
+
+/* ---------- Ansichten ---------- */
+const MSG_AR = {"Richtig! ✓":"صَحِيحٌ! ✓","Super! ✓":"رَائِعٌ! ✓","Genau! ✓":"بِالضَّبْطِ! ✓","Weiter so! ✓":"اِسْتَمِرَّ! ✓","Noch nicht! Überleg mal, was davor kommt.":"لَيْسَ بَعْدُ! فَكِّرْ: مَاذَا يَأْتِي قَبْلَهُ؟","Kleiner Tipp: Die leuchtende Karte ist die richtige.":"تَلْمِيحٌ: البِطَاقَةُ المُضِيئَةُ هِيَ الصَّحِيحَةُ.","Das gehört nicht dazu – versuch es nochmal!":"هَذَا لَيْسَ مِنْهَا، حَاوِلْ مَرَّةً أُخْرَى!"};
+const rk = n => n === 2 ? "رَكْعَتَانِ" : AR(n) + " رَكَعَاتٍ";
+const hint = (h, cls = "k-h") => kAr && h ? `<small class="${cls}">${h}</small>` : "";
+const wrapAr = html => kAr ? `<div class="k-ar" dir="rtl">${html}</div>` : html;
+orderView = function(){
+  const g = K.g, n = g.items.length;
+  const progress = g.custom === "temple" ? temple() :
+    `<div class="slots">${g.items.map((it, i) => `<span class="slot ${i < K.placed ? "filled" : ""}" style="--gc:${g.color}">${i < K.placed ? (it.r ? (g.isAr ? `${it.t}، ${rk(it.r)}` : it.t + ", " + it.r + " Rakʿa") : "✓ " + (g.isAr ? AR(i + 1) : i + 1)) : (g.isAr ? AR(i + 1) : i + 1)}</span>`).join("")}</div>`;
+  const hintKey = K.stepMiss >= 3 ? "i" + K.placed : null;
+  const msg = K.msg ? (g.isAr ? (MSG_AR[K.msg] || K.msg) : K.msg) : (g.isAr ? `الخُطْوَةُ ${AR(K.placed + 1)} مِنْ ${AR(n)}` : `Schritt ${K.placed + 1} von ${n}`);
+  return wrapAr(`<p class="k-prompt">${g.prompt}</p>${progress}
+    <p class="k-msg" aria-live="polite">${msg}</p>
+    <div class="cards">${K.cards.map(c => {
+      const placed = c.idx >= 0 && c.idx < K.placed;
+      return `<button class="kcard ${placed ? "placed" : ""} ${c.key === hintKey ? "hint" : ""}" data-pick="${c.key}" ${placed ? "disabled" : ""}>
+        ${cardVisual(c)}<span class="c-t">${c.t}${c.d ? `<small>${c.d}</small>` : ""}${hint(c.h)}</span>${placed ? `<span class="c-n">${g.isAr ? AR(c.idx + 1) : c.idx + 1}</span>` : ""}</button>`;
+    }).join("")}</div>`);
+};
+memoryView = function(){
+  const ar = K.g.isAr, found = K.cards.filter(c => c.found).length / 2;
+  return wrapAr(`<p class="k-prompt">${ar ? "اِقْلِبْ بِطَاقَتَيْنِ. هَلْ تَجِدُ الزَّوْجَيْنِ؟" : "Decke zwei Karten auf. Findest du das arabische Wort und seine Bedeutung?"}</p>
+    <p class="k-msg">${ar ? `المُحَاوَلَاتُ: ${AR(K.moves)} · الأَزْوَاجُ: ${AR(found)} مِنْ ${AR(K.pairs.length)}` : `Züge: ${K.moves}, Paare: ${found} von ${K.pairs.length}`}</p>
+    <div class="memo">${K.cards.map(c => `<button class="mcard ${c.open || c.found ? "open" : ""} ${c.found ? "found" : ""}" data-mem="${c.k}" aria-label="${c.open || c.found ? c.txt : "Verdeckte Karte"}">
+      <span class="m-in"><span class="m-back">✦</span><span class="m-front ${c.ar ? "arabic" : ""}" ${c.ar ? 'lang="ar"' : ""}>${c.txt}</span></span></button>`).join("")}</div>`);
+};
+function wordsView(){
+  const set = K.g.set;
+  if(K.phase === "learn"){
+    return `<p class="w-intro">${UI("Tippe auf ein Wort und hör es dir an. Dann spielen wir!", "Tap a word to hear it. Then let's play!", "اِضْغَطْ عَلَى الكَلِمَةِ لِتَسْمَعَهَا، ثُمَّ نَلْعَبُ!")}</p>
+      <div class="w-grid">${set.w.map((w, i) => `<button class="w-card" data-arsay="${esc(w[1])}"><span class="e">${w[0]}</span><span class="a" lang="ar">${w[1]}</span><span class="t">${wTr(w)}</span><span class="d">${wMean(w)}</span></button>`).join("")}</div>
+      <button class="primary" data-k="wstart">${UI("Los geht's! ▶", "Let's go! ▶", "هَيَّا نَلْعَبُ! ◀")}</button>`;
+  }
+  const r = K.rounds[K.i], ans = K.picked !== null, ok = K.picked === r.o[0], w = r.w;
+  return `<div class="progress"><i style="width:${(K.i + (ans ? 1 : 0)) / K.rounds.length * 100}%"></i></div>
+    <div class="say"><div class="w-pic">${w[0]}</div><p>${UI("Wie heißt das auf Arabisch?", "What is this in Arabic?", "مَا اسْمُ هَذَا بِالعَرَبِيَّةِ؟")}</p></div>
+    <div class="opts w-opts">${r.shown.map((o, k) => { let cls = ""; if(ans){ if(o === r.o[0]) cls = "ok"; else if(o === K.picked) cls = "bad"; }
+      return `<button class="opt ${cls}" data-say="${k}" lang="ar" ${ans ? "disabled" : ""}><span class="k">${"ABC"[k]}</span>${o}</button>`; }).join("")}</div>
+    ${ans ? `<div class="feedback ${ok ? "ok" : "bad"}"><strong>${ok ? UI("Super! ⭐", "Great! ⭐", "أَحْسَنْتَ! ⭐") : UI("Fast! Richtig ist:", "Almost! The answer is:", "قَرِيبٌ! الصَّوَابُ:")}</strong>
+      <div class="w-big" lang="ar">${w[1]}</div><p><i>${wTr(w)}</i> – ${wMean(w)}</p>${sayBtn(w[1])}</div>
+      <button class="primary" data-k="next">${K.i + 1 < K.rounds.length ? UI("Weiter", "Next", "التَّالِي") : UI("Fertig!", "Done!", "اِنْتَهَيْتُ!")}</button>` : ""}`;
+}
+choiceView = function(){
+  if(K.g.words) return wordsView();
+  const g = K.g, r = K.rounds[K.i], ans = K.picked !== null, ok = K.picked === r.o[0], ar = g.isAr;
+  const oh = o => { if(!ar || !r.ho) return ""; const j = r.o.indexOf(o); return j >= 0 && r.ho[j] !== o ? hint(r.ho[j]) : ""; };
+  const body = `<div class="progress"><i style="width:${(K.i + (ans ? 1 : 0)) / K.rounds.length * 100}%"></i></div>
+    <div class="say"><span class="say-e">${typeof r.e === "function" ? r.e() : r.e}</span><p>${r.q}${hint(r.hq)}<br><b>${g.ask || (ar ? "مَاذَا تَقُولُ؟" : "Was sagst du?")}</b></p>${ar ? sayBtn(r.q) : ""}</div>
+    <div class="opts">${r.shown.map((o, k) => { let cls = ""; if(ans){ if(o === r.o[0]) cls = "ok"; else if(o === K.picked) cls = "bad"; }
+      return `<button class="opt ${cls}" data-say="${k}" ${ans ? "disabled" : ""}><span class="k">${ar ? "أبج"[k] : "ABC"[k]}</span><span>${o}${oh(o)}</span></button>`; }).join("")}</div>
+    ${ans ? `<div class="feedback ${ok ? "ok" : "bad"}"><strong>${ok ? (ar ? "أَحْسَنْتَ! ⭐" : "Super gemacht! ⭐") : (ar ? "قَرِيبٌ! الصَّوَابُ: " : "Fast! Richtig ist: ") + r.o[0]}</strong>
+      <p class="ar" lang="ar" dir="rtl" style="margin:4px 0">${r.ar}</p><p>${r.m}${hint(r.hm)}</p><p class="src">${ar ? "المَصْدَرُ" : "Quelle"}: ${srcLinks(r.s)}</p></div>
+      <button class="primary" data-k="next">${K.i + 1 < K.rounds.length ? (ar ? "التَّالِي" : "Weiter") : (ar ? "اِنْتَهَيْتُ!" : "Fertig!")}</button>` : ""}`;
+  return wrapAr(body);
+};
+winScreen = function(){
+  const g = K.g, ar = g.isAr || (kAr && g.words);
+  const h = K.stars === 3 ? UI("Māschāʾallāh – perfekt!", "Māshāʾallāh – perfect!", "مَا شَاءَ اللَّهُ، مُمْتَازٌ!") : K.stars === 2 ? UI("Sehr gut gemacht!", "Very well done!", "أَحْسَنْتَ جِدًّا!") : UI("Geschafft! Beim nächsten Mal klappt es noch besser.", "Done! Next time it will be even better.", "أَتْمَمْتَهَا! وَفِي المَرَّةِ القَادِمَةِ أَفْضَلُ.");
+  const slots = g.type === "order" && g.id === "zeiten" ? `<div class="slots">${g.items.map(it => `<span class="slot filled" style="--gc:${g.color}">${g.isAr ? `${it.t}، ${rk(it.r)}` : `${it.t}, ${it.r} Rakʿa`}</span>`).join("")}</div>` : "";
+  const words = g.words ? `<div class="w-grid">${g.set.w.map(w => `<button class="w-card" data-arsay="${esc(w[1])}"><span class="e">${w[0]}</span><span class="a" lang="ar">${w[1]}</span><span class="t">${wTr(w)}</span></button>`).join("")}</div>` : "";
+  return wrapAr(`<div class="win">
+    <div class="win-stars" aria-label="${K.stars} / 3">${[0,1,2].map(i => `<span class="${i < K.stars ? "on" : ""}" style="--d:${i * .15}s">★</span>`).join("")}</div>
+    <h3>${h}</h3>${g.custom === "temple" ? temple() : ""}${slots}${words}
+    <div class="learn"><b>${UI("Das hast du gelernt", "What you learned", "مَاذَا تَعَلَّمْتَ؟")}</b><ul>${g.learn.map(l => `<li>${l}</li>`).join("")}</ul><p class="src">${ar ? "المَصْدَرُ" : UI("Quelle", "Source", "")}: ${srcLinks(g.src)}</p></div>
+    <button class="primary" data-k="again">${UI("Nochmal spielen", "Play again", "اِلْعَبْ مَرَّةً أُخْرَى")}</button>
+    <button class="secondary" data-k="home">${UI("Andere Spiele", "Other games", "أَلْعَابٌ أُخْرَى")}</button></div>`);
+};
+
+/* ---------- Spiele-Übersicht ---------- */
+const _renderKids = renderKids;
+renderKids = function(){
+  if(K){ _renderKids(); $("#kStars").textContent = `★ ${totalStars()} / ${(GAMES.length + WORDS.length) * 3}`; return; }
+  _renderKids();
+  const maxS = (GAMES.length + WORDS.length) * 3;
+  $("#kStars").textContent = `★ ${totalStars()} / ${maxS}`;
+  const body = $("#kBody"), hero = body.querySelector(".k-hero"), list = body.querySelector(".games");
+  const tg = `<div class="k-lang"><div class="seg" role="group" aria-label="${L("Spielsprache", "Game language")}"><button data-klang="0" aria-pressed="${!kAr}">${L("🇩🇪 Deutsch", "🇬🇧 English")}</button><button data-klang="1" aria-pressed="${kAr}">العربية 🌙</button></div></div>`;
+  const words = `<div class="k-sec"><span class="i">🔤</span><b>${UI("Arabisch lernen", "Learn Arabic", "تَعَلَّمِ العَرَبِيَّةَ")}</b><span class="ar" lang="ar">أَوَّلُ الكَلِمَاتِ</span></div>
+    <div class="w-sets">${WORDS.map(s => `<button class="w-set" data-game="w-${s.k}" style="--a:${s.a};--b:${s.b}"><span class="st">${starStr(kStars["w-" + s.k] || 0)}</span><span class="em">${s.em}</span><span class="ar" lang="ar">${s.ar}</span><span class="de">${EN() ? s.en : s.de}</span></button>`).join("")}</div>
+    <div class="k-sec"><span class="i">🎲</span><b>${UI("Spiele", "Games", "أَلْعَابٌ")}</b><span class="ar" lang="ar">اِلْعَبْ وَتَعَلَّمْ</span></div>`;
+  if(hero) hero.insertAdjacentHTML("afterend", tg + words);
+  if(kAr && list) list.querySelectorAll("[data-game]").forEach(b => { const a = GA[b.dataset.game]; if(!a) return;
+    const st = b.querySelector(".g-text strong"), sp = b.querySelector(".g-text span");
+    if(st){ const de = st.textContent; st.innerHTML = `<span lang="ar" class="arabic" style="font-size:20px">${a.title}</span>`; if(sp) sp.innerHTML = `${a.sub}<small class="k-h">${de}</small>`; }
+    b.setAttribute("dir", "rtl"); });
+};
+pickMemory = function(k){
+  const c = K.cards[k]; if(K.lock || c.open || c.found) return;
+  c.open = true; K.open.push(c);
+  if(K.open.length === 2){
+    K.moves++; K.lock = true; const [a, b] = K.open, match = a.pair === b.pair, KK = K;
+    renderKids();
+    setTimeout(() => { if(K !== KK) return;
+      if(match){ a.found = b.found = true; if(navigator.vibrate) navigator.vibrate(25); }
+      a.open = b.open = false; K.open = []; K.lock = false;
+      if(K.cards.every(x => x.found)) finish(K.moves <= 12 ? 3 : K.moves <= 18 ? 2 : 1); else renderKids();
+    }, match ? 450 : 900);
+    return;
+  }
+  renderKids();
+};
+$("#kBody").addEventListener("click", e => {
+  const kl = e.target.closest("[data-klang]"); if(kl){ kAr = kl.dataset.klang === "1"; store.set("lm-kids-ar", kAr); renderKids(); return; }
+  const ws = e.target.closest('[data-k="wstart"]'); if(ws && K){ K.phase = "quiz"; renderKids(); window.scrollTo(0, 0); return; }
+  if(K && K.g.words && e.target.closest("[data-say]") && K.picked !== null){ arSpeak(K.rounds[K.i].o[0]); }
+});
+document.addEventListener("click", e => {
+  const b = e.target.closest("[data-arsay]"); if(!b) return;
+  document.querySelectorAll(".w-card.speaking").forEach(x => x.classList.remove("speaking"));
+  if(b.classList.contains("w-card")){ b.classList.add("speaking"); setTimeout(() => b.classList.remove("speaking"), 1200); }
+  arSpeak(b.dataset.arsay);
+});
 })();
 
 /* ---------- init ---------- */
