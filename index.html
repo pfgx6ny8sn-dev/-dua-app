@@ -7182,6 +7182,177 @@ window.addEventListener("resize", () => { clearTimeout(rt); rt = setTimeout(() =
 }, 250); });
 })();
 
+/* =================== p31: Tasbīḥ – Tagesprogramm mit automatischem Weiter + Bonus =================== */
+(function(){
+const css = `
+.tz-plan{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;margin:2px -16px 0;padding:4px 16px}
+.tz-plan::-webkit-scrollbar{display:none}
+.tz-step{flex:none;display:flex;align-items:center;gap:6px;border:0;border-radius:999px;padding:6px 12px 6px 6px;background:var(--surface);color:var(--muted);font:inherit;font-size:13px;font-weight:700;box-shadow:inset 0 0 0 1px var(--sep)}
+.tz-step i{width:22px;height:22px;border-radius:50%;display:grid;place-items:center;font-style:normal;font-size:12px;background:var(--fill);color:var(--ink)}
+.tz-step.on{color:var(--ink);box-shadow:inset 0 0 0 2px var(--gold)}
+.tz-step.on i{background:var(--gold);color:var(--on-acc)}
+.tz-step.ok{color:var(--teal)}
+.tz-step.ok i{background:var(--teal);color:#fff}
+.tz-head{display:flex;align-items:center;justify-content:space-between;margin:14px 2px 0}
+.tz-head b{font-size:14px;color:var(--gold);letter-spacing:.04em;text-transform:uppercase}
+.tz-head span{font-size:13px;color:var(--muted);font-weight:600}
+.tz-bonus-tag{display:inline-flex;align-items:center;gap:6px;background:var(--gold-soft);color:var(--gold);border-radius:999px;padding:4px 12px;font-weight:800;font-size:13px}
+.tz-count{text-align:center;font-weight:800;line-height:1;margin:12px 0 2px;font-variant-numeric:tabular-nums}
+.tz-count b{font-size:76px;background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent;letter-spacing:-.03em}
+.tz-count span{font-size:24px;color:var(--muted);margin-left:4px}
+.tz-why{background:var(--surface);border:1px solid var(--sep);border-radius:22px;padding:14px 16px;margin:18px 0 6px}
+.tz-why h3{margin:0 0 6px;font-size:15px;color:var(--gold);display:flex;align-items:center;gap:8px}
+.tz-why .ar{font-family:"Scheherazade New",serif;font-size:22px;line-height:1.85;direction:rtl;text-align:right;margin:4px 0 8px}
+.tz-why p{margin:0 0 6px;font-size:15.5px}
+.tz-why .p2{font-size:13.5px;color:var(--muted)}
+.tz-gift{display:flex;gap:10px;align-items:flex-start;background:var(--gold-soft);border-radius:16px;padding:10px 12px;margin:8px 0 6px}
+.tz-gift span{font-size:24px;line-height:1}
+.tz-gift b{display:block;color:var(--gold);font-size:13px;letter-spacing:.04em;text-transform:uppercase}
+.tz-gift p{margin:2px 0 0;font-size:15px}
+.tz-done{position:relative;overflow:hidden;text-align:center;border-radius:24px;padding:18px 16px;margin:14px 0 10px;color:#fff;background:linear-gradient(135deg,#1f6f4a,#3fa36f);box-shadow:0 12px 26px rgba(31,111,74,.3)}
+.tz-done .big{font-size:40px;line-height:1}
+.tz-done b{display:block;font-size:20px;margin:6px 0 2px;font-family:var(--display,inherit)}
+.tz-done p{margin:0;font-size:14.5px;opacity:.92}
+.tz-bonus{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:8px 0 6px}
+.tz-bonus button{position:relative;border:1px solid var(--sep);background:var(--surface);color:var(--ink);border-radius:18px;padding:10px 10px 8px;font:inherit;cursor:pointer;text-align:center}
+.tz-bonus button[aria-pressed="true"]{box-shadow:inset 0 0 0 2px var(--gold)}
+.tz-bonus button:last-child:nth-child(odd){grid-column:1/-1}
+@media (min-width:760px){.tz-bonus{grid-template-columns:repeat(4,1fr)}.tz-bonus button:last-child:nth-child(odd){grid-column:auto}}
+.tz-bonus .a{display:block;font-family:"Scheherazade New",serif;font-size:19px;color:var(--gold);line-height:1.4}
+.tz-bonus .t{display:block;font-size:12.5px;color:var(--muted)}
+.tz-bonus .n{position:absolute;top:6px;right:8px;font-size:11px;font-weight:800;color:var(--teal)}
+.tz-adv{position:fixed;left:50%;top:40%;z-index:85;transform:translate(-50%,-50%) scale(.8);opacity:0;pointer-events:none;background:var(--bg2);border:1px solid var(--line);border-radius:24px;padding:18px 22px;text-align:center;box-shadow:0 20px 40px rgba(0,0,0,.4);transition:all .3s cubic-bezier(.2,1.4,.4,1)}
+.tz-adv.show{opacity:1;transform:translate(-50%,-50%) scale(1)}
+.tz-adv .big{font-size:42px}
+.tz-adv b{display:block;font-size:18px;margin-top:4px}
+.tz-adv span{font-size:14px;color:var(--muted)}
+@media (min-width:760px){.tz-bonus{grid-template-columns:repeat(4,1fr)}}
+`;
+const st = document.createElement("style"); st.textContent = css; document.head.appendChild(st);
+const EN = () => lang === "en";
+const two = (de, en) => { const [p, s] = EN() ? [en, de] : [de, en]; return `<p>${p}</p><p class="p2">${s}</p>`; };
+
+/* Das Tagesprogramm (authentische Zahlen) */
+const PLAN = [
+ {id:"p-subhan", ar:"سُبْحَانَ اللَّهِ", tl:"Subḥānallāh", de:"Gepriesen sei Allah", en:"Glory be to Allah", t:33,
+  h:{ar:"سُبْحَانَ اللَّهِ وَالْحَمْدُ لِلَّهِ تَمْلَآنِ مَا بَيْنَ السَّمَاوَاتِ وَالْأَرْضِ", de:"Subḥānallāh und Al-ḥamdu lillāh füllen den Raum zwischen Himmel und Erde.", en:"Subḥānallāh and al-ḥamdu lillāh fill what is between the heavens and the earth.", s:"Muslim 223"},
+  g:{de:"Deine Waage wird schwer mit guten Taten.", en:"Your scale grows heavy with good deeds."}},
+ {id:"p-hamd", ar:"الْحَمْدُ لِلَّهِ", tl:"Al-ḥamdu lillāh", de:"Alles Lob gebührt Allah", en:"All praise is for Allah", t:33,
+  h:{ar:"وَالْحَمْدُ لِلَّهِ تَمْلَأُ الْمِيزَانَ", de:"Al-ḥamdu lillāh füllt die Waage.", en:"Al-ḥamdu lillāh fills the scale.", s:"Muslim 223"},
+  g:{de:"Die Waage deiner guten Taten wird voll.", en:"The scale of your good deeds is filled."}},
+ {id:"p-akbar", ar:"اللَّهُ أَكْبَرُ", tl:"Allāhu akbar", de:"Allah ist der Größte", en:"Allah is the Greatest", t:33,
+  h:{ar:"أَحَبُّ الْكَلَامِ إِلَى اللَّهِ أَرْبَعٌ: سُبْحَانَ اللَّهِ، وَالْحَمْدُ لِلَّهِ، وَلَا إِلَهَ إِلَّا اللَّهُ، وَاللَّهُ أَكْبَرُ", de:"Die liebsten Worte bei Allah sind vier: Subḥānallāh, Al-ḥamdu lillāh, Lā ilāha illallāh und Allāhu akbar.", en:"The most beloved words to Allah are four: Subḥānallāh, al-ḥamdu lillāh, lā ilāha illallāh and Allāhu akbar.", s:"Muslim 2137"},
+  g:{de:"Du sagst die Worte, die Allah am meisten liebt.", en:"You say the words Allah loves most."}},
+ {id:"p-tamam", ar:"لَا إِلَهَ إِلَّا اللَّهُ وَحْدَهُ لَا شَرِيكَ لَهُ، لَهُ الْمُلْكُ وَلَهُ الْحَمْدُ، وَهُوَ عَلَى كُلِّ شَيْءٍ قَدِيرٌ", tl:"Lā ilāha illallāhu waḥdahu lā scharīka lah, lahul-mulku wa lahul-ḥamd, wa huwa ʿalā kulli schaiʾin qadīr", de:"Es gibt keinen Gott außer Allah allein … – damit wird die Hundert voll", en:"There is no god but Allah alone … – this completes the hundred", t:1,
+  h:{ar:"مَنْ سَبَّحَ اللَّهَ فِي دُبُرِ كُلِّ صَلَاةٍ ثَلَاثًا وَثَلَاثِينَ … وَقَالَ تَمَامَ الْمِائَةِ … غُفِرَتْ خَطَايَاهُ وَإِنْ كَانَتْ مِثْلَ زَبَدِ الْبَحْرِ", de:"Wer nach jedem Gebet 33× Subḥānallāh, 33× Al-ḥamdu lillāh und 33× Allāhu akbar sagt und die Hundert mit diesen Worten voll macht, dem werden seine Fehler vergeben – selbst wenn sie so viel wären wie der Schaum des Meeres.", en:"Whoever after every prayer says Subḥānallāh 33 times, al-ḥamdu lillāh 33 times and Allāhu akbar 33 times and completes the hundred with these words, his sins are forgiven even if they were like the foam of the sea.", s:"Muslim 597"},
+  g:{de:"Vergebung – selbst für Fehler so viel wie Meeresschaum.", en:"Forgiveness – even for sins like the foam of the sea."}},
+ {id:"p-istighfar", ar:"أَسْتَغْفِرُ اللَّهَ", tl:"Astaghfirullāh", de:"Ich bitte Allah um Vergebung", en:"I ask Allah for forgiveness", t:100,
+  h:{ar:"إِنِّي لَأَسْتَغْفِرُ اللَّهَ فِي الْيَوْمِ مِائَةَ مَرَّةٍ", de:"Der Prophet ﷺ sagte: Ich bitte Allah am Tag hundertmal um Vergebung.", en:"The Prophet ﷺ said: I ask Allah for forgiveness a hundred times a day.", s:"Muslim 2702; Qur'an 71:10–12"},
+  g:{de:"Allah vergibt – und schenkt Regen, Gärten und Segen (Sure Nūḥ).", en:"Allah forgives – and gives rain, gardens and blessings (Sūrat Nūḥ)."}},
+ {id:"p-bihamdihi", ar:"سُبْحَانَ اللَّهِ وَبِحَمْدِهِ", tl:"Subḥānallāhi wa biḥamdih", de:"Gepriesen sei Allah und Lob sei Ihm", en:"Glory and praise be to Allah", t:100,
+  h:{ar:"مَنْ قَالَ: سُبْحَانَ اللَّهِ وَبِحَمْدِهِ، فِي يَوْمٍ مِائَةَ مَرَّةٍ، حُطَّتْ خَطَايَاهُ وَإِنْ كَانَتْ مِثْلَ زَبَدِ الْبَحْرِ", de:"Wer am Tag hundertmal „Subḥānallāhi wa biḥamdih“ sagt, dem werden seine Fehler weggenommen – selbst wenn sie wie der Schaum des Meeres wären.", en:"Whoever says “Subḥānallāhi wa biḥamdih” a hundred times a day, his sins are wiped away even if they were like the foam of the sea.", s:"Buchārī 6405, Muslim 2691"},
+  g:{de:"Deine Fehler werden weggewischt.", en:"Your sins are wiped away."}},
+ {id:"p-salawat", ar:"اللَّهُمَّ صَلِّ عَلَى مُحَمَّدٍ", tl:"Allāhumma ṣalli ʿalā Muḥammad", de:"O Allah, segne Muhammad ﷺ", en:"O Allah, send blessings upon Muhammad ﷺ", t:10,
+  h:{ar:"مَنْ صَلَّى عَلَيَّ وَاحِدَةً صَلَّى اللَّهُ عَلَيْهِ عَشْرًا", de:"Der Prophet ﷺ sagte: Wer einmal den Segen für mich spricht, den segnet Allah zehnmal.", en:"The Prophet ﷺ said: Whoever sends one blessing upon me, Allah blesses him ten times.", s:"Muslim 408"},
+  g:{de:"Für jedes Mal segnet Allah dich zehnmal.", en:"For each one, Allah blesses you ten times."}}
+];
+const BONUS = [
+ {id:"b-tahlil", ar:"لَا إِلَهَ إِلَّا اللَّهُ", tl:"Lā ilāha illallāh", de:"Es gibt keinen Gott außer Allah", en:"There is no god but Allah", t:100,
+  h:{ar:"أَفْضَلُ الذِّكْرِ لَا إِلَهَ إِلَّا اللَّهُ", de:"Das beste Gedenken ist: Lā ilāha illallāh.", en:"The best remembrance is: Lā ilāha illallāh.", s:"Tirmidhī 3383"},
+  g:{de:"Das beste aller Worte des Gedenkens.", en:"The best of all words of remembrance."}},
+ {id:"b-kalimatan", ar:"سُبْحَانَ اللَّهِ وَبِحَمْدِهِ، سُبْحَانَ اللَّهِ الْعَظِيمِ", tl:"Subḥānallāhi wa biḥamdih, subḥānallāhil-ʿaẓīm", de:"Zwei leichte Worte", en:"Two light words", t:33,
+  h:{ar:"كَلِمَتَانِ خَفِيفَتَانِ عَلَى اللِّسَانِ، ثَقِيلَتَانِ فِي الْمِيزَانِ، حَبِيبَتَانِ إِلَى الرَّحْمَنِ", de:"Zwei Worte sind leicht auf der Zunge, schwer auf der Waage und geliebt vom Allerbarmer.", en:"Two words are light on the tongue, heavy on the scale and beloved to the Most Merciful.", s:"Buchārī 6406, Muslim 2694"},
+  g:{de:"Leicht zu sagen – aber schwer auf deiner Waage.", en:"Easy to say – but heavy on your scale."}},
+ {id:"b-palme", ar:"سُبْحَانَ اللَّهِ الْعَظِيمِ وَبِحَمْدِهِ", tl:"Subḥānallāhil-ʿaẓīmi wa biḥamdih", de:"Pflanzt Palmen in deinem Garten 🌴", en:"Plants palms in your garden 🌴", t:10,
+  h:{ar:"مَنْ قَالَ: سُبْحَانَ اللَّهِ الْعَظِيمِ وَبِحَمْدِهِ، غُرِسَتْ لَهُ نَخْلَةٌ فِي الْجَنَّةِ", de:"Wer „Subḥānallāhil-ʿaẓīmi wa biḥamdih“ sagt, dem wird eine Palme im Paradies gepflanzt.", en:"Whoever says “Subḥānallāhil-ʿaẓīmi wa biḥamdih”, a palm tree is planted for him in Paradise.", s:"Tirmidhī 3464"},
+  g:{de:"Jedes Mal eine Palme im Paradies – und in deinem Garten in der App.", en:"A palm in Paradise each time – and in your garden in the app."}},
+ {id:"b-hawqala", ar:"لَا حَوْلَ وَلَا قُوَّةَ إِلَّا بِاللَّهِ", tl:"Lā ḥaula wa lā quwwata illā billāh", de:"Keine Kraft und keine Macht außer bei Allah", en:"No power and no strength except with Allah", t:33,
+  h:{ar:"لَا حَوْلَ وَلَا قُوَّةَ إِلَّا بِاللَّهِ كَنْزٌ مِنْ كُنُوزِ الْجَنَّةِ", de:"Lā ḥaula wa lā quwwata illā billāh ist ein Schatz aus den Schätzen des Paradieses.", en:"Lā ḥaula wa lā quwwata illā billāh is a treasure from the treasures of Paradise.", s:"Buchārī 6384, Muslim 2704"},
+  g:{de:"Ein Schatz aus dem Paradies.", en:"A treasure from Paradise."}}
+].concat(PLAN.map(p => ({...p, id:"b" + p.id.slice(1), t:p.t === 1 ? 10 : p.t})));
+
+const dk = () => { const d = new Date(); return d.getFullYear() + "-" + (d.getMonth() + 1) + "-" + d.getDate(); };
+function load(){ let s = store.get("lm-tz", null); if(!s || s.day !== dk()) s = {day:dk(), idx:0, c:{}, bonus:null, b:{}}; return s; }
+let S = load();
+const save = () => store.set("lm-tz", S);
+const planDone = () => S.idx >= PLAN.length;
+function cur(){ if(!planDone()) return PLAN[S.idx]; return BONUS.find(b => b.id === S.bonus) || null; }
+const RING2 = 2 * Math.PI * 46;
+function tbTarget(d){ return d.t; }
+
+renderTasbih = function(){
+  S = load();
+  const d = cur(), done = planDone();
+  const plan = `<div class="tz-plan">${PLAN.map((p, i) => `<span class="tz-step ${i < S.idx ? "ok" : i === S.idx ? "on" : ""}"><i>${i < S.idx ? "✓" : i + 1}</i>${p.tl.split(" ").slice(0, 2).join(" ").replace(/,$/, "")}${p.t > 1 ? ` · ${p.t}` : ""}</span>`).join("")}</div>`;
+  let html = plan;
+  if(done){
+    html += `<div class="tz-done"><div class="big">🌟</div><b>${L("Māschāʾallāh! Tagesprogramm geschafft", "Māshāʾallāh! Daily programme complete")}</b>
+      <p>${L("Jetzt kannst du frei weiterzählen – alles ab jetzt ist dein Bonus.", "Now you can keep counting freely – everything from now on is your bonus.")}</p></div>
+      <div class="tz-head"><span class="tz-bonus-tag">🎁 ${L("Bonus-Tasbīḥ wählen", "Choose a bonus tasbīḥ")}</span></div>
+      <div class="tz-bonus">${BONUS.map(b => `<button data-tzb="${b.id}" aria-pressed="${S.bonus === b.id}"><span class="a" lang="ar">${b.ar.length > 34 ? b.ar.split("،")[0] : b.ar}</span><span class="t">${b.tl.length > 30 ? b.tl.split(",")[0] + " …" : b.tl}</span>${S.b[b.id] ? `<span class="n">${S.b[b.id]}</span>` : ""}</button>`).join("")}</div>`;
+  }
+  if(d){
+    const n = done ? (S.b[d.id] || 0) : (S.c[d.id] || 0), T = tbTarget(d);
+    const prog = done ? ((n % T) / T || (n > 0 && n % T === 0 ? 1 : 0)) : Math.min(1, n / T);
+    html += `<div class="tz-head"><b>${done ? "🎁 Bonus" : L(`Schritt ${S.idx + 1} von ${PLAN.length}`, `Step ${S.idx + 1} of ${PLAN.length}`)}</b><span>${L("Ziel", "Target")} ${T}${done && n >= T ? ` · ${Math.floor(n / T)}×` : ""}</span></div>
+      <div class="tb-dhikr"><div class="arabic" lang="ar" style="font-size:${d.ar.length > 40 ? 28 : 44}px">${d.ar}</div><p class="tr">${d.tl}</p><p class="de">${EN() ? d.en : d.de}</p></div>
+      <div class="tz-count"><b id="tzN">${n}</b><span>/ ${T}</span></div>
+      <button class="tb-tap" id="tzTap" aria-label="${L("Zählen", "Count")}">
+        <svg class="ring" viewBox="0 0 100 100"><circle class="bg" cx="50" cy="50" r="46"/><circle class="fg" id="tzRing" cx="50" cy="50" r="46" stroke-dasharray="${RING2}" stroke-dashoffset="${RING2 * (1 - prog)}"/></svg>
+        <span class="tb-core"><svg viewBox="0 0 24 24" fill="none" stroke="#F2B04A" stroke-width="1.4" stroke-linejoin="round"><path d="M12 2.8l2.3 3.2 3.9-.8-.8 3.9L20.6 12l-3.2 2.3.8 3.9-3.9-.8L12 20.6l-2.3-3.2-3.9.8.8-3.9L3.4 12l3.2-2.3-.8-3.9 3.9.8z"/></svg></span>
+        <span class="tb-ripple"></span></button>
+      <div class="tb-tools">
+        <button data-tz="undo" aria-label="${L("Eins zurück", "One back")}"><svg viewBox="0 0 24 24"><path d="M9 14L4 9l5-5"/><path d="M4 9h10a6 6 0 0 1 0 12h-3"/></svg></button>
+        <button data-tz="reset" aria-label="${L("Zurücksetzen", "Reset")}"><svg viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg></button>
+        ${done ? "" : `<button data-tz="skip" aria-label="${L("Überspringen", "Skip")}" style="font-size:13px;font-weight:700">${L("Weiter ›", "Next ›")}</button>`}
+      </div>
+      <div class="tz-why"><h3>💡 ${L("Warum dieses Tasbīḥ?", "Why this tasbīḥ?")}</h3>
+        <div class="ar" lang="ar">${d.h.ar}</div>${two(d.h.de, d.h.en)}
+        <div class="tz-gift"><span>🎁</span><div><b>${L("Belohnung", "Reward")}</b><p>${EN() ? d.g.en : d.g.de}</p></div></div>
+        <p class="src">${L("Quelle", "Source")}: ${srcLinks(d.h.s)}</p></div>`;
+  }
+  $("#tbV").innerHTML = html;
+  const on = document.querySelector(".tz-step.on"); if(on) on.scrollIntoView({inline:"center", block:"nearest"});
+};
+let advT = 0;
+function flash(big, title, sub){
+  let p = $("#tzAdv"); if(!p){ p = document.createElement("div"); p.id = "tzAdv"; p.className = "tz-adv"; document.body.appendChild(p); }
+  p.innerHTML = `<div class="big">${big}</div><b>${title}</b><span>${sub || ""}</span>`;
+  p.classList.add("show"); clearTimeout(advT); advT = setTimeout(() => p.classList.remove("show"), 1300);
+}
+function count(delta){
+  const d = cur(); if(!d) return;
+  const done = planDone(), bag = done ? S.b : S.c;
+  const n = Math.max(0, (bag[d.id] || 0) + delta); bag[d.id] = n;
+  if(delta > 0){ const k = dayKey(new Date()); tbLog[k] = (tbLog[k] || 0) + 1; store.set("tb-log", tbLog);
+    if(d.id === "b-palme"){ const g = store.get("lm-garden", null) || {}; g.p = (g.p || 0) + 1; store.set("lm-garden", g); } }
+  save();
+  const T = d.t;
+  const el = $("#tzN"); if(el) el.textContent = n;
+  const ring = $("#tzRing"); if(ring){ const pr = done ? (n % T === 0 && n > 0 ? 1 : (n % T) / T) : Math.min(1, n / T); ring.style.strokeDashoffset = RING2 * (1 - pr); }
+  const tap = $("#tzTap"); if(tap){ tap.classList.remove("hit"); void tap.offsetWidth; tap.classList.add("hit"); }
+  if(delta <= 0) return;
+  if(!done && n >= T){
+    if(navigator.vibrate) navigator.vibrate([40, 60, 40]);
+    S.idx++; save();
+    if(planDone()){ flash("🌟", L("Tagesprogramm geschafft!", "Daily programme done!"), L("Jetzt Bonus sammeln", "Now collect bonus")); if(typeof confetti === "function") confetti(); setTimeout(renderTasbih, 900); }
+    else { flash("✅", L("Geschafft!", "Done!"), L("Weiter mit: ", "Next: ") + PLAN[S.idx].tl.split(",")[0]); setTimeout(renderTasbih, 900); }
+    return;
+  }
+  if(done && n % T === 0){ if(navigator.vibrate) navigator.vibrate([40, 60, 40]); flash("🎁", L("Bonus-Runde geschafft!", "Bonus round done!"), `${n}× ${d.tl.split(",")[0]}`); }
+  else if(navigator.vibrate) navigator.vibrate(12);
+}
+$("#tbV").addEventListener("click", e => {
+  if(e.target.closest("#tzTap")){ count(1); return; }
+  const b = e.target.closest("[data-tzb]"); if(b){ S.bonus = b.dataset.tzb; save(); renderTasbih(); const t = $("#tzTap"); if(t) t.scrollIntoView({block:"center", behavior:"smooth"}); return; }
+  const t = e.target.closest("[data-tz]"); if(!t) return;
+  const d = cur(); if(!d) return; const bag = planDone() ? S.b : S.c;
+  if(t.dataset.tz === "undo") count(-1);
+  if(t.dataset.tz === "reset"){ bag[d.id] = 0; save(); renderTasbih(); }
+  if(t.dataset.tz === "skip"){ S.idx++; save(); renderTasbih(); }
+});
+})();
+
 /* ---------- init ---------- */
 localize(); applyTheme(); applyPrefs(); renderHome(); renderGebet(); renderQuran(); renderQuiz(); renderKids(); renderNames();
 document.querySelectorAll("[data-learn]").forEach(b => b.setAttribute("aria-pressed", b.dataset.learn === learnSub));
