@@ -8023,7 +8023,7 @@ const today = () => dayKey(new Date());
 /* ---------- 1. Punkte-Tagebuch (lm-pts) ---------- */
 const PTS = "lm-pts", SAL = "lm-salah";
 const CAP = {t:50, q:40, g:50};
-const calc = d => (d.s || 0) + Math.min(CAP.t, Math.floor((d.t || 0) / 10)) + 20 * (d.p ? 1 : 0) + 5 * (d.d || 0) + Math.min(CAP.q, 2 * (d.q || 0)) + Math.min(CAP.g, 5 * (d.g || 0)) + 10 * (d.l || 0);
+const calc = d => (d.s || 0) + Math.min(30, d.r || 0) + Math.min(CAP.t, Math.floor((d.t || 0) / 10)) + 20 * (d.p ? 1 : 0) + 5 * (d.d || 0) + Math.min(CAP.q, 2 * (d.q || 0)) + Math.min(CAP.g, 5 * (d.g || 0)) + 10 * (d.l || 0);
 let busy = false;
 function refresh(field, inc){
   if(busy) return 0; busy = true;
@@ -8400,7 +8400,8 @@ function rulesHTML(){
     ["❓", L("Richtige Quiz-Antwort", "Correct quiz answer"), L("2 Punkte", "2 points"), L(`bis ${CAP.q}/Tag`, `up to ${CAP.q}/day`)],
     ["🎮", L("Spiel geschafft", "Game finished"), L("5 Punkte", "5 points"), L(`bis ${CAP.g}/Tag`, `up to ${CAP.g}/day`)],
     ["🌸", L("Gute Tat im Garten", "Good deed in the garden"), L("5 Punkte", "5 points"), ""],
-    ["📖", L("Hadith oder Sure gelernt", "Hadith or sūra learned"), L("10 Punkte", "10 points"), ""]];
+    ["📖", L("Hadith oder Sure gelernt", "Hadith or sūra learned"), L("10 Punkte", "10 points"), ""],
+    ["🎙️", L("Sure vorgelesen und geprüft", "Sūra recited and checked"), L("bis 10 Punkte", "up to 10 points"), L("fehlerfrei 10 · fast fehlerfrei 5 · geübt 2 · bis 30/Tag", "flawless 10 · nearly 5 · practised 2 · up to 30/day")]];
   return `<div class="ch-card2"><h4>✨ ${L("So sammelst du Punkte", "How to earn points")}</h4><ul class="ch-rules">${R.map(r => `<li><span class="i">${r[0]}</span><span>${r[1]}${r[3] ? `<br><small style="color:var(--muted);font-weight:600">${r[3]}</small>` : ""}</span><b>${r[2]}</b></li>`).join("")}</ul>
     <p class="mut" style="margin-top:10px">${L("Die Woche beginnt am Montag. Wichtiger als Punkte ist die Absicht: alles für Allah 🤍", "The week starts on Monday. More important than points is the intention: everything for Allah 🤍")}</p></div>`;
 }
@@ -8629,7 +8630,7 @@ async function startup(){
 }
 setTimeout(startup, 2500);
 document.addEventListener("visibilitychange", () => { if(document.visibilityState === "visible" && ready()) setTimeout(() => { if(document.getElementById("v-challenge").classList.contains("active")) load(); else startup(); }, 1500); });
-window.lmChallenge = {refresh, open: () => setTab("challenge")};
+window.lmChallenge = {refresh, open: () => setTab("challenge"), add: (f, n) => { const d = refresh(f, n); gain(d, f === "r" ? "🎙️" : "⭐"); return d; }};
 })();
 
 /* =================== p34: Qur'an – letzter Ḥizb komplett (al-Aʿlā bis an-Nās) =================== */
@@ -9738,6 +9739,270 @@ st.textContent = `.hz-card{position:relative;display:grid;grid-template-columns:
 .hz-bar{grid-column:2 / 4;height:8px;border-radius:9px;background:var(--fill);overflow:hidden}
 .hz-bar i{display:block;height:100%;border-radius:9px;background:var(--grad)}`;
 document.head.appendChild(st);
+})();
+
+/* =================== p35: Qur'an – „Ich lese vor“: Rezitation prüfen (Wörter & Reihenfolge) =================== */
+(function(){
+const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+const EN = () => lang === "en";
+const esc2 = s => String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+
+/* ---------- Arabisch vergleichbar machen ---------- */
+function norm(w){
+  return String(w)
+    .replace(/[ؐ-ًؚ-ٰٟۖ-ۭـ]/g, "")   // Vokalzeichen, Tatwīl, Qur'an-Zeichen
+    .replace(/[آأإٱٲٳ]/g, "ا")              // Alif-Formen
+    .replace(/ى/g, "ي").replace(/ة/g, "ه")                 // ى→ي, ة→ه
+    .replace(/ؤ/g, "و").replace(/ئ/g, "ي")                 // ؤ→و, ئ→ي
+    .replace(/ء/g, "")                                                     // einzelnes Hamza
+    .replace(/[^ء-ي]/g, "");
+}
+function lev(a, b){
+  if(a === b) return 0; if(!a.length) return b.length; if(!b.length) return a.length;
+  let prev = Array.from({length: b.length + 1}, (_, i) => i);
+  for(let i = 1; i <= a.length; i++){
+    const cur = [i];
+    for(let j = 1; j <= b.length; j++) cur[j] = Math.min(prev[j] + 1, cur[j - 1] + 1, prev[j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1));
+    prev = cur;
+  }
+  return prev[b.length];
+}
+/* zwei Wörter gelten als gleich, wenn sie fast gleich geschrieben sind */
+function same(h, e){
+  if(!h || !e) return false;
+  if(h === e) return true;
+  const strip = x => x.replace(/^(و|ف)(?=.{3,})/, "");                       // „wa-/fa-“ verschluckt
+  if(strip(h) === strip(e)) return true;
+  const d = lev(h, e), L2 = Math.max(h.length, e.length);
+  return L2 <= 3 ? d <= 1 && Math.min(h.length, e.length) >= 2 : d / L2 <= 0.34;
+}
+/* Gehörtes an den erwarteten Text anlegen. Ergebnis je Wort: ok / skip / pending */
+function align(exp, heard){
+  const st = exp.map(() => "pending"); let p = 0, wrong = [], i = 0;
+  while(i < heard.length && p < exp.length){
+    const h = heard[i];
+    if(same(h, exp[p])){ st[p++] = "ok"; i++; continue; }
+    if(p + 1 < exp.length && same(h, exp[p] + exp[p + 1])){ st[p++] = "ok"; st[p++] = "ok"; i++; continue; }        // zusammengezogen
+    if(i + 1 < heard.length && same(h + heard[i + 1], exp[p])){ st[p++] = "ok"; i += 2; continue; }                // getrennt gehört
+    let jump = 0;
+    for(let k = 1; k <= 2 && p + k < exp.length; k++) if(same(h, exp[p + k])){ jump = k; break; }
+    if(jump){ for(let k = 0; k < jump; k++) st[p + k] = "skip"; p += jump; st[p++] = "ok"; i++; continue; }
+    wrong.push({at: p, w: h}); i++;                                          // falsches oder überflüssiges Wort
+  }
+  return {st, p, wrong};
+}
+const BASMALA = ["بسم", "الله", "الرحمن", "الرحيم"];
+const ISTIADHA = ["اعوذ", "بالله", "من", "الشيطان", "الرجيم"];
+
+/* ---------- Töne ---------- */
+let AC = null;
+function tone(kind){
+  try{
+    AC = AC || new (window.AudioContext || window.webkitAudioContext)();
+    const t = AC.currentTime, o = AC.createOscillator(), g = AC.createGain();
+    o.connect(g); g.connect(AC.destination);
+    if(kind === "err"){ o.type = "square"; o.frequency.setValueAtTime(330, t); o.frequency.setValueAtTime(220, t + .12); g.gain.setValueAtTime(.0001, t); g.gain.exponentialRampToValueAtTime(.18, t + .02); g.gain.exponentialRampToValueAtTime(.0001, t + .3); o.start(t); o.stop(t + .32); }
+    else { o.type = "sine"; o.frequency.setValueAtTime(880, t); o.frequency.setValueAtTime(1320, t + .09); g.gain.setValueAtTime(.0001, t); g.gain.exponentialRampToValueAtTime(.15, t + .02); g.gain.exponentialRampToValueAtTime(.0001, t + .35); o.start(t); o.stop(t + .36); }
+  }catch(e){}
+}
+
+/* ---------- Ablauf ---------- */
+let R = null;   // laufende Prüfung
+function start(s){
+  if(!SR){ unsupported(); return; }
+  const verses = s.a.map(v => v[0].split(" ").filter(w => norm(w)));
+  const flat = [], vOf = [];
+  verses.forEach((ws, vi) => ws.forEach(w => { flat.push(norm(w)); vOf.push(vi); }));
+  R = {s, verses, flat, vOf, finals: [], interim: "", errs: 0, lastWrong: 0, lastSkip: 0, shown: 0, done: false, stopped: false, hide: lsGet("lm-rec-hide", true), vDone: -1, verseErr: {}, t0: Date.now()};
+  tone("ok");
+  open(); listen();
+}
+const lsGet = (k, d) => { try{ const v = localStorage.getItem(k); return v == null ? d : JSON.parse(v); }catch(e){ return d; } };
+const lsSet = (k, v) => { try{ localStorage.setItem(k, JSON.stringify(v)); }catch(e){} };
+let rec = null;
+function listen(){
+  rec = new SR(); rec.lang = "ar-SA"; rec.continuous = true; rec.interimResults = true; rec.maxAlternatives = 1;
+  rec.onresult = e => {
+    let interim = "";
+    for(let i = e.resultIndex; i < e.results.length; i++){
+      const t = e.results[i][0].transcript;
+      if(e.results[i].isFinal) R.finals.push(t); else interim += " " + t;
+    }
+    R.interim = interim; update();
+  };
+  rec.onerror = e => {
+    if(e.error === "not-allowed" || e.error === "service-not-allowed"){ R.stopped = true; R.err = "mic"; draw(); }
+    else if(e.error === "network"){ R.stopped = true; R.err = "net"; draw(); }
+  };
+  rec.onend = () => { if(R && !R.stopped && !R.done){ try{ rec.start(); }catch(_){ setTimeout(() => { try{ rec.start(); }catch(__){} }, 300); } } else draw(); };
+  try{ rec.start(); R.listening = true; }catch(e){}
+}
+function stop(){ if(R){ R.stopped = true; } try{ rec && rec.stop(); }catch(e){} }
+function heardWords(includeInterim){
+  let w = (R.finals.join(" ") + (includeInterim ? " " + R.interim : "")).split(/\s+/).map(norm).filter(Boolean);
+  const drop = pre => { if(w.length >= 2 && same(w[0], pre[0]) && same(w[1], pre[1])){ let k = 0; while(k < pre.length && k < w.length && same(w[k], pre[k])) k++; w = w.slice(k); } };
+  drop(ISTIADHA); if(R.s.slug !== "al-fatihah") drop(BASMALA);
+  return w;
+}
+function update(){
+  const fin = align(R.flat, heardWords(false));
+  const live = align(R.flat, heardWords(true));
+  R.st = live.st.map((x, i) => fin.st[i] === "skip" ? "skip" : x);
+  R.p = live.p;
+  const nSkip = fin.st.filter(x => x === "skip").length, nWrong = fin.wrong.length;
+  if(nSkip > R.lastSkip || nWrong > R.lastWrong){
+    tone("err"); R.errs += (nSkip - R.lastSkip) + (nWrong - R.lastWrong);
+    fin.wrong.slice(R.lastWrong).forEach(x => { const v = R.vOf[Math.min(x.at, R.vOf.length - 1)]; R.verseErr[v] = (R.verseErr[v] || 0) + 1; });
+    fin.st.forEach((x, i) => { if(x === "skip") R.verseErr[R.vOf[i]] = R.verseErr[R.vOf[i]] || 1; });
+    R.flash = Date.now(); R.wrongWord = nWrong > R.lastWrong ? fin.wrong[fin.wrong.length - 1] : null;
+    if(navigator.vibrate) navigator.vibrate([60, 40, 60]);
+  }
+  R.lastSkip = nSkip; R.lastWrong = nWrong;
+  const cv = R.p >= R.flat.length ? R.verses.length : R.vOf[R.p];
+  if(cv - 1 > R.vDone){ R.vDone = cv - 1; if(!R.done) tone("ok"); }
+  if(fin.p >= R.flat.length && !R.done){ R.done = true; stop(); finish(); }
+  draw();
+}
+
+/* ---------- Oberfläche ---------- */
+const css = `
+.rc-btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;margin-top:8px;border:0;border-radius:18px;padding:14px;font:inherit;font-size:16.5px;font-weight:800;cursor:pointer;color:#fff;background:linear-gradient(135deg,#1F7A5A,#33B38A);box-shadow:0 10px 22px -10px rgba(31,122,90,.8)}
+.rc-ov{position:fixed;inset:0;z-index:135;display:flex;flex-direction:column;background:var(--bg);color:var(--ink);animation:lmfIn .2s}
+.rc-top{display:flex;align-items:center;gap:10px;padding:calc(12px + env(safe-area-inset-top,0px)) 16px 10px;border-bottom:1px solid var(--sep)}
+.rc-top b{flex:1;font-size:17px}
+.rc-top button{border:0;background:var(--fill);color:var(--ink);border-radius:999px;padding:8px 14px;font:inherit;font-weight:800;cursor:pointer}
+.rc-body{flex:1;overflow:auto;padding:16px 16px 10px;max-width:760px;width:100%;margin:0 auto;box-sizing:border-box}
+.rc-st{display:flex;align-items:center;gap:10px;font-weight:800;font-size:14px;color:var(--muted);margin-bottom:12px}
+.rc-mic{width:14px;height:14px;border-radius:50%;background:#e5675a;box-shadow:0 0 0 0 rgba(229,103,90,.6);animation:rcPulse 1.4s infinite}
+.rc-mic.off{background:var(--muted);animation:none}
+@keyframes rcPulse{0%{box-shadow:0 0 0 0 rgba(229,103,90,.6)}70%{box-shadow:0 0 0 12px rgba(229,103,90,0)}100%{box-shadow:0 0 0 0 rgba(229,103,90,0)}}
+.rc-bar{height:8px;border-radius:9px;background:var(--fill);overflow:hidden;margin-bottom:14px}
+.rc-bar i{display:block;height:100%;background:linear-gradient(90deg,#1F7A5A,#33B38A);transition:width .25s}
+.rc-v{background:var(--surface);border-radius:22px;padding:14px 14px 10px;box-shadow:inset 0 0 0 1px var(--sep);margin-bottom:10px;transition:opacity .2s}
+.rc-v.cur{box-shadow:inset 0 0 0 2px var(--gold)}
+.rc-v.fut{opacity:.5}
+.rc-v.ok{box-shadow:inset 0 0 0 1.5px #33B38A}
+.rc-v .ar{direction:rtl;text-align:right;font-family:"Scheherazade New","Amiri",serif;font-size:30px;line-height:2.1;margin:0}
+.rc-w{display:inline-block;border-radius:10px;padding:0 3px;transition:background .2s,color .2s}
+.rc-w.ok{color:#2EA57A}
+.rc-w.skip{color:#fff;background:#e5675a}
+.rc-w.next{background:var(--gold-soft);box-shadow:inset 0 -3px 0 var(--gold)}
+.rc-w.hid{color:transparent;background:var(--fill);min-width:2.2em;text-shadow:none;user-select:none}
+.rc-w.hid.next{background:var(--gold-soft)}
+.rc-v .meta{display:flex;justify-content:space-between;font-size:12.5px;color:var(--muted);font-weight:700}
+.rc-flash{position:fixed;left:50%;top:calc(70px + env(safe-area-inset-top,0px));transform:translateX(-50%);z-index:140;background:#e5675a;color:#fff;border-radius:16px;padding:10px 16px;font-weight:800;font-size:15px;box-shadow:0 12px 26px -8px rgba(229,103,90,.8);text-align:center;max-width:calc(100% - 32px)}
+.rc-flash span{display:block;font-family:"Scheherazade New",serif;font-size:24px;font-weight:700;direction:rtl}
+.rc-foot{display:flex;gap:8px;padding:10px 16px calc(14px + env(safe-area-inset-bottom,0px));border-top:1px solid var(--sep);max-width:760px;width:100%;margin:0 auto;box-sizing:border-box}
+.rc-foot button{flex:1;border:0;border-radius:16px;padding:13px 8px;font:inherit;font-size:15px;font-weight:800;cursor:pointer;background:var(--fill);color:var(--ink)}
+.rc-foot button.pri{background:linear-gradient(135deg,#1F7A5A,#33B38A);color:#fff}
+.rc-end{text-align:center;padding:10px 4px}
+.rc-end .big{font-size:64px;line-height:1}
+.rc-end h3{font-family:var(--display);font-size:26px;margin:8px 0 4px}
+.rc-end p{margin:4px 0;font-size:15.5px}
+.rc-end .vlist{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin:14px 0}
+.rc-end .vlist span{min-width:34px;padding:6px 8px;border-radius:12px;font-weight:800;font-size:13px;background:rgba(51,179,138,.18);color:#2EA57A}
+.rc-end .vlist span.bad{background:rgba(229,103,90,.18);color:#e5675a}
+.rc-info{background:var(--surface);border-radius:18px;padding:12px 14px;margin-top:12px;font-size:14px;line-height:1.5;color:var(--muted);box-shadow:inset 0 0 0 1px var(--sep)}
+.rc-info b{color:var(--ink)}
+`;
+const st = document.createElement("style"); st.textContent = css; document.head.appendChild(st);
+
+let ov = null, flashEl = null, flashT = 0;
+function open(){
+  if(!ov){ ov = document.createElement("div"); ov.className = "rc-ov"; ov.setAttribute("role", "dialog"); ov.setAttribute("aria-modal", "true"); document.body.appendChild(ov); ov.addEventListener("click", onClick); }
+  document.documentElement.style.overflow = "hidden";
+  draw();
+}
+function close(){ stop(); R = null; if(ov){ ov.remove(); ov = null; } if(flashEl){ flashEl.remove(); flashEl = null; } document.documentElement.style.overflow = ""; }
+function unsupported(){
+  const d = document.createElement("div"); d.className = "ch-pop";
+  d.innerHTML = `<div><div class="vs">🎙️</div><h3>${L("Hier geht das leider nicht", "Not available here")}</h3><p>${L("Dein Browser kann keine Sprache erkennen. Öffne die Web-App in <b>Chrome</b> oder <b>Edge</b> (Computer oder Android) oder in <b>Safari</b> (iPhone).", "Your browser can’t recognise speech. Open the web app in <b>Chrome</b> or <b>Edge</b> (computer or Android) or <b>Safari</b> (iPhone).")}</p><button class="ch-btn">OK</button></div>`;
+  document.body.appendChild(d); d.addEventListener("click", () => d.remove());
+}
+function draw(){
+  if(!ov || !R) return;
+  const s = R.s, st = R.st || R.flat.map(() => "pending");
+  const okN = st.filter(x => x === "ok").length, pct = okN / R.flat.length * 100;
+  const cur = R.p >= R.flat.length ? R.verses.length - 1 : R.vOf[R.p || 0];
+  let body = "";
+  if(R.done){
+    const bad = Object.keys(R.verseErr).length, good = R.verses.length - bad;
+    body = `<div class="rc-end"><div class="big">${R.errs === 0 ? "🌟" : good / R.verses.length >= .8 ? "👏" : "💪"}</div>
+      <h3>${R.errs === 0 ? L("Fehlerfrei – Māschāʾallāh!", "Flawless – Māshāʾallāh!") : L(`${good} von ${R.verses.length} Versen fehlerfrei`, `${good} of ${R.verses.length} verses flawless`)}</h3>
+      <p>${R.errs === 0 ? L(`Du hast ${esc2(s.t)} ohne Fehler vorgelesen.`, `You recited ${esc2(s.t)} without mistakes.`) : L(`${R.errs} ${R.errs === 1 ? "Fehler" : "Fehler"} – übe die roten Verse noch einmal.`, `${R.errs} ${R.errs === 1 ? "mistake" : "mistakes"} – practise the red verses again.`)}</p>
+      ${R.pts ? `<p style="color:var(--gold);font-weight:800">+${R.pts} ${L("Punkte für die Challenge", "points for the challenge")} 🏆</p>` : ""}
+      <div class="vlist">${R.verses.map((_, i) => `<span class="${R.verseErr[i] ? "bad" : ""}">${ayahNo(s, i)}</span>`).join("")}</div>
+      ${R.errs === 0 && !learned.has(s.slug) ? `<button class="ch-btn" data-rc="learned">✓ ${L("Als gelernt markieren", "Mark as learned")}</button>` : ""}
+      <div class="rc-info">${L("Die App prüft, ob die <b>Wörter</b> und ihre <b>Reihenfolge</b> stimmen. Die genaue Aussprache (Tadschwīd) prüft sie nicht – dafür ist ein Lehrer am besten.", "The app checks whether the <b>words</b> and their <b>order</b> are right. It does not check exact pronunciation (tajwīd) – a teacher is best for that.")}</div></div>`;
+  } else if(R.err){
+    body = `<div class="rc-end"><div class="big">🎙️</div><h3>${R.err === "mic" ? L("Kein Zugriff aufs Mikrofon", "No microphone access") : L("Keine Verbindung", "No connection")}</h3>
+      <p>${R.err === "mic" ? L("Bitte das Mikrofon erlauben (Schloss-Symbol neben der Adresse) und nochmal starten. In den Claude-Links ist das Mikrofon gesperrt – nutze die Web-App.", "Please allow the microphone (lock icon next to the address) and start again. The microphone is blocked in the Claude links – use the web app.") : L("Die Spracherkennung braucht Internet. Bitte Verbindung prüfen.", "Speech recognition needs the internet. Please check the connection.")}</p>
+      <p><a href="${(window.lmFam && lmFam.WEBAPP) || "https://pfgx6ny8sn-dev.github.io/-dua-app/"}" target="_blank" rel="noopener" style="color:var(--gold);font-weight:700">${L("Web-App öffnen", "Open web app")}</a></p></div>`;
+  } else {
+    let k = 0;
+    body = `<div class="rc-st"><span class="rc-mic ${R.stopped ? "off" : ""}"></span>${R.stopped ? L("Pausiert", "Paused") : L("Ich höre zu … lies jetzt vor", "Listening … recite now")}<span style="margin-left:auto">${L("Fehler", "Mistakes")}: ${R.errs}</span></div>
+      <div class="rc-bar"><i style="width:${pct}%"></i></div>
+      ${R.p === 0 && !R.finals.length ? `<div class="rc-info" style="margin:0 0 12px">${L("Lies Vers für Vers in deinem Tempo. Richtige Wörter werden <b style=\"color:#2EA57A\">grün</b>. Bei einem Fehler hörst du einen Ton.", "Recite verse by verse at your own pace. Correct words turn <b style=\"color:#2EA57A\">green</b>. You’ll hear a tone if there’s a mistake.")}</div>` : ""}
+      ${R.verses.map((ws, vi) => {
+        const html = ws.map(w => { const i = k++, x = st[i]; const nx = i === R.p; const hid = R.hide && x === "pending";
+          return `<span class="rc-w ${x === "ok" ? "ok" : x === "skip" ? "skip" : ""} ${nx ? "next" : ""} ${hid ? "hid" : ""}">${esc2(w)}</span>`; }).join(" ");
+        const done = vi <= R.vDone;
+        if(vi < cur - 1 || vi > cur + 1) return "";
+        return `<div class="rc-v ${vi === cur ? "cur" : done ? "ok" : "fut"}"><p class="ar" lang="ar">${html} <span style="font-size:20px;color:var(--muted)">﴿${ayahNo(s, vi).toLocaleString("ar-EG")}﴾</span></p><div class="meta"><span>${L("Vers", "Verse")} ${ayahNo(s, vi)}</span><span>${done ? (R.verseErr[vi] ? "⚠️" : "✓") : ""}</span></div></div>`;
+      }).join("")}`;
+  }
+  ov.innerHTML = `<div class="rc-top"><b>🎙️ ${esc2(s.t)}</b><button data-rc="close">${L("Beenden", "Close")}</button></div>
+    <div class="rc-body">${body}</div>
+    ${R.done || R.err ? `<div class="rc-foot"><button data-rc="again" class="pri">↻ ${L("Nochmal", "Again")}</button><button data-rc="close">${L("Fertig", "Done")}</button></div>`
+      : `<div class="rc-foot"><button data-rc="hide">${R.hide ? "👁 " + L("Text zeigen", "Show text") : "🙈 " + L("Text verstecken", "Hide text")}</button><button data-rc="hint">💡 ${L("Tipp", "Hint")}</button><button data-rc="${R.stopped ? "resume" : "pause"}" class="pri">${R.stopped ? "▶ " + L("Weiter", "Resume") : "⏸ " + L("Pause", "Pause")}</button></div>`}`;
+  /* Fehler-Hinweis */
+  if(R.flash && Date.now() - R.flash < 2200 && !R.done){
+    const expIdx = R.wrongWord ? R.wrongWord.at : (R.st || []).lastIndexOf("skip");
+    const v = R.vOf[Math.max(0, Math.min(expIdx, R.flat.length - 1))];
+    const wl = R.verses[v] || [], off = R.vOf.indexOf(v), word = wl[expIdx - off] || "";
+    if(!flashEl){ flashEl = document.createElement("div"); flashEl.className = "rc-flash"; document.body.appendChild(flashEl); }
+    flashEl.innerHTML = `${R.wrongWord ? L("Nicht ganz – richtig ist:", "Not quite – it should be:") : L("Ein Wort fehlt:", "A word is missing:")}<span lang="ar">${esc2(word)}</span>`;
+    clearTimeout(flashT); flashT = setTimeout(() => { if(flashEl){ flashEl.remove(); flashEl = null; } }, 2200);
+  }
+  const c = ov.querySelector(".rc-v.cur"); if(c) c.scrollIntoView({block: "center", behavior: "smooth"});
+}
+function finish(){
+  const bad = Object.keys(R.verseErr).length;
+  let pts = 0;
+  if(window.lmChallenge && lmChallenge.add){ pts = R.errs === 0 ? 10 : (R.verses.length - bad) / R.verses.length >= .8 ? 5 : 2; pts = lmChallenge.add("r", pts) || 0; }
+  R.pts = pts;
+  tone("ok"); if(R.errs === 0 && typeof confetti === "function") confetti();
+  const log = lsGet("lm-rec-log", {}); log[R.s.slug] = {at: Date.now(), errs: R.errs, n: R.verses.length}; lsSet("lm-rec-log", log);
+  draw();
+}
+function onClick(e){
+  const b = e.target.closest("[data-rc]"); if(!b || !R) return;
+  const a = b.dataset.rc;
+  if(a === "close"){ close(); if(typeof renderQuran === "function") renderQuran(); return; }
+  if(a === "again"){ const s = R.s; close(); start(s); return; }
+  if(a === "pause"){ stop(); draw(); return; }
+  if(a === "resume"){ R.stopped = false; R.err = null; listen(); draw(); return; }
+  if(a === "hide"){ R.hide = !R.hide; lsSet("lm-rec-hide", R.hide); draw(); return; }
+  if(a === "hint"){ if(R.p < R.flat.length){ const v = R.vOf[R.p], off = R.vOf.indexOf(v), w = R.verses[v][R.p - off]; if(window.lmFam) lmFam.toast(L("Nächstes Wort: ", "Next word: ") + w); } return; }
+  if(a === "learned"){ learned.add(R.s.slug); store.set("qr-learned", [...learned]); b.remove(); if(window.lmFam) lmFam.toast(L("Māschāʾallāh – als gelernt markiert ✓", "Māshāʾallāh – marked as learned ✓")); return; }
+}
+
+/* ---------- Knopf in der Suren-Ansicht ---------- */
+const _rq = renderQuran;
+renderQuran = function(){
+  _rq.apply(this, arguments);
+  if(!qr.sura) return;
+  const tools = document.querySelector("#qrBody .s-tools"); if(!tools) return;
+  const last = (lsGet("lm-rec-log", {}) || {})[qr.sura];
+  tools.insertAdjacentHTML("afterend", `<button class="rc-btn" data-rcstart>🎙️ ${L("Ich lese vor – prüfen", "I’ll recite – check me")}</button>${last ? `<p class="audio-note" style="margin-top:4px">${L("Zuletzt", "Last time")}: ${last.errs === 0 ? L("fehlerfrei 🌟", "flawless 🌟") : L(`${last.errs} Fehler`, `${last.errs} mistakes`)}</p>` : ""}`);
+};
+document.addEventListener("click", e => {
+  if(!e.target.closest("[data-rcstart]")) return;
+  const s = SURAS.find(x => x.slug === qr.sura); if(!s) return;
+  if(typeof stopQuranAudio === "function") try{ stopQuranAudio(); }catch(_){}
+  start(s);
+});
+window.lmRecite = {norm, same, align};
 })();
 
 /* ---------- init ---------- */
