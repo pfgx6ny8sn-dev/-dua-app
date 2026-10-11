@@ -7514,6 +7514,9 @@ let suspend = false, pushT = 0, metaT = 0, status = fam && fam.code ? "ok" : "lo
 const persistMeta = () => { jset("lmf-mt", mt); jset("lmf-dirty", dirty); };
 const saveFam = () => { jset("lmf-fam", fam); jset("lmf-kids", kids); jset("lmf-active", active); };
 const kidOf = id => kids.find(k => k.id === id);
+const YEAR = new Date().getFullYear();
+const ageOf = k => k && k.by ? YEAR - k.by : null;
+const ageLbl = k => { const a = ageOf(k); return a == null ? "" : (lang === "en" ? a + " yrs" : a + " J."); };
 
 /* ---------- Änderungen mitschreiben ---------- */
 function touch(k){
@@ -7589,7 +7592,7 @@ async function pull(){
 }
 async function refreshFamily(){
   const j = await rpc("get_family", {p_code: fam.code});
-  fam.name = j.name || fam.name || ""; kids = j.kids || [];
+  fam.name = j.name || fam.name || ""; const old = kids; kids = (j.kids || []).map(k => { if(!("by" in k)){ const o = old.find(x => x.id === k.id); if(o && o.by) k.by = o.by; } return k; });
   if(active && !kidOf(active)){ active = kids[0] ? kids[0].id : null; }
   saveFam(); return j;
 }
@@ -7729,6 +7732,8 @@ const head = (t, back) => `<div class="lmf-h">${back ? `<button class="lmf-back"
 const avGrid = sel => `<div class="lmf-av">${AV.map(a => `<button data-f="av" data-av="${a}" aria-pressed="${a === sel}">${a}</button>`).join("")}</div>`;
 function kidForm(k){
   return `<label>${L("Name", "Name")}</label><input id="lmfName" maxlength="30" value="${esc2(k ? k.name : V.name || "")}" placeholder="${L("z. B. Amina", "e.g. Amina")}" autocomplete="off">
+    <label>${L("Alter", "Age")} <span style="color:var(--gold)">*</span></label><input id="lmfAge" inputmode="numeric" maxlength="2" value="${esc2(V.age != null ? V.age : (k && k.by ? YEAR - k.by : ""))}" placeholder="${L("z. B. 7", "e.g. 7")}" autocomplete="off" style="max-width:140px">
+    <p class="mut" style="margin:4px 2px 0">${L("Für faire Punkte in der Challenge – Kleine bekommen mehr pro Aufgabe.", "For fair challenge points – little ones get more per task.")}</p>
     <label>${L("Bild", "Picture")}</label>${avGrid(V.av)}
     <label>${L("PIN (freiwillig, 4 Ziffern)", "PIN (optional, 4 digits)")}</label><input id="lmfPin" inputmode="numeric" maxlength="4" value="${esc2(k ? k.pin || "" : V.pin || "")}" placeholder="– – – –" autocomplete="off">`;
 }
@@ -7770,7 +7775,7 @@ function draw(){
   }
   else if(s === "fam"){
     h = head("👨‍👩‍👧 " + esc2(fam.name || L("Unsere Familie", "Our family"))) + statusHTML() +
-      `<div class="lmf-kids">${kids.map(k => { const w = kidWeek(k); return `<button class="lmf-kid${k.id === active ? " on" : ""}" data-f="pickkid" data-id="${k.id}"><span class="a" style="--kc:${kc(k.id)}">${esc2(k.avatar)}</span><span class="t"><b>${esc2(k.name)}</b><span>${L("Diese Woche", "This week")}: 📿 ${fmtN(w.n)} · ⭐ ${w.s}/7</span></span>${k.id === active ? `<span class="tag">${L("Ich", "Me")}</span>` : ""}</button>`; }).join("")}</div>
+      `<div class="lmf-kids">${kids.map(k => { const w = kidWeek(k); return `<button class="lmf-kid${k.id === active ? " on" : ""}" data-f="pickkid" data-id="${k.id}"><span class="a" style="--kc:${kc(k.id)}">${esc2(k.avatar)}</span><span class="t"><b>${esc2(k.name)}${k.by ? ` <small style="color:var(--muted);font-weight:700">· ${ageLbl(k)}</small>` : ""}</b><span>${L("Diese Woche", "This week")}: 📿 ${fmtN(w.n)} · ⭐ ${w.s}/7</span></span>${k.id === active ? `<span class="tag">${L("Ich", "Me")}</span>` : ""}</button>`; }).join("")}</div>
        <button class="lmf-btn sec" data-f="gate" data-then="addkid">➕ ${L("Kind hinzufügen", "Add child")}</button>
        <button class="lmf-btn sec" data-f="gate" data-then="parent">🔒 ${L("Eltern-Bereich", "Parents’ area")}</button>`;
   }
@@ -7784,7 +7789,7 @@ function draw(){
     h = head("🔒 " + L("Eltern-Bereich", "Parents’ area"), "fam") +
       (fam.code ? `<label>${L("Familien-Code", "Family code")}</label><div class="lmf-code" style="font-size:24px;margin-top:0">${esc2(fam.code)}</div><button class="lmf-btn sec" data-f="copy">📋 ${L("Code kopieren", "Copy code")}</button>` : statusHTML()) +
       `<label>${L("Familienname", "Family name")}</label><div class="lmf-row"><input id="lmfFam" maxlength="40" value="${esc2(fam.name || "")}"><button class="lmf-btn sec" style="margin:0;flex:0 0 auto;width:auto" data-f="rename">${L("Speichern", "Save")}</button></div>
-       <label>${L("Kinder", "Children")}</label><div class="lmf-kids" style="margin-top:0">${kids.map(k => `<button class="lmf-kid" data-f="editkid" data-id="${k.id}"><span class="a" style="--kc:${kc(k.id)}">${esc2(k.avatar)}</span><span class="t"><b>${esc2(k.name)}</b><span>${k.pin ? "🔐 PIN" : L("ohne PIN", "no PIN")}</span></span><span class="ed">${L("Ändern", "Edit")} ›</span></button>`).join("")}</div>
+       <label>${L("Kinder", "Children")}</label><div class="lmf-kids" style="margin-top:0">${kids.map(k => `<button class="lmf-kid" data-f="editkid" data-id="${k.id}"><span class="a" style="--kc:${kc(k.id)}">${esc2(k.avatar)}</span><span class="t"><b>${esc2(k.name)}</b><span>${k.by ? "🎂 " + ageLbl(k) : `<span style="color:#e5675a">⚠️ ${L("Alter fehlt", "Age missing")}</span>`} · ${k.pin ? "🔐 PIN" : L("ohne PIN", "no PIN")}</span></span><span class="ed">${L("Ändern", "Edit")} ›</span></button>`).join("")}</div>
        <button class="lmf-btn sec" data-f="go" data-to="addkid">➕ ${L("Kind hinzufügen", "Add child")}</button>
        <label>${L("Gerät", "Device")}</label>
        <button class="lmf-btn warn" data-f="go" data-to="leave">${L("Dieses Gerät abmelden", "Sign out this device")}</button>
@@ -7796,6 +7801,14 @@ function draw(){
       `<button class="lmf-btn" data-f="savekid">${L("Speichern", "Save")}</button>${V.err ? `<p style="color:#e5675a">${V.err}</p>` : ""}` +
       (k ? (V.confirm ? `<p style="margin-top:16px">${L(`Wirklich löschen? Alle Ergebnisse von <b>${esc2(k.name)}</b> gehen verloren.`, `Really delete? All of <b>${esc2(k.name)}</b>’s results will be lost.`)}</p><div class="lmf-row"><button class="lmf-btn sec" data-f="go" data-to="parent">${L("Nein", "No")}</button><button class="lmf-btn warn" data-f="delkid">${L("Ja, löschen", "Yes, delete")}</button></div>`
                       : (kids.length > 1 ? `<button class="lmf-btn warn" data-f="askdel">${L("Profil löschen", "Delete profile")}</button>` : "")) : "");
+  }
+  else if(s === "agefix"){
+    const k = kidOf(V.id) || kidOf(active);
+    h = head("🎂 " + L(`Wie alt ist ${esc2(k ? k.name : "")}?`, `How old is ${esc2(k ? k.name : "")}?`)) +
+      `<p>${L("Neu: Damit die Punkte in der Challenge fair sind, braucht jedes Profil ein Alter. Bitte von Mama oder Papa ausfüllen.", "New: for fair challenge points every profile needs an age. Please let a parent fill this in.")}</p>
+       <label>${L("Alter", "Age")}</label><input id="lmfAge" inputmode="numeric" maxlength="2" value="${esc2(V.age || "")}" placeholder="${L("z. B. 7", "e.g. 7")}" autocomplete="off" style="max-width:140px">
+       <label>${L("Frage für Eltern", "Question for parents")}: ${V.a} × ${V.b} = ?</label><input id="lmfGate" inputmode="numeric" maxlength="3" autocomplete="off" style="max-width:140px">
+       <button class="lmf-btn" data-f="agesave">${L("Speichern", "Save")}</button>${V.err ? `<p style="color:#e5675a">${V.err}</p>` : ""}`;
   }
   else if(s === "leave"){
     h = head(L("Gerät abmelden?", "Sign out device?"), "parent") +
@@ -7811,15 +7824,15 @@ function draw(){
 }
 function onInput(e){
   if(e.target.id === "lmfJoin"){ const raw = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 12); e.target.value = raw.replace(/(.{4})(?=.)/g, "$1-"); }
-  if(e.target.id === "lmfPin" || e.target.id === "lmfGate") e.target.value = e.target.value.replace(/\D/g, "");
+  if(e.target.id === "lmfPin" || e.target.id === "lmfGate" || e.target.id === "lmfAge") e.target.value = e.target.value.replace(/\D/g, "");
 }
 const val = id => { const el = document.getElementById(id); return el ? el.value.trim() : ""; };
-const keepForm = () => { if(document.getElementById("lmfName")) V.name = val("lmfName"); if(document.getElementById("lmfPin")) V.pin = val("lmfPin"); if(document.getElementById("lmfFam")) V.fam = val("lmfFam"); };
+const keepForm = () => { if(document.getElementById("lmfName")) V.name = val("lmfName"); if(document.getElementById("lmfPin")) V.pin = val("lmfPin"); if(document.getElementById("lmfFam")) V.fam = val("lmfFam"); if(document.getElementById("lmfAge")) V.age = val("lmfAge"); };
 const errText = e => !CLOUD ? "" : (e && e.code === "nf") ? L("Diesen Familien-Code gibt es nicht. Bitte prüfen.", "This family code doesn’t exist. Please check.") : L("Keine Verbindung. Bitte Internet prüfen und nochmal versuchen.", "No connection. Please check the internet and try again.");
 const newId = () => "l" + Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
 
 async function onClick(e){
-  if(e.target === root){ close(); return; }
+  if(e.target === root){ if(V.s !== "agefix") close(); return; }
   const b = e.target.closest("[data-f]"); if(!b) return;
   const f = b.dataset.f;
   if(f === "close") return close();
@@ -7830,12 +7843,17 @@ async function onClick(e){
   if(f === "create"){
     keepForm(); const name = V.name, pin = V.pin;
     if(!name){ V.err = L("Bitte einen Namen eingeben.", "Please enter a name."); draw(); return; }
+    const ageN = parseInt(V.age, 10);
+    if(!(ageN >= 2 && ageN <= 99)){ V.err = L("Bitte das Alter eingeben (2–99).", "Please enter the age (2–99)."); draw(); return; }
+
     if(pin && pin.length !== 4){ V.err = L("Die PIN braucht genau 4 Ziffern.", "The PIN needs exactly 4 digits."); draw(); return; }
     b.disabled = true;
     try{
       let code = null, kid;
       if(CLOUD){ code = (await rpc("create_family", {p_name: V.fam || ""})).code; kid = await rpc("save_kid", {p_code: code, p_id: null, p_name: name, p_avatar: V.av, p_pin: pin || null}); }
       else kid = {id: newId(), name, avatar: V.av, pin: pin || null};
+      kid.by = YEAR - ageN;
+      if(code){ try{ await rpc("set_kid_age", {p_code: code, p_kid: kid.id, p_year: kid.by}); }catch(_){} }
       fam = {name: V.fam || "", code}; kids = [kid]; active = kid.id; ss.set("lmf-picked", kid.id);
       mt = {}; dirty = {}; const now = Date.now(); appKeys().forEach(k => { mt[k] = now; dirty[k] = 1; });
       saveFam(); persistMeta();
@@ -7874,17 +7892,30 @@ async function onClick(e){
     else { V.err = L("Leider falsch.", "Sorry, wrong."); V.a = 3 + Math.floor(Math.random() * 7); V.b = 3 + Math.floor(Math.random() * 7); draw(); }
     return;
   }
-  if(f === "editkid"){ const k = kidOf(b.dataset.id); if(!k) return; V = {s:"editkid", id: k.id, av: k.avatar, from: "parent"}; draw(); return; }
+  if(f === "agesave"){
+    keepForm(); const k = kidOf(V.id) || kidOf(active), ageN = parseInt(V.age, 10);
+    if(!(ageN >= 2 && ageN <= 99)){ V.err = L("Bitte das Alter eingeben (2–99).", "Please enter the age (2–99)."); draw(); return; }
+    if(Number(val("lmfGate")) !== V.a * V.b){ V.err = L("Die Rechenaufgabe stimmt leider nicht.", "The sum isn’t right."); V.a = 3 + Math.floor(Math.random() * 7); V.b = 3 + Math.floor(Math.random() * 7); draw(); return; }
+    k.by = YEAR - ageN; saveFam();
+    if(fam.code){ try{ await rpc("set_kid_age", {p_code: fam.code, p_kid: k.id, p_year: k.by}); }catch(_){} }
+    close(); toast(L("Gespeichert ✓", "Saved ✓")); if(typeof renderStart === "function") renderStart(); return;
+  }
+  if(f === "editkid"){ const k = kidOf(b.dataset.id); if(!k) return; V = {s:"editkid", id: k.id, av: k.avatar, from: "parent", age: k.by ? YEAR - k.by : ""}; draw(); return; }
   if(f === "askdel"){ keepForm(); V.confirm = true; draw(); return; }
   if(f === "savekid"){
     keepForm(); const k = V.s === "editkid" ? kidOf(V.id) : null, name = V.name, pin = V.pin;
     if(!name){ V.err = L("Bitte einen Namen eingeben.", "Please enter a name."); draw(); return; }
+    const ageN = parseInt(V.age, 10);
+    if(!(ageN >= 2 && ageN <= 99)){ V.err = L("Bitte das Alter eingeben (2–99).", "Please enter the age (2–99)."); draw(); return; }
+
     if(pin && pin.length !== 4){ V.err = L("Die PIN braucht genau 4 Ziffern.", "The PIN needs exactly 4 digits."); draw(); return; }
     b.disabled = true;
     try{
       let r;
       if(fam.code) r = await rpc("save_kid", {p_code: fam.code, p_id: k ? k.id : null, p_name: name, p_avatar: V.av, p_pin: pin || null});
       else r = {id: k ? k.id : newId(), name, avatar: V.av, pin: pin || null};
+      r.by = YEAR - ageN;
+      if(fam.code){ try{ await rpc("set_kid_age", {p_code: fam.code, p_kid: r.id, p_year: r.by}); }catch(_){} }
       if(k) Object.assign(k, r); else kids.push(r);
       saveFam(); toast(L("Gespeichert ✓", "Saved ✓"));
       V = {s: V.from === "fam" ? "fam" : "parent"}; draw(); if(typeof renderStart === "function") renderStart();
@@ -7997,9 +8028,16 @@ document.addEventListener("click", e => {
   else open("fam");
 });
 window.lmFamily = {open: () => open(fam ? "fam" : "intro")};
+function askAge(){
+  if(!fam || !active || root || document.querySelector(".lmf-pick")) return;
+  const k = kidOf(active); if(!k || k.by || ss.get("lmf-ageask") === k.id) return;
+  ss.set("lmf-ageask", k.id);
+  open("agefix", {id: k.id, a: 3 + Math.floor(Math.random() * 7), b: 3 + Math.floor(Math.random() * 7)});
+}
+setTimeout(askAge, 3500);
 window.lmFam = {
   get fam(){ return fam; }, get kids(){ return kids; }, get active(){ return active; }, get code(){ return fam && fam.code; },
-  CLOUD, WEBAPP, rpc, push, kidOf, kc, toast, showLoading, hideLoading, esc: esc2, fmtN, AV, KC,
+  CLOUD, WEBAPP, rpc, push, kidOf, kc, toast, ageOf, YEAR, showLoading, hideLoading, esc: esc2, fmtN, AV, KC,
   open: s => open(s || (fam ? "fam" : "intro"))
 };
 
@@ -8150,7 +8188,7 @@ function salHTML(){
     if(x){ cls = "done"; pp = `✓ +${x.p}`; }
     else if(now < a.getTime()){ cls = "soon"; pp = `🔒 ${fmtT(a)}`; }
     else if(now < b.getTime()){ const v = salPts(k, now, SW.w); cls = v === 10 ? "now top" : "now"; pp = L(`Jetzt +${v}`, `Now +${v}`); }
-    else { cls = "miss"; pp = L("Nachholen +1", "Make up +1"); }
+    else { cls = "miss"; pp = L("nachholen<br>+1", "make up<br>+1"); }
     return `<button class="sa-t ${cls}" data-c="sal" data-k="${k}" ${cls === "soon" ? `aria-disabled="true"` : ""}><span class="ar" lang="ar">${SN[k][2]}</span><b>${sName(k)}</b><span class="pp">${pp}</span></button>`;
   }).join("");
   const open = SP.find(k => !done[k] && now >= SW.w[k][0].getTime() && now < SW.w[k][1].getTime());
@@ -8212,11 +8250,19 @@ async function loadBoard(){
   if(me && S.r !== "all") me.s = localSum(S.r);
   if(S.r === "w") saveCache();
 }
-function sorted(){ return (S.board ? S.board.kids.slice() : []).sort((a, b) => (b.s.pt - a.s.pt) || a.name.localeCompare(b.name)); }
-function rankOf(list, id){ let r = 0, last = null; for(let i = 0; i < list.length; i++){ if(list[i].s.pt !== last){ r = i + 1; last = list[i].s.pt; } if(list[i].id === id) return r; } return 0; }
+const FAIR = [[7, 2], [10, 1.5], [13, 1.25], [17, 1], [999, 0.8]];
+const fac = age => { if(age == null) return 1; for(const [a, f] of FAIR) if(age <= a) return f; return 1; };
+const fmtF = f => String(f).replace(".", EN() ? "." : ",");
+function fair(k){
+  if(k.by == null && (k.id === F.active || k.mine)){ const mk = F.kidOf(k.id); if(mk && mk.by) k.by = mk.by; }
+  k.age = k.by ? F.YEAR - k.by : null; k.f = fac(k.age); k.fp = Math.round(((k.s && k.s.pt) || 0) * k.f);
+  return k;
+}
+function sorted(){ return (S.board ? S.board.kids.map(fair) : []).sort((a, b) => (b.fp - a.fp) || a.name.localeCompare(b.name)); }
+function rankOf(list, id){ let r = 0, last = null; for(let i = 0; i < list.length; i++){ if(list[i].fp !== last){ r = i + 1; last = list[i].fp; } if(list[i].id === id) return r; } return 0; }
 function saveCache(){
   const l = sorted(), me = l.find(k => k.id === F.active);
-  lss(cacheKey(), {g: S.board.group.name, n: l.length, rank: me ? rankOf(l, me.id) : 0, pt: me ? me.s.pt : 0, top: l.slice(0, 3).map(k => k.avatar), at: Date.now()});
+  lss(cacheKey(), {g: S.board.group.name, n: l.length, rank: me ? rankOf(l, me.id) : 0, pt: me ? me.fp : 0, top: l.slice(0, 3).map(k => k.avatar), at: Date.now()});
 }
 async function load(force){
   if(!ready()){ draw(); return; }
@@ -8298,6 +8344,10 @@ const css = `
 .ch-card2 h4{margin:0 0 8px;font-size:15px;color:var(--gold);display:flex;align-items:center;gap:8px}
 .ch-card2 p{margin:6px 0;font-size:14.5px;line-height:1.45}
 .ch-card2 p.mut{color:var(--muted);font-size:13.5px}
+.ch-fair{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;text-align:center}
+.ch-fair span{background:var(--fill);border-radius:12px;padding:8px 2px;font-size:11.5px;font-weight:700;color:var(--muted);line-height:1.3}
+.ch-fair b{display:block;font-size:16px;color:var(--gold)}
+.ch-row .tx b .ch-age,.ch-age{display:inline-block!important;width:auto!important;margin-left:4px;font-size:11.5px;font-weight:800;color:var(--muted);background:var(--fill);border-radius:999px;padding:1px 7px;vertical-align:2px}
 .ch-rules{display:grid;gap:6px;margin:4px 0 0;padding:0;list-style:none}
 .ch-rules li{display:flex;align-items:center;gap:10px;font-size:14.5px}
 .ch-rules li .i{width:30px;height:30px;border-radius:10px;background:var(--fill);display:grid;place-items:center;flex:none}
@@ -8358,7 +8408,7 @@ const css = `
 .sa-t:active{transform:scale(.94)}
 .sa-t .ar{font-family:"Scheherazade New",serif;font-size:16px;line-height:1.3;color:var(--muted)}
 .sa-t b{font-size:12.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
-.sa-t .pp{font-size:11px;font-weight:800;white-space:nowrap;color:var(--muted);font-variant-numeric:tabular-nums}
+.sa-t .pp{font-size:10.5px;font-weight:800;white-space:normal;text-align:center;line-height:1.2;color:var(--muted);font-variant-numeric:tabular-nums}
 .sa-t.soon{opacity:.55;cursor:default}
 .sa-t.now{background:var(--gold-soft);box-shadow:inset 0 0 0 2px var(--gold)}
 .sa-t.now .pp,.sa-t.now .ar{color:var(--gold)}
@@ -8403,6 +8453,9 @@ function rulesHTML(){
     ["📖", L("Hadith oder Sure gelernt", "Hadith or sūra learned"), L("10 Punkte", "10 points"), ""],
     ["🎙️", L("Sure vorgelesen und geprüft", "Sūra recited and checked"), L("bis 10 Punkte", "up to 10 points"), L("fehlerfrei 10 · fast fehlerfrei 5 · geübt 2 · bis 30/Tag", "flawless 10 · nearly 5 · practised 2 · up to 30/day")]];
   return `<div class="ch-card2"><h4>✨ ${L("So sammelst du Punkte", "How to earn points")}</h4><ul class="ch-rules">${R.map(r => `<li><span class="i">${r[0]}</span><span>${r[1]}${r[3] ? `<br><small style="color:var(--muted);font-weight:600">${r[3]}</small>` : ""}</span><b>${r[2]}</b></li>`).join("")}</ul>
+    <h4 style="margin-top:16px">⚖️ ${L("Faire Punkte nach Alter", "Fair points by age")}</h4>
+    <p class="mut" style="margin:0 0 8px">${L("Damit Kleine gegen Große eine Chance haben, werden die Punkte in der Rangliste mit dem Alters-Faktor malgenommen:", "So little ones have a chance against older ones, ranking points are multiplied by an age factor:")}</p>
+    <div class="ch-fair">${[[L("bis 7 J.", "up to 7"), 2], [L("8–10 J.", "8–10"), 1.5], [L("11–13 J.", "11–13"), 1.25], [L("14–17 J.", "14–17"), 1], [L("Erwachsene", "Adults"), 0.8]].map(([a, f]) => `<span><b>×${fmtF(f)}</b>${a}</span>`).join("")}</div>
     <p class="mut" style="margin-top:10px">${L("Die Woche beginnt am Montag. Wichtiger als Punkte ist die Absicht: alles für Allah 🤍", "The week starts on Monday. More important than points is the intention: everything for Allah 🤍")}</p></div>`;
 }
 function gateHTML(){
@@ -8416,6 +8469,8 @@ function mgrHTML(){
   const kids = F.kids || [];
   return `<div class="ch-card2"><h4>🔒 ${L("Eltern: Challenge verwalten", "Parents: manage challenge")}</h4>
     ${kids.length ? `<p class="mut">${L("Wer erscheint in der Rangliste?", "Who appears in the ranking?")}</p>${kids.map((k, i) => `<div class="ch-tog"><span class="av" style="--kc:${F.KC[i % F.KC.length]}">${esc(k.avatar)}</span><b>${esc(k.name)}</b><button class="ch-sw" role="switch" aria-checked="${!S.hidden.includes(k.id)}" data-c="tog" data-id="${k.id}" aria-label="${esc(k.name)}"></button></div>`).join("")}` : ""}
+    ${g ? `<p style="margin-top:14px;font-weight:800">✏️ ${L("Gruppenname ändern", "Rename group")}</p>
+    <div style="display:flex;gap:8px;align-items:center"><input class="ch-in" id="chRename" maxlength="40" value="${esc(g.name || "")}" style="margin:0"><button class="ch-btn sec" data-c="rename" style="margin:0;width:auto;flex:none;padding:12px 16px">${L("Speichern", "Save")}</button></div>` : ""}
     <p style="margin-top:14px;font-weight:800">➕ ${L("Neue Gruppe gründen", "Start a new group")}</p>
     <input class="ch-in" id="chNewName" maxlength="40" placeholder="${L("z. B. Cousins & Cousinen", "e.g. Cousins")}" autocomplete="off">
     <button class="ch-btn" data-c="create">${L("Gruppe gründen", "Start group")}</button>
@@ -8430,7 +8485,7 @@ function mgrHTML(){
 }
 function duelHTML(d, byId, seen){
   const a = byId[d.from], b = byId[d.to]; if(!a || !b) return "";
-  const va = a.s[d.kind] || 0, vb = b.s[d.kind] || 0, sum = va + vb;
+  fair(a); fair(b); const va = d.kind === "pt" ? a.fp : (a.s[d.kind] || 0), vb = d.kind === "pt" ? b.fp : (b.s[d.kind] || 0), sum = va + vb;
   const last = S.r === "lw";
   const meA = a.id === F.active, meB = b.id === F.active;
   const isNew = meB && !last && seen && Date.parse(d.at) > seen;
@@ -8476,8 +8531,8 @@ function draw(){
     const byId = {}; list.forEach(k => byId[k.id] = k);
     const meIn = !!byId[F.active];
     const top = list.slice(0, 3);
-    const R = (k, i) => { const rk = rankOf(list, k.id); return `<div class="ch-row${k.id === F.active ? " me" : ""}"><span class="rk">${rk}</span><span class="av" style="--kc:${kcol(k.id)}">${esc(k.avatar)}</span><span class="tx"><b>${esc(k.name)}</b><span>${esc(famLbl(k))} · ${stats(k.s)}</span></span><span class="pt">${fmt(k.s.pt)}<small>${L("Punkte", "points")}</small></span>${!k.mine && meIn && S.r !== "lw" ? `<button class="ch-vs" data-c="vs" data-id="${k.id}" aria-label="${L(`${k.name} herausfordern`, `Challenge ${k.name}`)}">⚔️</button>` : ""}</div>`; };
-    const pod = top.length >= 2 ? `<div class="ch-pod">${[top[1], top[0], top[2]].map(k => { if(!k) return `<div class="c"></div>`; const rk = rankOf(list, k.id); return `<div class="c r${Math.min(3, rk)}${k.id === F.active ? " me" : ""}"><span class="av" style="--kc:${kcol(k.id)}">${esc(k.avatar)}</span><span class="pn">${esc(k.name)}</span><span class="fm">${esc(famLbl(k))}</span><span class="pt">${fmt(k.s.pt)}</span><span class="blk">${rk}</span></div>`; }).join("")}</div>` : "";
+    const R = (k, i) => { const rk = rankOf(list, k.id); return `<div class="ch-row${k.id === F.active ? " me" : ""}"><span class="rk">${rk}</span><span class="av" style="--kc:${kcol(k.id)}">${esc(k.avatar)}</span><span class="tx"><b>${esc(k.name)}${k.age != null ? ` <span class="ch-age">${k.age} ${L("J.", "yrs")}</span>` : ""}</b><span>${esc(famLbl(k))} · ${stats(k.s)}</span></span><span class="pt">${fmt(k.fp)}<small>${k.f !== 1 ? `${fmt(k.s.pt)} × ${fmtF(k.f)}` : L("Punkte", "points")}</small></span>${!k.mine && meIn && S.r !== "lw" ? `<button class="ch-vs" data-c="vs" data-id="${k.id}" aria-label="${L(`${k.name} herausfordern`, `Challenge ${k.name}`)}">⚔️</button>` : ""}</div>`; };
+    const pod = top.length >= 2 ? `<div class="ch-pod">${[top[1], top[0], top[2]].map(k => { if(!k) return `<div class="c"></div>`; const rk = rankOf(list, k.id); return `<div class="c r${Math.min(3, rk)}${k.id === F.active ? " me" : ""}"><span class="av" style="--kc:${kcol(k.id)}">${esc(k.avatar)}</span><span class="pn">${esc(k.name)}</span><span class="fm">${esc(famLbl(k))}</span><span class="pt">${fmt(k.fp)}</span><span class="blk">${rk}</span></div>`; }).join("")}</div>` : "";
     const seen = lsj(seenKey(), 0);
     const duels = (S.board && S.board.duels || []).map(d => duelHTML(d, byId, seen)).filter(Boolean);
     const me = byId[F.active], myRank = me ? rankOf(list, me.id) : 0;
@@ -8557,6 +8612,13 @@ document.getElementById("chV").addEventListener("click", async e => {
   if(c === "mgrx"){ S.mgr = false; S.confirmLeave = false; draw(); return; }
   if(c === "askleave"){ S.confirmLeave = true; draw(); return; }
   if(c === "leavex"){ S.confirmLeave = false; draw(); return; }
+  if(c === "rename"){
+    const n = val("chRename"); if(!n){ S.mErr = L("Bitte einen Namen eingeben.", "Please enter a name."); draw(); return; }
+    b.disabled = true; S.mErr = null;
+    try{ await F.rpc("rename_group", {p_code: F.code, p_group: S.gid, p_name: n}); const g = S.groups.find(x => x.id === S.gid); if(g) g.name = n; if(S.board && S.board.group) S.board.group.name = n; F.toast(L("Gruppenname geändert ✓", "Group renamed ✓")); draw(); }
+    catch(err){ S.mErr = errMsg(err); draw(); }
+    return;
+  }
   if(c === "create" || c === "join" || c === "leave" || c === "tog"){
     b.disabled = true; S.mErr = null;
     try{
