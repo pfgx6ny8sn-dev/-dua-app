@@ -5962,6 +5962,9 @@ const css = `
 .lm-nav.p{left:8px}.lm-nav.n{right:8px}
 .lm-re{position:absolute;left:10px;bottom:10px;z-index:2;border:0;border-radius:999px;background:rgba(255,255,255,.92);color:#13302F;font-weight:700;font-size:13px;padding:6px 12px 6px 9px;display:flex;align-items:center;gap:5px;cursor:pointer;box-shadow:0 4px 12px rgba(0,0,0,.25)}
 .lm-re svg{width:15px;height:15px}
+.lm-snd{position:absolute;left:10px;top:10px;z-index:2;width:38px;height:38px;border-radius:50%;border:0;background:rgba(255,255,255,.92);color:#13302F;display:grid;place-items:center;cursor:pointer;box-shadow:0 4px 12px rgba(0,0,0,.25)}
+.lm-snd svg{width:20px;height:20px}
+.lm-snd[aria-pressed="false"]{background:rgba(255,255,255,.35);color:#fff}
 .lm-strip{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;padding:12px 14px 4px;scroll-snap-type:x proximity}
 .lm-strip::-webkit-scrollbar{display:none}
 .lm-strip button{flex:none;scroll-snap-align:center;position:relative;width:58px;height:62px;border-radius:16px;border:0;background:var(--fill);cursor:pointer;padding:2px;transition:transform .2s,background .2s}
@@ -6177,26 +6180,62 @@ function tween(toP, toEx, d, my){
   });
 }
 const wait = (ms, my) => new Promise(r => setTimeout(r, reduceMotion ? 0 : ms));
+/* ---------- Ton: Gebetsworte (Sprecher) + al-Fātiḥa von Scheich Yāsir ad-Dausarī ---------- */
+let soundOn = store.get("lm-gebet-sound", true);
+const aud = new Audio(); aud.preload = "auto";
+const CLIP = {akbar:"akbar", azim:"azim", samia:"samia", rabbana:"rabbana", ala:"ala", ighfir:"ighfir", tahiyyat:"tashahhud", salawat:"salawat", salamR:"salam", salamL:"salam"};
+const FATIHA = STEPS[1].r.ar.split(/\s*﴿[^﴾]*﴾\s*/).filter(Boolean);
+const FATIHA_TL = STEPS[1].r.tl.split(/\.\s*/).filter(Boolean);
+const SILENT = "data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQAAAAA=";
+let unlocked = false;
+function unlock(){ if(unlocked) return; unlocked = true; try{ aud.muted = true; aud.src = SILENT; const pr = aud.play(); if(pr) pr.then(() => { aud.pause(); aud.muted = false; }).catch(() => { aud.muted = false; }); }catch(e){ aud.muted = false; } }
+function stopAudio(){ try{ aud.pause(); }catch(e){} }
+function playUrl(url, my){
+  return new Promise(res => {
+    if(!soundOn || my !== token) return res();
+    let done = false; const fin = () => { if(done) return; done = true; clearInterval(iv); clearTimeout(to); aud.onended = aud.onerror = null; res(); };
+    const iv = setInterval(() => { if(my !== token || !soundOn){ stopAudio(); fin(); } }, 200);
+    const to = setTimeout(fin, 45000);
+    aud.onended = fin; aud.onerror = fin; aud.muted = false; aud.src = url;
+    const pr = aud.play(); if(pr) pr.catch(fin);
+  });
+}
+async function speak(k, my){
+  if(!soundOn) return;
+  if(k === "fatiha"){
+    for(let a = 0; a < 7; a++){
+      if(my !== token || !soundOn) return;
+      const b = document.getElementById("lmBub");
+      if(b){ b.innerHTML = `<span class="a" lang="ar">${FATIHA[a] || ""}</span><span class="n">${a + 1}/7</span>`; b.classList.remove("off"); }
+      await playUrl(`https://everyayah.com/data/Yasser_Ad-Dussary_128kbps/00100${a + 1}.mp3`, my);
+    }
+    return;
+  }
+  if(CLIP[k]) await playUrl(`audio/gebet/${CLIP[k]}.mp3`, my);
+}
 async function play(i, fromPrev){
   const my = ++token, s = SEQ[i];
-  bubble(null);
+  stopAudio(); bubble(null);
   if(reduceMotion){
     const last = s.ph[s.ph.length - 1];
     let ex = Object.assign({}, DEF_EX, s.pex || {}); s.ph.forEach(p => Object.assign(ex, p.ex || {}));
     const sayK = [...s.ph].reverse().find(p => p.say);
-    curPol = toPol(resolve(last.to)); curEx = ex; paint(); bubble(sayK && sayK.say); return;
+    curPol = toPol(resolve(last.to)); curEx = ex; paint(); bubble(sayK && sayK.say);
+    for(const p of s.ph) if(p.say){ await speak(p.say, my); if(my !== token) return; }
+    return;
   }
   await tween(s.pre, Object.assign({}, DEF_EX, s.pex || {}), fromPrev ? 350 : 450, my);
   if(my !== token) return;
   await wait(250, my);
+  let pending = null;
   for(const p of s.ph){
     if(my !== token) return;
-    if(p.say) bubble(p.say);
+    if(p.say){ if(pending) await pending; if(my !== token) return; bubble(p.say); pending = speak(p.say, my); }
     await tween(p.to, p.ex, p.d, my);
     if(p.h) await wait(p.h, my);
   }
 }
-
+const sndIcon = () => soundOn ? '<svg viewBox="0 0 24 24"><path d="M4 9v6h4l5 4V5L8 9H4z" fill="currentColor"/><path d="M16 8.5a5 5 0 0 1 0 7M18.5 6a8.5 8.5 0 0 1 0 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>' : '<svg viewBox="0 0 24 24"><path d="M4 9v6h4l5 4V5L8 9H4z" fill="currentColor"/><path d="M16 9l5 6M21 9l-5 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>';
 /* ---------- Namen der Schritte & Duas ---------- */
 const STEP_AR = ["تَكْبِيرَةُ الإِحْرَامِ","القِيَامُ وَالفَاتِحَةُ","الرُّكُوعُ","الاِعْتِدَالُ","السُّجُودُ","الجِلْسَةُ","السَّجْدَةُ الثَّانِيَةُ","التَّشَهُّدُ","الصَّلَاةُ عَلَى النَّبِيِّ ﷺ","التَّسْلِيمُ"];
 const DN = {
@@ -6267,6 +6306,7 @@ renderGebet = function(){
         <div class="lm-bub off" id="lmBub" aria-live="polite"></div>
         <button class="lm-nav p" data-lm="-1" aria-label="${U.prev}">‹</button>
         <button class="lm-nav n" data-lm="1" aria-label="${U.next}">›</button>
+        <button class="lm-snd" data-lm="snd" aria-label="${EN() ? "Sound on/off" : "Ton an/aus"}" aria-pressed="${soundOn}">${sndIcon()}</button>
         <button class="lm-re" data-lm="re"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg>${U.again}</button>
       </div>
       <div class="lm-strip" id="lmStrip" role="tablist">${STEPS.map((x, i) => `<button role="tab" data-lmgo="${i}" aria-label="${U.step} ${i+1}: ${x[lang].n}"><i>${i+1}</i>${drawFig(x.fig)}</button>`).join("")}</div>
@@ -6290,15 +6330,19 @@ function go(d){ const n = gStep + d; if(n < 0 || n >= STEPS.length) return; show
 $("#gBody").addEventListener("click", e => {
   if(gTab !== 2) return;
   const b = e.target.closest("[data-lm]");
-  if(b){ e.stopPropagation(); const v = b.dataset.lm; if(v === "re") play(gStep, false); else go(+v); return; }
+  unlock();
+  if(b){ e.stopPropagation(); const v = b.dataset.lm;
+    if(v === "snd"){ soundOn = !soundOn; store.set("lm-gebet-sound", soundOn); b.innerHTML = sndIcon(); b.setAttribute("aria-pressed", soundOn); if(!soundOn) stopAudio(); else play(gStep, false); return; }
+    if(v === "re") play(gStep, false); else go(+v); return; }
   const s = e.target.closest("[data-lmgo]"); if(s){ const n = +s.dataset.lmgo; show(n, n === gStep + 1); return; }
   if(e.target.closest("#lmStage")) play(gStep, false);
 }, true);
+const _stTab = setTab; setTab = function(id){ if(id !== "gebet"){ token++; stopAudio(); } _stTab(id); };
 let sx = null, sy = null;
 $("#gBody").addEventListener("touchstart", e => { if(gTab === 2 && e.target.closest("#lmStage")){ sx = e.touches[0].clientX; sy = e.touches[0].clientY; } }, {passive:true});
 $("#gBody").addEventListener("touchend", e => {
   if(sx === null) return; const dx = e.changedTouches[0].clientX - sx, dy = e.changedTouches[0].clientY - sy; sx = null;
-  if(Math.abs(dx) > 70 && Math.abs(dx) > 1.8 * Math.abs(dy)){ e.preventDefault(); go(dx < 0 ? 1 : -1); }
+  if(Math.abs(dx) > 70 && Math.abs(dx) > 1.8 * Math.abs(dy)){ e.preventDefault(); unlock(); go(dx < 0 ? 1 : -1); }
 });
 $("#gBody").addEventListener("keydown", e => {
   if(gTab !== 2) return;
@@ -6476,8 +6520,8 @@ const HERO = {
   "v-videos":{ar:"فِيدْيُو", ic:"🎬", g:["#1E4A86","#4C8BE0"]}
 };
 function heroize(){
-  document.querySelectorAll("main .view:not(#v-home) .ltitle:not([data-lm]):not([style])").forEach(h => {
-    const v = h.closest(".view"); const c = HERO[v && v.id]; h.dataset.lm = "1"; if(!c) return;
+  document.querySelectorAll("main .view:not(#v-home) .ltitle:not([data-lmh]):not([style])").forEach(h => {
+    const v = h.closest(".view"); const c = HERO[v && v.id]; h.dataset.lmh = "1"; if(!c) return;
     const box = document.createElement("div"); box.className = "lm-hd"; box.style.setProperty("--g1", c.g[0]); box.style.setProperty("--g2", c.g[1]);
     box.innerHTML = `<svg class="orn" aria-hidden="true"><rect width="100%" height="100%" fill="url(#zp)"/></svg><div class="lm-hd-tx"><span class="lm-hd-ar" lang="ar">${c.ar}</span></div><span class="lm-hd-ic" aria-hidden="true">${c.ic}</span>`;
     const anchor = h.closest("#duaHome .hero") || h;
