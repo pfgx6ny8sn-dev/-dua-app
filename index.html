@@ -10356,6 +10356,21 @@ const css = `
 .wr-help{background:var(--surface);border-radius:16px;padding:12px 14px;margin:0 0 12px;font-size:14px;line-height:1.5;box-shadow:inset 0 0 0 1px var(--sep)}
 .wr-help b{color:var(--gold)}
 .wr-help ol{margin:6px 0 0;padding-left:20px}
+.wr-boxes{display:flex;flex-wrap:wrap;flex-direction:row;direction:rtl;justify-content:flex-start;gap:8px;margin:6px 0 4px}
+.wr-box{min-width:64px;min-height:54px;padding:4px 10px;border-radius:14px;background:var(--fill);box-shadow:inset 0 0 0 2px var(--sep);display:flex;align-items:center;justify-content:center;font-family:"Scheherazade New","Amiri",serif;font-size:26px;line-height:1.5;direction:rtl;color:var(--ink);transition:background .2s,box-shadow .2s}
+.wr-box.fill{box-shadow:inset 0 0 0 2px var(--gold);background:var(--gold-soft)}
+.wr-box.ok{box-shadow:inset 0 0 0 2px #33B38A;background:rgba(51,179,138,.16);color:#2EA57A}
+.wr-box.bad{box-shadow:inset 0 0 0 2px #e5675a;background:rgba(229,103,90,.16);color:#e5675a;animation:rcShake .45s}
+.wr-box.tip{box-shadow:inset 0 0 0 2px var(--gold);color:var(--gold)}
+.wr-box .n{font-family:var(--font,inherit);font-size:11px;font-weight:800;color:var(--muted);opacity:.7}
+.wr-extra{font-size:13px;font-weight:700;color:#e5675a;margin:2px 2px 0}
+.wr-cur{background:var(--surface);border-radius:22px;padding:14px;box-shadow:inset 0 0 0 2px var(--gold);margin-bottom:10px}
+.wr-cur .hd{display:flex;justify-content:space-between;font-size:13px;font-weight:800;color:var(--muted);margin-bottom:4px}
+.wr-cur .mean{font-size:13.5px;color:var(--muted);margin:8px 2px 0}
+.wr-res{font-size:14px;font-weight:800;margin:8px 2px 0}
+.wr-res.ok{color:#2EA57A}.wr-res.bad{color:#e5675a}
+.wr-done{opacity:.75}
+.wr-in .chk{background:linear-gradient(135deg,#1F7A5A,#33B38A);color:#fff}
 .qx-actions .wr-btn{grid-column:1 / -1;border:0;background:linear-gradient(135deg,#5B4BC4,#8A6FE0);color:#fff;box-shadow:0 10px 22px -10px rgba(91,75,196,.8);cursor:pointer;font:inherit}
 `;
 const st = document.createElement("style"); st.textContent = css; document.head.appendChild(st);
@@ -10363,99 +10378,120 @@ const st = document.createElement("style"); st.textContent = css; document.head.
 let W = null, ov = null;
 function start(s){
   const verses = s.a.map(v => v[0].split(" ").filter(w => wn(w)));
-  const flat = [], vOf = [];
-  verses.forEach((ws, vi) => ws.forEach(w => { flat.push(wn(w)); vOf.push(vi); }));
-  W = {s, verses, flat, vOf, p: 0, st: flat.map(() => "pending"), errs: 0, hints: 0, shown: new Set(), verseErr: {}, badAt: -1, wrongTry: false, done: false, help: !lsGet("lm-wr-helped", false)};
+  W = {s, verses, v: 0, res: null, tips: {}, errs: 0, hints: 0, verseErr: {}, tried: {}, done: false, help: !lsGet("lm-wr-helped", false), typed: []};
   open();
 }
 function open(){
   if(!ov){ ov = document.createElement("div"); ov.className = "rc-ov"; ov.setAttribute("role", "dialog"); ov.setAttribute("aria-modal", "true"); document.body.appendChild(ov);
-    ov.addEventListener("click", onClick); ov.addEventListener("input", onInput); ov.addEventListener("keydown", onKey); ov.addEventListener("compositionend", e => onInput({target: e.target})); }
+    ov.addEventListener("click", onClick); ov.addEventListener("input", onInput); ov.addEventListener("keydown", onKey); }
   document.documentElement.style.overflow = "hidden";
   draw(true);
 }
 function close(){ W = null; if(ov){ ov.remove(); ov = null; } document.documentElement.style.overflow = ""; }
-const cur = () => W.p >= W.flat.length ? W.verses.length - 1 : W.vOf[W.p];
-function wordAt(i){ const v = W.vOf[i], off = W.vOf.indexOf(v); return W.verses[v][i - off]; }
-
-function accept(){
-  W.st[W.p] = "ok"; W.badAt = -1;
-  const v = W.vOf[W.p]; W.p++; W.wrongTry = false;
-  if(W.p >= W.flat.length){ W.done = true; finish(); return; }
-  if(W.vOf[W.p] !== v) tone("ok"); else tone("tick");
+const toks = s => String(s || "").split(/\s+/).filter(x => wn(x));
+/* Geschriebene Wörter den erwarteten zuordnen (auch wenn eins fehlt oder zu viel ist) */
+function align(exp, got){
+  const n = exp.length, m = got.length, D = [];
+  for(let i = 0; i <= n; i++){ D.push(new Array(m + 1).fill(0)); D[i][0] = i; }
+  for(let j = 0; j <= m; j++) D[0][j] = j;
+  for(let i = 1; i <= n; i++) for(let j = 1; j <= m; j++)
+    D[i][j] = Math.min(D[i-1][j] + 1, D[i][j-1] + 1, D[i-1][j-1] + (wn(exp[i-1]) === wn(got[j-1]) ? 0 : 1));
+  const out = exp.map(() => ({w: "", ok: false})); let extra = 0, i = n, j = m;
+  while(i > 0 || j > 0){
+    if(i > 0 && j > 0 && D[i][j] === D[i-1][j-1] + (wn(exp[i-1]) === wn(got[j-1]) ? 0 : 1)){ out[i-1] = {w: got[j-1], ok: wn(exp[i-1]) === wn(got[j-1])}; i--; j--; }
+    else if(i > 0 && D[i][j] === D[i-1][j] + 1){ out[i-1] = {w: "", ok: false}; i--; }
+    else { extra++; j--; }
+  }
+  return {out, extra};
+}
+function check(){
+  const inp = ov.querySelector("#wrIn"); if(!inp) return;
+  const exp = W.verses[W.v], got = toks(inp.value);
+  if(!got.length){ inp.focus(); return; }
+  const {out, extra} = align(exp, got);
+  const wrong = out.filter((x, k) => !x.ok && !W.tips[W.v + ":" + k]).length + extra;
+  out.forEach((x, k) => { if(W.tips[W.v + ":" + k] && !x.ok){ x.tip = true; } });
+  W.res = {out, extra};
+  const allOk = out.every((x, k) => x.ok);
+  if(allOk){
+    tone("ok"); W.res.ok = true; draw(false);
+    setTimeout(() => { if(!W || W.done) return; W.v++; W.res = null; const i2 = ov.querySelector("#wrIn"); if(i2) i2.value = "";
+      if(W.v >= W.verses.length){ W.done = true; finish(); } else draw(true); }, 900);
+    return;
+  }
+  if(!W.tried[W.v]){ W.tried[W.v] = 1; W.errs += Math.max(1, wrong); W.verseErr[W.v] = Math.max(1, wrong); }
+  tone("err"); if(navigator.vibrate) navigator.vibrate([60, 40, 60]);
+  draw(false);
 }
 function onInput(e){
-  if(!W || W.done || e.target.id !== "wrIn" || e.isComposing) return;
-  const inp = e.target; inp.classList.remove("bad", "ok");
-  let val = inp.value;
-  if(val && !hasArabic(val) && /[A-Za-z]/.test(val)){ showKbHint(true); }
-  // Wörter, die mit Leerzeichen abgeschlossen sind, nacheinander prüfen
-  let changed = false;
-  while(!W.done){
-    const m = val.match(/^\s*(\S+)(\s+)([\s\S]*)$/);
-    const tokenDone = m ? m[1] : null;
-    const live = !m ? val.trim() : null;
-    if(tokenDone != null){
-      if(wn(tokenDone) === W.flat[W.p]){ accept(); val = m[3]; changed = true; continue; }
-      // falsch geschrieben: Ton, Wort stehen lassen zum Verbessern
-      if(!W.wrongTry){ W.errs++; W.verseErr[W.vOf[W.p]] = (W.verseErr[W.vOf[W.p]] || 0) + 1; W.wrongTry = true; }
-      tone("err"); if(navigator.vibrate) navigator.vibrate([60, 40, 60]);
-      W.badAt = W.p; val = tokenDone; inp.value = val; draw(); inp.classList.add("bad"); setTimeout(() => { if(W){ W.badAt = -1; inp.classList.remove("bad"); } }, 700);
-      return;
-    }
-    if(live && wn(live) === W.flat[W.p] && wn(live).length >= 1){ accept(); val = ""; changed = true; }
-    break;
+  if(!W || W.done || e.target.id !== "wrIn") return;
+  const v = e.target.value;
+  if(v && !hasArabic(v) && /[A-Za-z]/.test(v)) showKbHint();
+  W.res = null; drawBody();
+}
+function onKey(e){ if(!W || e.target.id !== "wrIn") return; if(e.key === "Enter"){ e.preventDefault(); check(); } }
+function showKbHint(){ const k = ov && ov.querySelector(".wr-kb"); if(k) k.innerHTML = `⚠️ ${L("Bitte die <b>arabische</b> Tastatur einschalten (🌐-Taste).", "Please switch to the <b>Arabic</b> keyboard (🌐 key).")}`; }
+function boxesHTML(){
+  const exp = W.verses[W.v], inp = ov && ov.querySelector("#wrIn"), got = toks(inp ? inp.value : "");
+  let cells;
+  if(W.res){
+    cells = exp.map((w, k) => { const r = W.res.out[k], tip = W.tips[W.v + ":" + k];
+      if(r.ok) return `<span class="wr-box ok">${esc2(r.w)}</span>`;
+      if(tip) return `<span class="wr-box tip">${esc2(w)}</span>`;
+      return `<span class="wr-box bad" data-wr="tipk" data-k="${k}">${r.w ? esc2(r.w) : `<span class="n">${k + 1}</span>`}</span>`; });
+  } else {
+    cells = exp.map((w, k) => { const tip = W.tips[W.v + ":" + k], g = got[k];
+      if(g) return `<span class="wr-box fill">${esc2(g)}</span>`;
+      if(tip) return `<span class="wr-box tip">${esc2(w)}</span>`;
+      return `<span class="wr-box" data-wr="tipk" data-k="${k}"><span class="n">${k + 1}</span></span>`; });
   }
-  if(changed){ inp.value = val.replace(/^\s+/, ""); draw(); }
-  else if(/^\s+$/.test(inp.value)) inp.value = "";
+  const over = !W.res && got.length > exp.length ? `<p class="wr-extra">${L(`Zu viele Wörter: Dieser Vers hat ${exp.length}.`, `Too many words: this verse has ${exp.length}.`)}</p>` : "";
+  let res = "";
+  if(W.res){
+    if(W.res.ok) res = `<p class="wr-res ok">✓ ${L("Richtig – Māschāʾallāh!", "Correct – Māshāʾallāh!")}</p>`;
+    else { const n = W.res.out.filter(x => !x.ok).length;
+      res = `<p class="wr-res bad">${L(`${n} ${n === 1 ? "Wort stimmt" : "Wörter stimmen"} noch nicht – verbessere und prüfe nochmal.`, `${n} ${n === 1 ? "word isn’t" : "words aren’t"} right yet – fix and check again.`)}${W.res.extra ? " " + L(`(${W.res.extra} zu viel)`, `(${W.res.extra} extra)`) : ""}</p>`; }
+  }
+  return `<div class="wr-boxes" dir="rtl">${cells.join("")}</div>${over}${res}`;
 }
-function onKey(e){
-  if(!W || e.target.id !== "wrIn") return;
-  if(e.key === "Enter"){ e.preventDefault(); const inp = e.target; if(inp.value.trim()){ inp.value = inp.value.trim() + " "; onInput({target: inp}); } }
-}
-let kbTimer = 0;
-function showKbHint(on){ const k = ov && ov.querySelector(".wr-kb"); if(k){ k.innerHTML = on ? `⚠️ ${L("Bitte die <b>arabische</b> Tastatur einschalten (🌐-Taste).", "Please switch to the <b>Arabic</b> keyboard (🌐 key).")}` : k.innerHTML; } }
-function draw(focus){
-  if(!ov || !W) return;
-  const s = W.s, okN = W.st.filter(x => x === "ok").length, pct = okN / W.flat.length * 100;
-  let body;
+function bodyHTML(){
+  const s = W.s;
   if(W.done){
     const bad = Object.keys(W.verseErr).length, good = W.verses.length - bad, perfect = W.errs === 0 && !W.hints;
-    body = `<div class="rc-end"><div class="big">${perfect ? "🌟" : good / W.verses.length >= .8 ? "👏" : "💪"}</div>
-      <h3>${perfect ? L("Fehlerfrei geschrieben – Māschāʾallāh!", "Written flawlessly – Māshāʾallāh!") : W.errs === 0 ? L("Ohne Fehler – mit kleiner Hilfe 👍", "No mistakes – with a little help 👍") : L(`${good} von ${W.verses.length} Versen fehlerfrei`, `${good} of ${W.verses.length} verses flawless`)}</h3>
-      ${W.errs ? `<p>${L(`${W.errs} Fehler – übe die roten Verse noch einmal.`, `${W.errs} mistakes – practise the red verses again.`)}</p>` : ""}
+    return `<div class="rc-end"><div class="big">${perfect ? "🌟" : good / W.verses.length >= .8 ? "👏" : "💪"}</div>
+      <h3>${perfect ? L("Fehlerfrei geschrieben – Māschāʾallāh!", "Written flawlessly – Māshāʾallāh!") : W.errs === 0 ? L("Ohne Fehler – mit kleiner Hilfe 👍", "No mistakes – with a little help 👍") : L(`${good} von ${W.verses.length} Versen beim ersten Mal richtig`, `${good} of ${W.verses.length} verses right first time`)}</h3>
       ${W.hints ? `<p>💡 ${L(`${W.hints}× Wort gezeigt`, `${W.hints}× word shown`)}</p>` : ""}
       ${W.pts ? `<p style="color:var(--gold);font-weight:800">+${W.pts} ${L("Punkte für die Challenge", "points for the challenge")} 🏆</p>` : ""}
       <div class="vlist">${W.verses.map((_, i) => `<span class="${W.verseErr[i] ? "bad" : ""}">${ayahNo(s, i)}</span>`).join("")}</div>
       <div class="rc-info">${L("Geprüft werden die Buchstaben jedes Wortes. Vokalzeichen (Ḥarakāt) musst du nicht schreiben.", "The letters of every word are checked. You don’t need to write the vowel marks (ḥarakāt).")}</div></div>`;
-  } else {
-    const c = cur(); let k = 0;
-    body = `${W.help ? `<div class="wr-help">✍️ <b>${L("So geht’s", "How it works")}</b>
-        <ol><li>${L("Schreib den Vers aus dem Gedächtnis – Wort für Wort. Vokalzeichen sind nicht nötig.", "Write the verse from memory – word by word. Vowel marks aren’t needed.")}</li>
-        <li>${L("Richtige Wörter erscheinen <b style=\"color:#2EA57A\">grün</b>. Bei einem Fehler kommt ein Ton – verbessere das Wort.", "Correct words appear in <b style=\"color:#2EA57A\">green</b>. A tone means a mistake – fix the word.")}</li>
-        <li>${L("Mit dem Finger schreiben: Tastatur <b>Gboard</b> (Android & iPhone) → Arabisch hinzufügen → Handschrift ✍️ wählen.", "Write with your finger: <b>Gboard</b> keyboard (Android & iPhone) → add Arabic → choose handwriting ✍️.")}</li></ol>
-        <button class="ch-btn sec" data-wr="okhelp" style="margin-top:8px">${L("Verstanden", "Got it")}</button></div>` : ""}
-      <div class="rc-st"><span>${L("Vers", "Verse")} ${ayahNo(s, c)} / ${ayahNo(s, W.verses.length - 1)}</span><span style="margin-left:auto">${L("Fehler", "Mistakes")}: ${W.errs}</span></div>
-      <div class="rc-bar"><i style="width:${pct}%"></i></div>
-      ${W.verses.map((ws, vi) => {
-        const html = ws.map(w => { const i = k++, x = W.st[i], nx = i === W.p, shown = W.shown.has(i);
-          const hid = x !== "ok" && !shown;
-          const cls = [x === "ok" ? "ok" : "", nx ? "next" : "", hid ? "hid" : "", shown && x !== "ok" ? "tip" : "", i === W.badAt ? "bad" : ""].join(" ");
-          return `<span class="rc-w ${cls}" ${hid && nx ? `data-wr="hint"` : ""}>${esc2(w)}</span>`; }).join(" ");
-        if(vi < c - 1 || vi > c + 1) return "";
-        const done = vi < c || W.p >= W.flat.length;
-        return `<div class="rc-v ${vi === c ? "cur" : done ? "ok" : "fut"}"><p class="ar" lang="ar">${html} <span style="font-size:20px;color:var(--muted)">﴿${ayahNo(s, vi).toLocaleString("ar-EG")}﴾</span></p><div class="meta"><span>${esc2(s.a[vi][2])}</span><span>${done ? (W.verseErr[vi] ? "⚠️" : "✓") : ""}</span></div></div>`;
-      }).join("")}`;
   }
+  const v = W.v, pct = v / W.verses.length * 100;
+  const prev = v > 0 ? `<div class="rc-v ok wr-done"><p class="ar" lang="ar">${W.verses[v - 1].map(w => `<span class="rc-w ok">${esc2(w)}</span>`).join(" ")} <span style="font-size:20px;color:var(--muted)">﴿${ayahNo(s, v - 1).toLocaleString("ar-EG")}﴾</span></p></div>` : "";
+  const next = v + 1 < W.verses.length ? `<div class="rc-v fut"><div class="meta"><span>${L("Danach", "Next")}: ${L("Vers", "verse")} ${ayahNo(s, v + 1)} · ${W.verses[v + 1].length} ${L("Wörter", "words")}</span></div></div>` : "";
+  return `${W.help ? `<div class="wr-help">✍️ <b>${L("So geht’s", "How it works")}</b>
+      <ol><li>${L("Schreib den <b>ganzen Vers</b> aus dem Gedächtnis – jedes Kästchen ist ein Wort. Vokalzeichen sind nicht nötig.", "Write the <b>whole verse</b> from memory – each box is one word. Vowel marks aren’t needed.")}</li>
+      <li>${L("Dann auf <b>„✓ Prüfen“</b> (oder Enter). Richtige Wörter werden <b style=\"color:#2EA57A\">grün</b>, falsche <b style=\"color:#e5675a\">rot</b> – mit einem Ton.", "Then tap <b>“✓ Check”</b> (or Enter). Correct words turn <b style=\"color:#2EA57A\">green</b>, wrong ones <b style=\"color:#e5675a\">red</b> – with a tone.")}</li>
+      <li>${L("Weißt du ein Wort nicht? Tippe auf sein Kästchen oder auf „💡“.", "Don’t know a word? Tap its box or “💡”.")}</li>
+      <li>${L("Mit dem Finger schreiben: Tastatur <b>Gboard</b> → Arabisch → Handschrift ✍️.", "Write with your finger: <b>Gboard</b> keyboard → Arabic → handwriting ✍️.")}</li></ol>
+      <button class="ch-btn sec" data-wr="okhelp" style="margin-top:8px">${L("Verstanden", "Got it")}</button></div>` : ""}
+    <div class="rc-st"><span>${L("Vers", "Verse")} ${ayahNo(s, v)} / ${ayahNo(s, W.verses.length - 1)}</span><span style="margin-left:auto">${L("Fehler", "Mistakes")}: ${W.errs}</span></div>
+    <div class="rc-bar"><i style="width:${pct}%"></i></div>
+    ${prev}
+    <div class="wr-cur"><div class="hd"><span>${L("Vers", "Verse")} ${ayahNo(s, v)} · ${W.verses[v].length} ${L("Wörter", "words")}</span><span>﴿${ayahNo(s, v).toLocaleString("ar-EG")}﴾</span></div>
+      <div id="wrBoxes">${boxesHTML()}</div>
+      <p class="mean">💭 ${esc2(s.a[v][2])}</p></div>
+    ${next}`;
+}
+function drawBody(){ const b = ov && ov.querySelector("#wrBoxes"); if(b && !W.done) b.innerHTML = boxesHTML(); }
+function draw(focus){
+  if(!ov || !W) return;
   const bd = ov.querySelector(".rc-body");
-  if(!W.done && ov.querySelector("#wrIn") && bd){ bd.innerHTML = body; const cv0 = bd.querySelector(".rc-v.cur"); if(cv0) cv0.scrollIntoView({block: "nearest"}); return; }
-  ov.innerHTML = `<div class="rc-top"><b>✍️ ${esc2(s.t)}</b><button data-wr="close">${L("Beenden", "Close")}</button></div>
-    ${W.done ? "" : `<div class="wr-in"><input id="wrIn" lang="ar" dir="rtl" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" enterkeyhint="next" placeholder="${L("Hier schreiben …", "Write here …")}" aria-label="${L("Arabisch schreiben", "Write in Arabic")}"><button data-wr="hint">💡 ${L("Wort", "Word")}</button></div><p class="wr-kb">${L("Tipp: Arabische Tastatur oder Gboard-Handschrift ✍️", "Tip: Arabic keyboard or Gboard handwriting ✍️")} · <a data-wr="help">${L("Hilfe", "Help")}</a></p>`}
-    <div class="rc-body">${body}</div>
+  if(!W.done && ov.querySelector("#wrIn") && bd){ bd.innerHTML = bodyHTML(); if(focus) setTimeout(() => { const i = ov && ov.querySelector("#wrIn"); if(i) try{ i.focus({preventScroll: true}); }catch(_){ i.focus(); } }, 30); return; }
+  ov.innerHTML = `<div class="rc-top"><b>✍️ ${esc2(W.s.t)}</b><button data-wr="close">${L("Beenden", "Close")}</button></div>
+    ${W.done ? "" : `<div class="wr-in"><input id="wrIn" lang="ar" dir="rtl" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" enterkeyhint="done" placeholder="${L("Ganzen Vers schreiben …", "Write the whole verse …")}" aria-label="${L("Arabisch schreiben", "Write in Arabic")}"><button data-wr="hint" aria-label="${L("Wort zeigen", "Show word")}">💡</button><button class="chk" data-wr="check">✓ ${L("Prüfen", "Check")}</button></div><p class="wr-kb">${L("Tipp: Arabische Tastatur oder Gboard-Handschrift ✍️", "Tip: Arabic keyboard or Gboard handwriting ✍️")} · <a data-wr="help">${L("Hilfe", "Help")}</a></p>`}
+    <div class="rc-body">${bodyHTML()}</div>
     ${W.done ? `<div class="rc-foot"><button data-wr="again" class="pri">↻ ${L("Nochmal", "Again")}</button><button data-wr="close">${L("Fertig", "Done")}</button></div>` : ""}`;
-  const inp = ov.querySelector("#wrIn");
-  if(inp){ if(focus !== false) setTimeout(() => { try{ inp.focus({preventScroll: true}); }catch(_){ inp.focus(); } }, 30); }
-  const cv = ov.querySelector(".rc-v.cur"); if(cv) cv.scrollIntoView({block: "nearest"});
+  const inp = ov.querySelector("#wrIn"); if(inp && focus !== false) setTimeout(() => { try{ inp.focus({preventScroll: true}); }catch(_){ inp.focus(); } }, 30);
 }
 function finish(){
   const bad = Object.keys(W.verseErr).length; let pts = 0;
@@ -10464,14 +10500,23 @@ function finish(){
   const log = lsGet("lm-wr-log", {}); log[W.s.slug] = {at: Date.now(), errs: W.errs, n: W.verses.length}; lsSet("lm-wr-log", log);
   draw(false);
 }
+function reveal(k){
+  const key = W.v + ":" + k; if(W.tips[key]) return;
+  W.tips[key] = 1; W.hints++; if(W.res && W.res.out[k]) W.res.out[k].tip = true; drawBody();
+}
 function onClick(e){
   const b = e.target.closest("[data-wr]"); if(!b || !W) return;
   const a = b.dataset.wr;
   if(a === "close"){ close(); return; }
   if(a === "again"){ const s = W.s; close(); start(s); return; }
-  if(a === "okhelp"){ W.help = false; lsSet("lm-wr-helped", true); draw(); return; }
-  if(a === "help"){ W.help = !W.help; draw(); return; }
-  if(a === "hint"){ if(W.p < W.flat.length && !W.shown.has(W.p)){ W.shown.add(W.p); W.hints++; } draw(); return; }
+  if(a === "okhelp"){ W.help = false; lsSet("lm-wr-helped", true); draw(true); return; }
+  if(a === "help"){ W.help = !W.help; draw(false); return; }
+  if(a === "check"){ check(); return; }
+  if(a === "tipk"){ reveal(+b.dataset.k); return; }
+  if(a === "hint"){
+    const exp = W.verses[W.v], k = W.res ? W.res.out.findIndex((x, i) => !x.ok && !W.tips[W.v + ":" + i]) : exp.findIndex((_, i) => !W.tips[W.v + ":" + i] && !toks(ov.querySelector("#wrIn").value)[i]);
+    if(k >= 0) reveal(k); return;
+  }
 }
 
 /* Knopf in der Suren-Ansicht */
@@ -10489,7 +10534,7 @@ document.addEventListener("click", e => {
   if(!e.target.closest("[data-wrstart]")) return;
   const s = SURAS.find(x => x.slug === qr.sura); if(s) start(s);
 });
-window.lmWrite = {wn};
+window.lmWrite = {wn, align};
 })();
 
 /* ---------- init ---------- */
