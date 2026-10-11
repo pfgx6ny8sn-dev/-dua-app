@@ -744,6 +744,7 @@ body.film-open{overflow:hidden}
 .pg-hint span:last-child{animation-direction:reverse}
 @keyframes nudge{0%,100%{transform:translateX(0)}50%{transform:translateX(-5px)}}
 @media (prefers-reduced-motion: reduce){*{transition:none!important;animation:none!important}}
+.opt .o-ar{display:flex;flex-direction:column;align-items:flex-start;gap:2px;min-width:0}.opt .o-ar .arabic{font-family:"Scheherazade New",serif;font-size:24px;line-height:1.5;font-weight:400}.opt .o-ar small{font-size:13px;opacity:.75;font-weight:600}
 </style>
 </head>
 <body>
@@ -4067,6 +4068,7 @@ const NAMES = [
 (function(){
   const NEWG = [
    {id:"gebetsworte", type:"choice", title:"Was sagt man im Gebet?", sub:"Die richtigen Worte in jeder Stellung.", color:"#3CC2AE", thumb:()=>drawFig("ruku"), ask:"Was sagst du hier?",
+    oa:{"Allāhu akbar":"اللَّهُ أَكْبَرُ","As-salāmu ʿalaikum":"السَّلَامُ عَلَيْكُمْ","Āmīn":"آمِين","Rabbighfir lī":"رَبِّ اغْفِرْ لِي","Subḥāna rabbiyal-ʿaẓīm":"سُبْحَانَ رَبِّيَ الْعَظِيمِ","Subḥāna rabbiyal-aʿlā":"سُبْحَانَ رَبِّيَ الْأَعْلَى","Samiʿallāhu liman ḥamidah":"سَمِعَ اللَّهُ لِمَنْ حَمِدَهُ","Bismillāh":"بِسْمِ اللَّهِ","Al-ḥamdu lillāh":"الْحَمْدُ لِلَّهِ","At-taḥiyyātu lillāh …":"التَّحِيَّاتُ لِلَّهِ …","Subḥānallāh":"سُبْحَانَ اللَّهِ","As-salāmu ʿalaikum wa raḥmatullāh":"السَّلَامُ عَلَيْكُمْ وَرَحْمَةُ اللَّهِ"},
     rounds:[
      {e:()=>drawFig("takbir"), q:"Du beginnst das Gebet und hebst die Hände.", o:["Allāhu akbar","As-salāmu ʿalaikum","Āmīn"], ar:"اللَّهُ أَكْبَرُ", m:"Mit dem Takbīr beginnt das Gebet.", s:"Abū Dāwūd 61"},
      {e:()=>drawFig("qiyam"), q:"Du hast die Fātiḥa zu Ende gelesen.", o:["Āmīn","Rabbighfir lī","Allāhu akbar"], ar:"آمِين", m:"Wessen Āmīn mit dem der Engel übereinstimmt, dem wird vergeben.", s:"Buchārī 780"},
@@ -4074,7 +4076,7 @@ const NAMES = [
      {e:()=>drawFig("itidal"), q:"Du richtest dich aus dem Rukūʿ auf.", o:["Samiʿallāhu liman ḥamidah","Bismillāh","As-salāmu ʿalaikum"], ar:"سَمِعَ اللَّهُ لِمَنْ حَمِدَهُ", m:"Allah hört den, der Ihn lobt.", s:"Buchārī 789"},
      {e:()=>drawFig("sujud"), q:"Du bist im Sudschūd (Niederwerfung).", o:["Subḥāna rabbiyal-aʿlā","Subḥāna rabbiyal-ʿaẓīm","Al-ḥamdu lillāh"], ar:"سُبْحَانَ رَبِّيَ الْأَعْلَى", m:"Gepriesen sei mein Herr, der Höchste.", s:"Muslim 772"},
      {e:()=>drawFig("jalsa"), q:"Du sitzt zwischen den zwei Niederwerfungen.", o:["Rabbighfir lī","Āmīn","Allāhu akbar"], ar:"رَبِّ اغْفِرْ لِي", m:"Mein Herr, vergib mir.", s:"Abū Dāwūd 874"},
-     {e:()=>drawFig("tashahhud"), q:"Du sitzt am Ende und zeigst mit dem Finger.", o:["At-taḥiyyātu lillāh …","Subḥānallāh","Bismillāh"], ar:"التَّحِيَّاتُ لِلَّهِ", m:"Das ist der Taschahhud.", s:"Buchārī 831"},
+     {e:()=>drawFig("tashahhud"), q:"Du sitzt am Ende und zeigst mit dem Finger.", o:["At-taḥiyyātu lillāh …","Subḥānallāh","Bismillāh"], ar:"التَّحِيَّاتُ لِلَّهِ، وَالصَّلَوَاتُ وَالطَّيِّبَاتُ، السَّلَامُ عَلَيْكَ أَيُّهَا النَّبِيُّ وَرَحْمَةُ اللَّهِ وَبَرَكَاتُهُ، السَّلَامُ عَلَيْنَا وَعَلَى عِبَادِ اللَّهِ الصَّالِحِينَ، أَشْهَدُ أَنْ لَا إِلَهَ إِلَّا اللَّهُ، وَأَشْهَدُ أَنَّ مُحَمَّدًا عَبْدُهُ وَرَسُولُهُ", m:"Das ist der Taschahhud.", s:"Buchārī 831"},
      {e:()=>drawFig("taslim"), q:"Du drehst den Kopf nach rechts und links.", o:["As-salāmu ʿalaikum wa raḥmatullāh","Āmīn","Allāhu akbar"], ar:"السَّلَامُ عَلَيْكُمْ وَرَحْمَةُ اللَّهِ", m:"Mit dem Salām endet das Gebet.", s:"Muslim 582"}],
     learn:["Jede Stellung im Gebet hat ihre eigenen Worte.","Mehr dazu im Bereich Gebet → „So betest du“."], src:"siehe bei jeder Frage",
     en:{title:"What do you say in prayer?", sub:"The right words in every position.", ask:"What do you say here?",
@@ -6909,6 +6911,16 @@ const GA = {
  sira:{title:"سِيرَةُ النَّبِيِّ ﷺ", sub:"رَتِّبِ الأَحْدَاثَ", prompt:"مَاذَا حَدَثَ أَوَّلًا؟ اِضْغَطْ عَلَى الأَحْدَاثِ بِالتَّرْتِيبِ.",
   items:[["المَوْلِدُ فِي مَكَّةَ","عَامَ الفِيلِ"],["أَوَّلُ الوَحْيِ","فِي غَارِ حِرَاءَ"],["الدَّعْوَةُ جَهْرًا","عَلَى جَبَلِ الصَّفَا"],["الهِجْرَةُ إِلَى المَدِينَةِ","مَعَ أَبِي بَكْرٍ"],["غَزْوَةُ بَدْرٍ","فِي السَّنَةِ الثَّانِيَةِ"],["فَتْحُ مَكَّةَ","فِي السَّنَةِ الثَّامِنَةِ"],["حَجَّةُ الوَدَاعِ","فِي السَّنَةِ العَاشِرَةِ"],["الوَفَاةُ فِي المَدِينَةِ","وَعُمُرُهُ ثَلَاثٌ وَسِتُّونَ"]],
   learn:["عَاشَ النَّبِيُّ ﷺ فِي مَكَّةَ ثَلَاثًا وَخَمْسِينَ سَنَةً، وَفِي المَدِينَةِ عَشْرَ سِنِينَ.","يَوْمَ فَتْحِ مَكَّةَ عَفَا عَنْ أَعْدَائِهِ."]},
+ gebetsworte:{title:"مَاذَا نَقُولُ فِي الصَّلَاةِ؟", sub:"الأَذْكَارُ الصَّحِيحَةُ فِي كُلِّ رُكْنٍ", ask:"مَاذَا تَقُولُ هُنَا؟",
+  rounds:[["تَبْدَأُ الصَّلَاةَ وَتَرْفَعُ يَدَيْكَ.","بِالتَّكْبِيرِ تَبْدَأُ الصَّلَاةُ.",["اللَّهُ أَكْبَرُ","السَّلَامُ عَلَيْكُمْ","آمِين"]],
+   ["اِنْتَهَيْتَ مِنْ قِرَاءَةِ الفَاتِحَةِ.","مَنْ وَافَقَ تَأْمِينُهُ تَأْمِينَ المَلَائِكَةِ غُفِرَ لَهُ.",["آمِين","رَبِّ اغْفِرْ لِي","اللَّهُ أَكْبَرُ"]],
+   ["أَنْتَ فِي الرُّكُوعِ.","تُسَبِّحُ رَبَّكَ العَظِيمَ.",["سُبْحَانَ رَبِّيَ العَظِيمِ","سُبْحَانَ رَبِّيَ الأَعْلَى","آمِين"]],
+   ["تَرْفَعُ رَأْسَكَ مِنَ الرُّكُوعِ.","اللَّهُ يَسْمَعُ مَنْ يَحْمَدُهُ.",["سَمِعَ اللَّهُ لِمَنْ حَمِدَهُ","بِسْمِ اللَّهِ","السَّلَامُ عَلَيْكُمْ"]],
+   ["أَنْتَ فِي السُّجُودِ.","تُسَبِّحُ رَبَّكَ الأَعْلَى.",["سُبْحَانَ رَبِّيَ الأَعْلَى","سُبْحَانَ رَبِّيَ العَظِيمِ","الحَمْدُ لِلَّهِ"]],
+   ["تَجْلِسُ بَيْنَ السَّجْدَتَيْنِ.","تَسْأَلُ اللَّهَ أَنْ يَغْفِرَ لَكَ.",["رَبِّ اغْفِرْ لِي","آمِين","اللَّهُ أَكْبَرُ"]],
+   ["تَجْلِسُ فِي آخِرِ الصَّلَاةِ وَتُشِيرُ بِإِصْبَعِكَ.","هَذَا هُوَ التَّشَهُّدُ.",["التَّحِيَّاتُ لِلَّهِ …","سُبْحَانَ اللَّهِ","بِسْمِ اللَّهِ"]],
+   ["تَلْتَفِتُ يَمِينًا وَشِمَالًا.","بِالتَّسْلِيمِ تَنْتَهِي الصَّلَاةُ.",["السَّلَامُ عَلَيْكُمْ وَرَحْمَةُ اللَّهِ","آمِين","اللَّهُ أَكْبَرُ"]]],
+  learn:["لِكُلِّ رُكْنٍ فِي الصَّلَاةِ ذِكْرُهُ.","قَالَ النَّبِيُّ ﷺ: صَلُّوا كَمَا رَأَيْتُمُونِي أُصَلِّي."]},
  sagen:{title:"مَاذَا نَقُولُ عِنْدَمَا …؟", sub:"الكَلِمَاتُ الصَّحِيحَةُ لِكُلِّ يَوْمٍ", ask:"مَاذَا تَقُولُ؟",
   rounds:[["تَبْدَأُ بِالأَكْلِ.","بِاسْمِ اللَّهِ نَبْدَأُ.",["بِسْمِ اللَّهِ","الحَمْدُ لِلَّهِ","إِنْ شَاءَ اللَّهُ"]],
    ["اِنْتَهَيْتَ مِنَ الأَكْلِ.","الحَمْدُ كُلُّهُ لِلَّهِ.",["الحَمْدُ لِلَّهِ","بِسْمِ اللَّهِ","مَا شَاءَ اللَّهُ"]],
@@ -7051,7 +7063,7 @@ choiceView = function(){
   const body = `<div class="progress"><i style="width:${(K.i + (ans ? 1 : 0)) / K.rounds.length * 100}%"></i></div>
     <div class="say"><span class="say-e">${typeof r.e === "function" ? r.e() : r.e}</span><p>${r.q}${hint(r.hq)}<br><b>${g.ask || (ar ? "مَاذَا تَقُولُ؟" : "Was sagst du?")}</b></p>${ar ? sayBtn(r.q) : ""}</div>
     <div class="opts">${r.shown.map((o, k) => { let cls = ""; if(ans){ if(o === r.o[0]) cls = "ok"; else if(o === K.picked) cls = "bad"; }
-      return `<button class="opt ${cls}" data-say="${k}" ${ans ? "disabled" : ""}><span class="k">${ar ? "أبج"[k] : "ABC"[k]}</span><span>${o}${oh(o)}</span></button>`; }).join("")}</div>
+      return `<button class="opt ${cls}" data-say="${k}" ${ans ? "disabled" : ""}><span class="k">${ar ? "أبج"[k] : "ABC"[k]}</span>${!ar && g.oa && g.oa[o] ? `<span class="o-ar"><span class="arabic" lang="ar" dir="rtl">${g.oa[o]}</span><small>${o}</small></span>` : `<span>${o}${oh(o)}</span>`}</button>`; }).join("")}</div>
     ${ans ? `<div class="feedback ${ok ? "ok" : "bad"}"><strong>${ok ? (ar ? "أَحْسَنْتَ! ⭐" : "Super gemacht! ⭐") : (ar ? "قَرِيبٌ! الصَّوَابُ: " : "Fast! Richtig ist: ") + r.o[0]}</strong>
       <p class="ar" lang="ar" dir="rtl" style="margin:4px 0">${r.ar}</p><p>${r.m}${hint(r.hm)}</p><p class="src">${ar ? "المَصْدَرُ" : "Quelle"}: ${srcLinks(r.s)}</p></div>
       <button class="primary" data-k="next">${K.i + 1 < K.rounds.length ? (ar ? "التَّالِي" : "Weiter") : (ar ? "اِنْتَهَيْتُ!" : "Fertig!")}</button>` : ""}`;
