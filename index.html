@@ -7167,6 +7167,14 @@ const css = `
 }
 `;
 const st = document.createElement("style"); st.textContent = css; document.head.appendChild(st);
+/* Start-Knopf in der Leiste: 🕋 */
+const hb = document.querySelector(".tabbar .tab.home");
+if(hb){ hb.innerHTML = '<span class="hk" aria-hidden="true">🕋</span>'; }
+const st2 = document.createElement("style");
+st2.textContent = `.tab.home .hk{font-size:28px;line-height:1;filter:drop-shadow(0 2px 3px rgba(0,0,0,.25));transition:transform .2s}
+.tab.home[aria-current="page"] .hk{transform:scale(1.08)}
+.tab.home:active .hk{transform:scale(.92)}`;
+document.head.appendChild(st2);
 let rt = 0, lastW = window.innerWidth;
 window.addEventListener("resize", () => { clearTimeout(rt); rt = setTimeout(() => {
   if(Math.abs(window.innerWidth - lastW) < 40) return; lastW = window.innerWidth;
