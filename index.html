@@ -7997,6 +7997,11 @@ document.addEventListener("click", e => {
   else open("fam");
 });
 window.lmFamily = {open: () => open(fam ? "fam" : "intro")};
+window.lmFam = {
+  get fam(){ return fam; }, get kids(){ return kids; }, get active(){ return active; }, get code(){ return fam && fam.code; },
+  CLOUD, WEBAPP, rpc, push, kidOf, kc, toast, showLoading, hideLoading, esc: esc2, fmtN, AV, KC,
+  open: s => open(s || (fam ? "fam" : "intro"))
+};
 
 /* ---------- Start ---------- */
 if(fam && kids.length && !kidOf(active)){ active = kids[0].id; saveFam(); }
@@ -8006,6 +8011,511 @@ if(fam && kids.length){
   else { ss.set("lmf-picked", active); setTimeout(bgPull, 600); }
   if(CLOUD && fam.code && picked === active) setTimeout(() => refreshFamily().then(() => { if(typeof renderStart === "function" && document.querySelector("#v-home.active")) renderStart(); }).catch(() => {}), 1200);
 }
+})();
+
+/* =================== p33: Challenge – Punkte, Rangliste mit anderen Familien, Herausforderungen =================== */
+(function(){
+const F = window.lmFam; if(!F) return;
+const EN = () => lang === "en";
+const esc = F.esc, fmt = F.fmtN;
+const today = () => dayKey(new Date());
+
+/* ---------- 1. Punkte-Tagebuch (lm-pts) ---------- */
+const PTS = "lm-pts";
+const CAP = {t:50, q:40, g:50};
+const calc = d => Math.min(CAP.t, Math.floor((d.t || 0) / 10)) + 20 * (d.p ? 1 : 0) + 5 * (d.d || 0) + Math.min(CAP.q, 2 * (d.q || 0)) + Math.min(CAP.g, 5 * (d.g || 0)) + 10 * (d.l || 0);
+let busy = false;
+function refresh(field, inc){
+  if(busy) return 0; busy = true;
+  try{
+    const t = today(), all = store.get(PTS, {}) || {}, old = all[t] || {}, d = {...old};
+    if(field) d[field] = (d[field] || 0) + inc;
+    d.t = (store.get("tb-log", {}) || {})[t] || 0;
+    d.p = (store.get("lm-tz-done", {}) || {})[t] ? 1 : 0;
+    const g = store.get("lm-garden", null); d.d = g && g.d && g.d[t] ? g.d[t].length : 0;
+    d.pt = calc(d);
+    const delta = d.pt - (old.pt || 0);
+    if(JSON.stringify(old) !== JSON.stringify(d)){ all[t] = d; store.set(PTS, all); }
+    return delta;
+  } finally { busy = false; }
+}
+let gainEl = null, gainT = 0;
+function gain(n, why){
+  if(!(n > 0)) return;
+  if(!gainEl){ gainEl = document.createElement("div"); gainEl.className = "ch-gain"; document.body.appendChild(gainEl); }
+  gainEl.innerHTML = `<b>+${n}</b> ${L("Punkte", "points")} ${why || "⭐"}`;
+  gainEl.classList.remove("show"); void gainEl.offsetWidth; gainEl.classList.add("show");
+  clearTimeout(gainT); gainT = setTimeout(() => gainEl.classList.remove("show"), 1800);
+}
+/* Gelerntes nur einmal zählen */
+const SEEN = "lm-pts-seen";
+const LEARN_KEYS = ["hd-learned", "qr-learned"];
+(function initSeen(){ if(store.get(SEEN, null)) return; const s = {}; LEARN_KEYS.forEach(k => s[k] = (store.get(k, []) || []).map(String)); store.set(SEEN, s); })();
+function learnedNew(k){
+  const s = store.get(SEEN, {}) || {}, have = new Set((s[k] || []).map(String));
+  const now = (store.get(k, []) || []).map(String), fresh = now.filter(x => !have.has(x));
+  if(!fresh.length) return 0;
+  s[k] = [...have, ...fresh]; store.set(SEEN, s); return fresh.length;
+}
+/* Speicher beobachten */
+const LS = (() => { try{ return localStorage; }catch(e){ return null; } })();
+let watchT = 0, pendingWhy = null;
+if(LS){
+  const prev = Storage.prototype.setItem;
+  Storage.prototype.setItem = function(k, v){
+    prev.call(this, k, v);
+    if(this !== LS || busy) return;
+    if(k === "tb-log" || k === "lm-tz-done" || k === "lm-garden"){
+      if(k === "lm-tz-done") pendingWhy = "⭐"; else if(k === "lm-garden" && !pendingWhy) pendingWhy = "🌸";
+      clearTimeout(watchT); watchT = setTimeout(() => { const d = refresh(); if(pendingWhy) gain(d, pendingWhy); pendingWhy = null; }, 350);
+    } else if(LEARN_KEYS.includes(k)){
+      const n = learnedNew(k); if(n) setTimeout(() => gain(refresh("l", n), "📖"), 0);
+    }
+  };
+}
+/* Quiz: jede richtige Antwort */
+const qb = document.getElementById("qBody");
+if(qb) qb.addEventListener("click", e => {
+  const op = e.target.closest("[data-opt]");
+  if(!op || typeof quiz === "undefined" || quiz.stage !== "q" || quiz.picked !== null) return;
+  const Q = quiz.list[quiz.i];
+  setTimeout(() => { if(Q && quiz.picked === Q.o[Q.a]) gain(refresh("q", 1), "❓"); }, 0);
+}, true);
+/* Spiele: jedes geschaffte Spiel */
+if(typeof renderKids === "function"){
+  const _rk = renderKids;
+  renderKids = function(){
+    _rk.apply(this, arguments);
+    try{ if(typeof K !== "undefined" && K && K.done && !K.__pts){ K.__pts = 1; gain(refresh("g", 1), "🎮"); } }catch(e){}
+  };
+}
+refresh();
+
+/* ---------- 2. Zeitspannen ---------- */
+const monday = (off) => { const d = new Date(); d.setHours(0, 0, 0, 0); d.setDate(d.getDate() - ((d.getDay() + 6) % 7) + 7 * (off || 0)); return d; };
+function range(r){
+  if(r === "all") return {from:"0000-00-00", to:"9999-99-99", wk: dayKey(monday(0))};
+  const m = monday(r === "lw" ? -1 : 0), s = new Date(m); s.setDate(m.getDate() + 6);
+  return {from: dayKey(m), to: dayKey(s), wk: dayKey(m)};
+}
+function localSum(r){
+  const R = range(r), all = store.get(PTS, {}) || {}, o = {pt:0, t:0, q:0, g:0, d:0, l:0, p:0};
+  for(const k in all) if(k >= R.from && k <= R.to) for(const f in o) o[f] += all[k][f] || 0;
+  return o;
+}
+const daysLeft = () => { const d = new Date(); return 7 - ((d.getDay() + 6) % 7); };
+
+/* ---------- 3. Daten vom Server ---------- */
+const S = {groups:null, hidden:[], gid: null, r:"w", board:null, loading:false, err:null, gate:null, mgr:false, sheet:null, confirmLeave:false};
+const LK = () => "lmc-g:" + (F.code || "");
+const seenKey = () => "lmc-seen:" + (F.active || "");
+const cacheKey = () => "lmc-cache:" + (F.active || "");
+const lsj = (k, d) => { try{ const v = localStorage.getItem(k); return v == null ? d : JSON.parse(v); }catch(e){ return d; } };
+const lss = (k, v) => { try{ Storage.prototype.setItem.call(localStorage, k, JSON.stringify(v)); }catch(e){} };
+const ready = () => F.CLOUD && F.fam && F.code && F.active;
+function errMsg(e){
+  const m = (e && e.message) || "";
+  if(/group_not_found/.test(m)) return L("Diesen Gruppen-Code gibt es nicht. Bitte prüfen.", "This group code doesn’t exist. Please check.");
+  if(/group_full/.test(m)) return L("Die Gruppe ist voll (30 Familien).", "The group is full (30 families).");
+  if(/too_many_groups/.test(m)) return L("Höchstens 10 Gruppen pro Familie.", "At most 10 groups per family.");
+  if(/too_many_duels/.test(m)) return L("Diese Woche hast du schon 10 Herausforderungen geschickt.", "You already sent 10 challenges this week.");
+  if(/PGRST202|Could not find the function|schema cache/.test(m)) return L("Die Challenge wird gerade eingerichtet – bitte später nochmal.", "The challenge is being set up – please try again later.");
+  return L("Keine Verbindung. Bitte Internet prüfen.", "No connection. Please check the internet.");
+}
+async function loadGroups(){
+  const j = await F.rpc("my_groups", {p_code: F.code});
+  S.groups = (j && j.groups) || []; S.hidden = (j && j.hidden) || [];
+  const saved = lsj(LK(), null);
+  if(!S.groups.find(g => g.id === S.gid)) S.gid = (S.groups.find(g => g.id === saved) || S.groups[0] || {}).id || null;
+}
+async function loadBoard(){
+  if(!S.gid){ S.board = null; return; }
+  try{ await F.push(); }catch(e){}
+  const R = range(S.r);
+  S.board = await F.rpc("group_board", {p_code: F.code, p_group: S.gid, p_from: R.from, p_to: R.to, p_wk: R.wk});
+  const me = S.board.kids.find(k => k.id === F.active);
+  if(me && S.r !== "all") me.s = localSum(S.r);
+  if(S.r === "w") saveCache();
+}
+function sorted(){ return (S.board ? S.board.kids.slice() : []).sort((a, b) => (b.s.pt - a.s.pt) || a.name.localeCompare(b.name)); }
+function rankOf(list, id){ let r = 0, last = null; for(let i = 0; i < list.length; i++){ if(list[i].s.pt !== last){ r = i + 1; last = list[i].s.pt; } if(list[i].id === id) return r; } return 0; }
+function saveCache(){
+  const l = sorted(), me = l.find(k => k.id === F.active);
+  lss(cacheKey(), {g: S.board.group.name, n: l.length, rank: me ? rankOf(l, me.id) : 0, pt: me ? me.s.pt : 0, top: l.slice(0, 3).map(k => k.avatar), at: Date.now()});
+}
+async function load(force){
+  if(!ready()){ draw(); return; }
+  S.loading = true; S.err = null; draw();
+  try{ if(force || !S.groups) await loadGroups(); await loadBoard(); }
+  catch(e){ S.err = errMsg(e); }
+  S.loading = false; draw(); checkNewDuels(true);
+}
+
+/* ---------- 4. Ansicht ---------- */
+const KINDS = {
+  pt:{ic:"🏆", de:"Punkte", en:"Points"},
+  t:{ic:"📿", de:"Tasbīḥ", en:"Tasbīḥ"},
+  q:{ic:"❓", de:"Quiz-Antworten", en:"Quiz answers"},
+  g:{ic:"🎮", de:"Spiele", en:"Games"},
+  d:{ic:"🌸", de:"Gute Taten", en:"Good deeds"}
+};
+const kName = k => KINDS[k][EN() ? "en" : "de"];
+const css = `
+#v-challenge .wrap{padding-bottom:40px}
+.ch-hero{position:relative;overflow:hidden;border-radius:28px;padding:20px 18px 18px;color:#fff;background:linear-gradient(135deg,#3B2A7A 0%,#7B3F8C 55%,#E0913A 120%);box-shadow:0 16px 34px -16px rgba(59,42,122,.7);margin-top:8px}
+.ch-hero .ar{font-family:"Scheherazade New",serif;font-size:24px;color:#FFE7A8;line-height:1.2}
+.ch-hero h2{margin:2px 0 2px;font-family:var(--display);font-size:30px;font-weight:800;line-height:1.1}
+.ch-hero p{margin:0;font-size:14.5px;opacity:.9}
+.ch-hero .tr{position:absolute;right:14px;top:10px;font-size:62px;filter:drop-shadow(0 6px 12px rgba(0,0,0,.3));transform:rotate(8deg)}
+.ch-chips{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;margin:14px -16px 0;padding:2px 16px}
+.ch-chips::-webkit-scrollbar{display:none}
+.ch-chip{flex:none;border:0;border-radius:999px;padding:8px 14px;background:var(--surface);color:var(--ink);font:inherit;font-size:14px;font-weight:700;box-shadow:inset 0 0 0 1px var(--sep);cursor:pointer}
+.ch-chip[aria-pressed="true"]{box-shadow:inset 0 0 0 2px var(--gold);color:var(--gold)}
+.ch-seg{display:grid;grid-template-columns:repeat(3,1fr);gap:4px;background:var(--fill);border-radius:16px;padding:4px;margin:12px 0 4px}
+.ch-seg button{border:0;border-radius:12px;padding:9px 4px;background:none;color:var(--muted);font:inherit;font-size:14px;font-weight:800;cursor:pointer}
+.ch-seg button[aria-pressed="true"]{background:var(--surface);color:var(--ink);box-shadow:0 2px 8px rgba(0,0,0,.12)}
+.ch-pod{display:grid;grid-template-columns:repeat(3,1fr);align-items:end;gap:8px;margin:18px 0 6px}
+.ch-pod .c{display:flex;flex-direction:column;align-items:center;min-width:0}
+.ch-pod .av{width:62px;height:62px;border-radius:50%;display:grid;place-items:center;font-size:36px;background:var(--kc);box-shadow:0 0 0 3px var(--surface),0 8px 18px -6px rgba(0,0,0,.35);position:relative}
+.ch-pod .c.r1 .av{width:76px;height:76px;font-size:44px}
+.ch-pod .c.r1 .av::before{content:"👑";position:absolute;top:-22px;font-size:24px}
+.ch-pod .pn{font-weight:800;font-size:14.5px;margin-top:8px;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ch-pod .fm{font-size:11.5px;color:var(--muted);font-weight:600;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ch-pod .pt{font-weight:800;font-size:15px;color:var(--gold);font-variant-numeric:tabular-nums;margin:2px 0 6px}
+.ch-pod .blk{width:100%;border-radius:16px 16px 6px 6px;display:grid;place-items:center;font-family:var(--display);font-size:28px;font-weight:800;color:rgba(255,255,255,.95);text-shadow:0 2px 6px rgba(0,0,0,.25)}
+.ch-pod .r1 .blk{height:96px;background:linear-gradient(180deg,#F7C55A,#D9952A)}
+.ch-pod .r2 .blk{height:72px;background:linear-gradient(180deg,#C9D3DE,#8E9BAA)}
+.ch-pod .r3 .blk{height:56px;background:linear-gradient(180deg,#E3A57A,#B06A3E)}
+.ch-pod .c.me .pn{color:var(--gold)}
+.ch-list{display:grid;gap:8px;margin-top:10px}
+.ch-row{display:flex;align-items:center;gap:10px;background:var(--surface);border-radius:18px;padding:9px 10px 9px 8px;box-shadow:inset 0 0 0 1px var(--sep)}
+.ch-row.me{box-shadow:inset 0 0 0 2px var(--gold)}
+.ch-row .rk{width:28px;text-align:center;font-weight:800;color:var(--muted);font-variant-numeric:tabular-nums;flex:none}
+.ch-row .av{width:42px;height:42px;border-radius:14px;display:grid;place-items:center;font-size:26px;background:var(--kc);flex:none}
+.ch-row .tx{flex:1;min-width:0}
+.ch-row .tx b{display:block;font-size:15.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ch-row .tx span{display:block;font-size:12px;color:var(--muted);font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ch-row .pt{font-weight:800;font-size:17px;font-variant-numeric:tabular-nums;color:var(--ink);text-align:right;flex:none}
+.ch-row .pt small{display:block;font-size:10.5px;color:var(--muted);font-weight:700}
+.ch-vs{border:0;width:40px;height:40px;border-radius:50%;background:var(--gold-soft);font-size:19px;cursor:pointer;flex:none}
+.ch-h{display:flex;align-items:center;justify-content:space-between;margin:24px 2px 8px}
+.ch-h h3{margin:0;font-family:var(--display);font-size:20px;font-weight:800}
+.ch-h small{color:var(--muted);font-weight:700;font-size:13px}
+.ch-duel{background:var(--surface);border-radius:20px;padding:12px 12px 10px;box-shadow:inset 0 0 0 1px var(--sep);margin-bottom:8px}
+.ch-duel.new{box-shadow:inset 0 0 0 2px var(--gold)}
+.ch-duel .top{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:800;color:var(--muted)}
+.ch-duel .top .kd{color:var(--gold)}
+.ch-duel .sides{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:8px;margin:8px 0 6px}
+.ch-duel .sd{display:flex;align-items:center;gap:8px;min-width:0}
+.ch-duel .sd.r{flex-direction:row-reverse;text-align:right}
+.ch-duel .sd .av{width:38px;height:38px;border-radius:12px;display:grid;place-items:center;font-size:23px;background:var(--kc);flex:none}
+.ch-duel .sd b{display:block;font-size:14.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ch-duel .sd span{display:block;font-size:18px;font-weight:800;font-variant-numeric:tabular-nums}
+.ch-duel .x{font-size:20px}
+.ch-duel .dbar{display:flex;height:10px;border-radius:9px;overflow:hidden;background:var(--fill)}
+.ch-duel .dbar i{display:block;height:100%}
+.ch-duel .dbar i.a{background:var(--grad)}
+.ch-duel .dbar i.b{background:var(--teal)}
+.ch-duel .st{font-size:13px;font-weight:700;color:var(--muted);margin-top:6px;text-align:center}
+.ch-duel .st.win{color:var(--gold)}
+.ch-card2{background:var(--surface);border-radius:22px;padding:14px 16px;box-shadow:inset 0 0 0 1px var(--sep);margin-top:12px}
+.ch-card2 h4{margin:0 0 8px;font-size:15px;color:var(--gold);display:flex;align-items:center;gap:8px}
+.ch-card2 p{margin:6px 0;font-size:14.5px;line-height:1.45}
+.ch-card2 p.mut{color:var(--muted);font-size:13.5px}
+.ch-rules{display:grid;gap:6px;margin:4px 0 0;padding:0;list-style:none}
+.ch-rules li{display:flex;align-items:center;gap:10px;font-size:14.5px}
+.ch-rules li .i{width:30px;height:30px;border-radius:10px;background:var(--fill);display:grid;place-items:center;flex:none}
+.ch-rules li b{margin-left:auto;color:var(--gold);white-space:nowrap;font-variant-numeric:tabular-nums}
+.ch-code{font-family:ui-monospace,Menlo,monospace;font-size:26px;font-weight:800;letter-spacing:.1em;text-align:center;background:var(--gold-soft);color:var(--gold);border-radius:18px;padding:14px 8px;margin:8px 0;user-select:all;-webkit-user-select:all}
+.ch-btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;border:0;border-radius:16px;padding:13px 14px;margin-top:8px;font:inherit;font-size:15.5px;font-weight:800;cursor:pointer;background:var(--grad);color:var(--on-acc,#1b1300)}
+.ch-btn.sec{background:var(--surface);color:var(--ink);box-shadow:inset 0 0 0 1px var(--sep)}
+.ch-btn.warn{background:none;color:#e5675a;box-shadow:inset 0 0 0 1.5px #e5675a}
+.ch-btn:disabled{opacity:.5}
+.ch-in{width:100%;box-sizing:border-box;border:1.5px solid var(--sep);background:var(--bg2,var(--surface));color:var(--ink);border-radius:14px;padding:12px 13px;font:inherit;font-size:16px;outline:none;margin-top:6px}
+.ch-in:focus{border-color:var(--gold)}
+.ch-in.code{font-family:ui-monospace,Menlo,monospace;letter-spacing:.12em;text-transform:uppercase;text-align:center;font-size:20px;font-weight:700}
+.ch-err{color:#e5675a;font-weight:700;font-size:14px;margin:8px 0 0}
+.ch-tog{display:flex;align-items:center;gap:10px;padding:8px 0;border-top:1px solid var(--sep)}
+.ch-tog:first-of-type{border-top:0}
+.ch-tog .av{width:36px;height:36px;border-radius:12px;display:grid;place-items:center;font-size:22px;background:var(--kc);flex:none}
+.ch-tog b{flex:1}
+.ch-sw{border:0;width:52px;height:30px;border-radius:999px;background:var(--fill);position:relative;cursor:pointer;flex:none}
+.ch-sw::after{content:"";position:absolute;top:3px;left:3px;width:24px;height:24px;border-radius:50%;background:#fff;box-shadow:0 2px 4px rgba(0,0,0,.25);transition:left .2s}
+.ch-sw[aria-checked="true"]{background:var(--teal)}
+.ch-sw[aria-checked="true"]::after{left:25px}
+.ch-gate{font-size:28px;font-weight:800;text-align:center;margin:6px 0;font-variant-numeric:tabular-nums}
+.ch-load{display:flex;justify-content:center;padding:30px}
+.ch-load i{width:34px;height:34px;border-radius:50%;border:4px solid var(--fill);border-top-color:var(--gold);animation:lmfSpin .8s linear infinite}
+.ch-empty{text-align:center;color:var(--muted);font-weight:600;padding:18px 8px;font-size:14.5px}
+.ch-gain{position:fixed;left:50%;top:calc(14px + env(safe-area-inset-top,0px));transform:translate(-50%,-30px);opacity:0;z-index:160;pointer-events:none;background:linear-gradient(135deg,#F7C55A,#E0913A);color:#2a1a00;border-radius:999px;padding:8px 16px;font-weight:700;font-size:15px;box-shadow:0 10px 24px -8px rgba(224,145,58,.8);transition:transform .35s cubic-bezier(.2,1.4,.4,1),opacity .25s}
+.ch-gain b{font-size:17px;font-weight:800}
+.ch-gain.show{transform:translate(-50%,0);opacity:1}
+.ch-sheet{position:fixed;inset:0;z-index:125;display:flex;align-items:flex-end;justify-content:center;background:rgba(4,14,20,.55);animation:lmfIn .2s}
+.ch-sheet>div{width:100%;max-width:520px;background:var(--bg2,var(--bg));color:var(--ink);border-radius:28px 28px 0 0;padding:18px 18px calc(22px + env(safe-area-inset-bottom,0px));animation:lmfUp .25s cubic-bezier(.2,1,.3,1)}
+@media (min-width:700px){.ch-sheet{align-items:center}.ch-sheet>div{border-radius:28px}}
+.ch-sheet h3{margin:0 0 4px;font-family:var(--display);font-size:22px}
+.ch-sheet .vs{display:flex;align-items:center;justify-content:center;gap:14px;font-size:40px;margin:10px 0}
+.ch-kinds{display:grid;gap:8px;margin-top:10px}
+.ch-kinds button{display:flex;align-items:center;gap:12px;border:0;border-radius:16px;padding:12px 14px;background:var(--surface);color:var(--ink);font:inherit;font-size:16px;font-weight:700;box-shadow:inset 0 0 0 1px var(--sep);cursor:pointer;text-align:left}
+.ch-kinds button span{font-size:22px}
+.ch-pop{position:fixed;inset:0;z-index:128;display:grid;place-items:center;background:rgba(4,14,20,.6);padding:20px;animation:lmfIn .2s}
+.ch-pop>div{max-width:360px;width:100%;text-align:center;background:var(--bg2,var(--bg));color:var(--ink);border-radius:28px;padding:22px 18px 16px;box-shadow:0 0 0 2px var(--gold),0 24px 50px rgba(0,0,0,.5);animation:lmfUp .3s cubic-bezier(.2,1.4,.4,1)}
+.ch-pop .vs{display:flex;align-items:center;justify-content:center;gap:12px;font-size:46px;margin-bottom:8px}
+.ch-pop h3{margin:0;font-family:var(--display);font-size:22px}
+.ch-pop p{margin:6px 0 4px;font-size:15.5px}
+.lm-chcard{position:relative;display:flex;align-items:center;gap:14px;width:100%;border:0;text-align:left;border-radius:28px;padding:16px;margin-top:14px;color:#fff;font:inherit;cursor:pointer;background:linear-gradient(135deg,#3B2A7A 0%,#7B3F8C 60%,#E0913A 130%);box-shadow:0 14px 30px -14px rgba(59,42,122,.8);overflow:hidden}
+.lm-chcard .ic{font-size:44px;flex:none;filter:drop-shadow(0 4px 8px rgba(0,0,0,.3))}
+.lm-chcard .tx{flex:1;min-width:0}
+.lm-chcard b{display:block;font-family:var(--display);font-size:21px;font-weight:800}
+.lm-chcard .tx span{display:block;font-size:14px;opacity:.92;margin-top:2px}
+.lm-chcard .tp{display:flex;flex:none}
+.lm-chcard .tp i{font-style:normal;width:34px;height:34px;border-radius:50%;display:grid;place-items:center;font-size:20px;background:rgba(255,255,255,.2);margin-left:-8px;box-shadow:0 0 0 2px rgba(255,255,255,.35)}
+.lm-chcard .rk{flex:none;text-align:center;background:rgba(255,255,255,.18);border-radius:16px;padding:6px 10px;font-weight:800;font-size:12px;line-height:1.1}
+.lm-chcard .rk big{display:block;font-size:24px;font-family:var(--display)}
+@media (min-width:760px){.ch-list{grid-template-columns:1fr 1fr}.ch-duels{display:grid;grid-template-columns:1fr 1fr;gap:8px}.ch-duels .ch-duel{margin:0}}
+`;
+const st = document.createElement("style"); st.textContent = css; document.head.appendChild(st);
+
+document.querySelector("main").insertAdjacentHTML("beforeend", `<section class="view" id="v-challenge"><header class="nav"><div class="nav-row">
+  <div class="nav-l"><button class="nav-back" data-go="home"><svg><use href="#back"/></svg><span id="chBack">Start</span></button></div><div class="nav-t" id="chNavT">Challenge</div><div class="nav-r"></div></div></header>
+  <div class="wrap" id="chV"></div></section>`);
+
+const kidColor = (id, i) => F.KC[(i < 0 ? 0 : i) % F.KC.length];
+let colorIdx = {};
+function colorsFor(list){ colorIdx = {}; list.forEach((k, i) => colorIdx[k.id] = F.KC[i % F.KC.length]); }
+const kcol = id => colorIdx[id] || F.KC[0];
+const stats = s => [s.t ? `📿 ${fmt(s.t)}` : "", s.q ? `❓ ${s.q}` : "", s.g ? `🎮 ${s.g}` : "", s.d ? `🌸 ${s.d}` : "", s.p ? `⭐ ${s.p}` : "", s.l ? `📖 ${s.l}` : ""].filter(Boolean).join(" · ") || L("noch keine Punkte", "no points yet");
+const famLbl = k => k.mine ? L("eure Familie", "your family") : (k.fam || L("Familie", "Family"));
+
+function rulesHTML(){
+  const R = [["📿", L("10× Tasbīḥ", "10× tasbīḥ"), L("1 Punkt", "1 point"), L(`bis ${CAP.t}/Tag`, `up to ${CAP.t}/day`)],
+    ["⭐", L("Tagesprogramm geschafft", "Daily programme done"), L("20 Punkte", "20 points"), ""],
+    ["❓", L("Richtige Quiz-Antwort", "Correct quiz answer"), L("2 Punkte", "2 points"), L(`bis ${CAP.q}/Tag`, `up to ${CAP.q}/day`)],
+    ["🎮", L("Spiel geschafft", "Game finished"), L("5 Punkte", "5 points"), L(`bis ${CAP.g}/Tag`, `up to ${CAP.g}/day`)],
+    ["🌸", L("Gute Tat im Garten", "Good deed in the garden"), L("5 Punkte", "5 points"), ""],
+    ["📖", L("Hadith oder Sure gelernt", "Hadith or sūra learned"), L("10 Punkte", "10 points"), ""]];
+  return `<div class="ch-card2"><h4>✨ ${L("So sammelst du Punkte", "How to earn points")}</h4><ul class="ch-rules">${R.map(r => `<li><span class="i">${r[0]}</span><span>${r[1]}${r[3] ? `<br><small style="color:var(--muted);font-weight:600">${r[3]}</small>` : ""}</span><b>${r[2]}</b></li>`).join("")}</ul>
+    <p class="mut" style="margin-top:10px">${L("Die Woche beginnt am Montag. Wichtiger als Punkte ist die Absicht: alles für Allah 🤍", "The week starts on Monday. More important than points is the intention: everything for Allah 🤍")}</p></div>`;
+}
+function gateHTML(){
+  const g = S.gate;
+  return `<div class="ch-card2"><h4>🔒 ${L("Frage für Eltern", "Question for parents")}</h4><div class="ch-gate">${g.a} × ${g.b} = ?</div>
+    <input class="ch-in" id="chGate" inputmode="numeric" maxlength="3" style="text-align:center;font-size:22px" autocomplete="off">
+    <button class="ch-btn" data-c="gateok">OK</button><button class="ch-btn sec" data-c="gatex">${L("Abbrechen", "Cancel")}</button>${g.err ? `<p class="ch-err">${g.err}</p>` : ""}</div>`;
+}
+function mgrHTML(){
+  const g = S.groups && S.groups.find(x => x.id === S.gid);
+  const kids = F.kids || [];
+  return `<div class="ch-card2"><h4>🔒 ${L("Eltern: Challenge verwalten", "Parents: manage challenge")}</h4>
+    ${kids.length ? `<p class="mut">${L("Wer erscheint in der Rangliste?", "Who appears in the ranking?")}</p>${kids.map((k, i) => `<div class="ch-tog"><span class="av" style="--kc:${F.KC[i % F.KC.length]}">${esc(k.avatar)}</span><b>${esc(k.name)}</b><button class="ch-sw" role="switch" aria-checked="${!S.hidden.includes(k.id)}" data-c="tog" data-id="${k.id}" aria-label="${esc(k.name)}"></button></div>`).join("")}` : ""}
+    <p style="margin-top:14px;font-weight:800">➕ ${L("Neue Gruppe gründen", "Start a new group")}</p>
+    <input class="ch-in" id="chNewName" maxlength="40" placeholder="${L("z. B. Cousins & Cousinen", "e.g. Cousins")}" autocomplete="off">
+    <button class="ch-btn" data-c="create">${L("Gruppe gründen", "Start group")}</button>
+    <p style="margin-top:14px;font-weight:800">🔑 ${L("Einer Gruppe beitreten", "Join a group")}</p>
+    <input class="ch-in code" id="chJoin" maxlength="9" placeholder="XXXX-XXXX" autocomplete="off" autocapitalize="characters">
+    <button class="ch-btn sec" data-c="join">${L("Beitreten", "Join")}</button>
+    ${g ? (S.confirmLeave
+      ? `<p style="margin-top:14px">${L(`Gruppe „${esc(g.name || "")}“ wirklich verlassen? Eure Herausforderungen darin werden gelöscht.`, `Really leave “${esc(g.name || "")}”? Your challenges in it will be deleted.`)}</p><div style="display:flex;gap:8px"><button class="ch-btn sec" data-c="leavex">${L("Nein", "No")}</button><button class="ch-btn warn" data-c="leave">${L("Ja, verlassen", "Yes, leave")}</button></div>`
+      : `<button class="ch-btn warn" style="margin-top:16px" data-c="askleave">${L(`„${esc(g.name || L("Gruppe", "Group"))}“ verlassen`, `Leave “${esc(g.name || "group")}”`)}</button>`) : ""}
+    ${S.mErr ? `<p class="ch-err">${S.mErr}</p>` : ""}
+    <button class="ch-btn sec" style="margin-top:12px" data-c="mgrx">${L("Fertig", "Done")}</button></div>`;
+}
+function duelHTML(d, byId, seen){
+  const a = byId[d.from], b = byId[d.to]; if(!a || !b) return "";
+  const va = a.s[d.kind] || 0, vb = b.s[d.kind] || 0, sum = va + vb;
+  const last = S.r === "lw";
+  const meA = a.id === F.active, meB = b.id === F.active;
+  const isNew = meB && !last && seen && Date.parse(d.at) > seen;
+  let status;
+  if(last){ status = va === vb ? L("Unentschieden 🤝", "It’s a draw 🤝") : `🏆 ${esc((va > vb ? a : b).name)} ${L("hat gewonnen!", "won!")}`; }
+  else {
+    const left = daysLeft(), lead = va === vb ? L("Gleichstand", "Tied") : `${esc((va > vb ? a : b).name)} ${L("liegt vorne", "is ahead")}`;
+    status = `${lead} · ${left === 1 ? L("letzter Tag!", "last day!") : L(`noch ${left} Tage`, `${left} days left`)}`;
+  }
+  const side = (k, v, r) => `<div class="sd${r ? " r" : ""}"><span class="av" style="--kc:${kcol(k.id)}">${esc(k.avatar)}</span><div style="min-width:0"><b>${esc(k.name)}${k.id === F.active ? " (" + L("ich", "me") + ")" : ""}</b><span>${fmt(v)}</span></div></div>`;
+  return `<div class="ch-duel${isNew ? " new" : ""}"><div class="top"><span>⚔️ ${meA ? L("Du hast herausgefordert", "You challenged") : meB ? L(`${esc(a.name)} fordert dich heraus`, `${esc(a.name)} challenges you`) : L("Herausforderung", "Challenge")}</span><span class="kd" style="margin-left:auto">${KINDS[d.kind].ic} ${kName(d.kind)}</span></div>
+    <div class="sides">${side(a, va)}<span class="x">⚔️</span>${side(b, vb, true)}</div>
+    <div class="dbar"><i class="a" style="width:${sum ? va / sum * 100 : 50}%"></i><i class="b" style="width:${sum ? vb / sum * 100 : 50}%"></i></div>
+    <div class="st${last ? " win" : ""}">${status}</div></div>`;
+}
+function draw(){
+  const v = document.getElementById("chV"); if(!v) return;
+  const nt = document.getElementById("chNavT"); if(nt) nt.textContent = "Challenge";
+  const bk = document.getElementById("chBack"); if(bk) bk.textContent = L("Start", "Home");
+  const hero = sub => `<div class="ch-hero"><span class="tr" aria-hidden="true">🏆</span><div class="ar" lang="ar">التَّحَدِّي</div><h2>Challenge</h2><p>${sub}</p></div>`;
+  let h = "";
+  if(!F.CLOUD){
+    h = hero(L("Wer sammelt die meisten Punkte?", "Who collects the most points?")) +
+      `<div class="ch-card2"><p>${L("Die Challenge mit anderen Familien gibt es in der Web-App:", "The challenge with other families is available in the web app:")}</p><p><a href="${F.WEBAPP}" target="_blank" rel="noopener" style="color:var(--gold);font-weight:700">${F.WEBAPP.replace("https://", "")}</a></p></div>` + rulesHTML();
+  } else if(!F.fam || !F.code){
+    h = hero(L("Fordert andere Familien heraus!", "Challenge other families!")) +
+      `<div class="ch-card2"><p>${L("Legt zuerst eure Familie an. Dann könnt ihr mit Cousins, Freunden oder der Moschee-Gruppe um die Wette sammeln.", "First set up your family. Then you can compete with cousins, friends or your mosque group.")}</p><button class="ch-btn" data-c="fam">👨‍👩‍👧 ${L("Familie anlegen", "Set up family")}</button></div>` + rulesHTML();
+  } else if(!S.groups && !S.err){
+    h = hero(L("Wird geladen …", "Loading …")) + `<div class="ch-load"><i></i></div>`;
+  } else if(S.err && !S.groups){
+    h = hero(L("Wer sammelt die meisten Punkte?", "Who collects the most points?")) + `<div class="ch-card2"><p class="ch-err">${S.err}</p><button class="ch-btn sec" data-c="retry">${L("Nochmal versuchen", "Try again")}</button></div>`;
+  } else if(!S.groups.length){
+    h = hero(L("Fordert andere Familien heraus!", "Challenge other families!")) +
+      `<div class="ch-card2"><h4>👨‍👩‍👧‍👦 ${L("So funktioniert’s", "How it works")}</h4>
+        <p>1. ${L("Eine Familie gründet eine Gruppe und bekommt einen <b>Gruppen-Code</b>.", "One family starts a group and gets a <b>group code</b>.")}</p>
+        <p>2. ${L("Andere Familien treten mit dem Code bei – z. B. Cousins, Freunde, die Moschee-Klasse.", "Other families join with the code – e.g. cousins, friends, the mosque class.")}</p>
+        <p>3. ${L("Jede Woche gibt es eine neue Rangliste – und ihr könnt euch gegenseitig herausfordern ⚔️", "Every week there’s a new ranking – and you can challenge each other ⚔️")}</p>
+        <p class="mut">${L("Andere Familien sehen nur Spitzname, Bild, Familienname und Punkte.", "Other families only see nickname, picture, family name and points.")}</p></div>` +
+      (S.gate ? gateHTML() : S.mgr ? mgrHTML() : `<button class="ch-btn" data-c="gate">🔒 ${L("Eltern: Gruppe gründen oder beitreten", "Parents: start or join a group")}</button>`) + rulesHTML();
+  } else {
+    const g = S.groups.find(x => x.id === S.gid) || S.groups[0];
+    const list = sorted(); colorsFor(list);
+    const byId = {}; list.forEach(k => byId[k.id] = k);
+    const meIn = !!byId[F.active];
+    const top = list.slice(0, 3);
+    const R = (k, i) => { const rk = rankOf(list, k.id); return `<div class="ch-row${k.id === F.active ? " me" : ""}"><span class="rk">${rk}</span><span class="av" style="--kc:${kcol(k.id)}">${esc(k.avatar)}</span><span class="tx"><b>${esc(k.name)}</b><span>${esc(famLbl(k))} · ${stats(k.s)}</span></span><span class="pt">${fmt(k.s.pt)}<small>${L("Punkte", "points")}</small></span>${!k.mine && meIn && S.r !== "lw" ? `<button class="ch-vs" data-c="vs" data-id="${k.id}" aria-label="${L(`${k.name} herausfordern`, `Challenge ${k.name}`)}">⚔️</button>` : ""}</div>`; };
+    const pod = top.length >= 2 ? `<div class="ch-pod">${[top[1], top[0], top[2]].map(k => { if(!k) return `<div class="c"></div>`; const rk = rankOf(list, k.id); return `<div class="c r${Math.min(3, rk)}${k.id === F.active ? " me" : ""}"><span class="av" style="--kc:${kcol(k.id)}">${esc(k.avatar)}</span><span class="pn">${esc(k.name)}</span><span class="fm">${esc(famLbl(k))}</span><span class="pt">${fmt(k.s.pt)}</span><span class="blk">${rk}</span></div>`; }).join("")}</div>` : "";
+    const seen = lsj(seenKey(), 0);
+    const duels = (S.board && S.board.duels || []).map(d => duelHTML(d, byId, seen)).filter(Boolean);
+    const me = byId[F.active], myRank = me ? rankOf(list, me.id) : 0;
+    const sub = S.r === "all" ? L("Alle Punkte seit Beginn", "All points so far") : S.r === "lw" ? L("Ergebnis der letzten Woche", "Last week’s result") :
+      (me ? (myRank === 1 ? L(`Du bist auf Platz 1 – Māschāʾallāh! 🥇`, `You’re in 1st place – Māshāʾallāh! 🥇`) : L(`Du bist auf Platz ${myRank} von ${list.length} – weiter so!`, `You’re in place ${myRank} of ${list.length} – keep going!`)) : L("Wer sammelt diese Woche die meisten Punkte?", "Who collects the most points this week?"));
+    h = hero(sub) +
+      (S.groups.length > 1 ? `<div class="ch-chips">${S.groups.map(x => `<button class="ch-chip" data-c="grp" data-id="${x.id}" aria-pressed="${x.id === g.id}">${esc(x.name || L("Gruppe", "Group"))}</button>`).join("")}</div>` : "") +
+      `<div class="ch-seg">${[["w", L("Diese Woche", "This week")], ["lw", L("Letzte Woche", "Last week")], ["all", L("Gesamt", "All time")]].map(([r, t]) => `<button data-c="r" data-r="${r}" aria-pressed="${S.r === r}">${t}</button>`).join("")}</div>` +
+      (S.err ? `<p class="ch-err">${S.err}</p>` : "") +
+      (S.loading && !S.board ? `<div class="ch-load"><i></i></div>` : list.length ? pod + `<div class="ch-list">${list.map(R).join("")}</div>`
+        : `<div class="ch-empty">${L("Noch niemand in dieser Gruppe.", "Nobody in this group yet.")}</div>`) +
+      (S.r !== "all" ? `<div class="ch-h"><h3>⚔️ ${L("Herausforderungen", "Challenges")}</h3><small>${S.r === "w" ? L("diese Woche", "this week") : L("letzte Woche", "last week")}</small></div>` +
+        (duels.length ? `<div class="ch-duels">${duels.join("")}</div>` : `<div class="ch-empty">${S.r === "w" ? (meIn ? L("Tippe bei einem Kind auf ⚔️ und fordere es heraus!", "Tap ⚔️ next to a child to challenge them!") : L("Noch keine Herausforderungen.", "No challenges yet.")) : L("Letzte Woche gab es keine Herausforderungen.", "There were no challenges last week.")}</div>`) : "") +
+      `<div class="ch-card2"><h4>👨‍👩‍👧‍👦 ${esc(g.name || L("Unsere Gruppe", "Our group"))} · ${g.n} ${g.n === 1 ? L("Familie", "family") : L("Familien", "families")}</h4>
+        <p class="mut">${L("Andere Familien einladen – sie geben diesen Code unter Challenge → Eltern → „Beitreten“ ein:", "Invite other families – they enter this code under Challenge → Parents → “Join”:")}</p>
+        <div class="ch-code">${esc(g.invite)}</div><button class="ch-btn sec" data-c="copy" data-v="${esc(g.invite)}">📋 ${L("Code kopieren", "Copy code")}</button></div>` +
+      (S.gate ? gateHTML() : S.mgr ? mgrHTML() : `<button class="ch-btn sec" style="margin-top:12px" data-c="gate">🔒 ${L("Eltern: Gruppen & Einstellungen", "Parents: groups & settings")}</button>`) +
+      rulesHTML();
+    if(S.r === "w" && duels.length) lss(seenKey(), Date.now());
+  }
+  v.innerHTML = h;
+}
+
+/* ---------- 5. Herausfordern ---------- */
+function vsSheet(id){
+  const k = S.board && S.board.kids.find(x => x.id === id), me = S.board && S.board.kids.find(x => x.id === F.active);
+  if(!k || !me) return;
+  const d = document.createElement("div"); d.className = "ch-sheet";
+  d.innerHTML = `<div role="dialog" aria-modal="true"><h3>⚔️ ${L(`${esc(k.name)} herausfordern`, `Challenge ${esc(k.name)}`)}</h3>
+    <div class="vs"><span>${esc(me.avatar)}</span><span style="font-size:26px">⚔️</span><span>${esc(k.avatar)}</span></div>
+    <p style="margin:0;color:var(--muted);font-weight:600;text-align:center">${L("Wer schafft diese Woche mehr …", "Who gets more this week …")}</p>
+    <div class="ch-kinds">${Object.keys(KINDS).map(x => `<button data-kind="${x}"><span>${KINDS[x].ic}</span>${kName(x)}</button>`).join("")}</div>
+    <button class="ch-btn sec" data-kind="_x" style="margin-top:12px">${L("Abbrechen", "Cancel")}</button></div>`;
+  document.body.appendChild(d);
+  d.addEventListener("click", async e => {
+    if(e.target === d){ d.remove(); return; }
+    const b = e.target.closest("[data-kind]"); if(!b) return;
+    if(b.dataset.kind === "_x"){ d.remove(); return; }
+    d.querySelectorAll("button").forEach(x => x.disabled = true);
+    try{
+      await F.rpc("send_duel", {p_code: F.code, p_group: S.gid, p_from: F.active, p_to: k.id, p_kind: b.dataset.kind, p_wk: range("w").wk});
+      d.remove(); F.toast(L(`Herausforderung an ${k.name} geschickt ⚔️`, `Challenge sent to ${k.name} ⚔️`));
+      if(S.r !== "w") S.r = "w"; load();
+    }catch(err){ d.remove(); F.toast(errMsg(err)); }
+  });
+}
+
+/* ---------- 6. Klicks ---------- */
+const newGate = () => ({a: 3 + Math.floor(Math.random() * 7), b: 3 + Math.floor(Math.random() * 7)});
+document.getElementById("chV").addEventListener("input", e => {
+  if(e.target.id === "chJoin"){ const r = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 8); e.target.value = r.length > 4 ? r.slice(0, 4) + "-" + r.slice(4) : r; }
+  if(e.target.id === "chGate") e.target.value = e.target.value.replace(/\D/g, "");
+});
+document.getElementById("chV").addEventListener("click", async e => {
+  const b = e.target.closest("[data-c]"); if(!b) return;
+  const c = b.dataset.c;
+  const val = id => { const el = document.getElementById(id); return el ? el.value.trim() : ""; };
+  if(c === "fam"){ F.open(); return; }
+  if(c === "retry"){ load(true); return; }
+  if(c === "r"){ S.r = b.dataset.r; S.board = null; load(); return; }
+  if(c === "grp"){ S.gid = b.dataset.id; lss(LK(), S.gid); S.board = null; load(); return; }
+  if(c === "vs"){ vsSheet(b.dataset.id); return; }
+  if(c === "copy"){ const v = b.dataset.v; try{ await navigator.clipboard.writeText(v); F.toast(L("Code kopiert ✓", "Code copied ✓")); }catch(_){ const el = document.querySelector("#chV .ch-code"); if(el){ const r = document.createRange(); r.selectNodeContents(el); const s = getSelection(); s.removeAllRanges(); s.addRange(r); } F.toast(L("Code markiert – jetzt kopieren", "Code selected – copy it now")); } return; }
+  if(c === "gate"){ S.gate = newGate(); S.mgr = false; draw(); setTimeout(() => { const i = document.getElementById("chGate"); if(i){ i.focus(); i.scrollIntoView({block:"center", behavior:"smooth"}); } }, 50); return; }
+  if(c === "gatex"){ S.gate = null; draw(); return; }
+  if(c === "gateok"){
+    if(Number(val("chGate")) === S.gate.a * S.gate.b){ S.gate = null; S.mgr = true; S.mErr = null; S.confirmLeave = false; draw(); const m = document.getElementById("chNewName"); if(m) m.scrollIntoView({block:"center", behavior:"smooth"}); }
+    else { S.gate = Object.assign(newGate(), {err: L("Leider falsch.", "Sorry, wrong.")}); draw(); }
+    return;
+  }
+  if(c === "mgrx"){ S.mgr = false; S.confirmLeave = false; draw(); return; }
+  if(c === "askleave"){ S.confirmLeave = true; draw(); return; }
+  if(c === "leavex"){ S.confirmLeave = false; draw(); return; }
+  if(c === "create" || c === "join" || c === "leave" || c === "tog"){
+    b.disabled = true; S.mErr = null;
+    try{
+      if(c === "create"){ const g = await F.rpc("create_group", {p_code: F.code, p_name: val("chNewName") || (F.fam.name ? F.fam.name + " & Freunde" : L("Unsere Challenge", "Our challenge"))}); S.gid = g.id; lss(LK(), g.id); S.mgr = false; F.toast(L("Gruppe gegründet ✓ – jetzt den Code teilen", "Group created ✓ – now share the code")); }
+      if(c === "join"){ const code = val("chJoin"); if(code.replace(/-/g, "").length !== 8){ S.mErr = L("Der Gruppen-Code hat 8 Zeichen.", "The group code has 8 characters."); draw(); return; } const g = await F.rpc("join_group", {p_code: F.code, p_invite: code}); S.gid = g.id; lss(LK(), g.id); S.mgr = false; F.toast(L(`Willkommen in „${g.name}“ ✓`, `Welcome to “${g.name}” ✓`)); }
+      if(c === "leave"){ await F.rpc("leave_group", {p_code: F.code, p_group: S.gid}); S.gid = null; S.confirmLeave = false; S.mgr = false; F.toast(L("Gruppe verlassen", "Left the group")); }
+      if(c === "tog"){ const on = b.getAttribute("aria-checked") !== "true"; await F.rpc("set_challenge", {p_code: F.code, p_kid: b.dataset.id, p_on: on}); S.hidden = on ? S.hidden.filter(x => x !== b.dataset.id) : [...S.hidden, b.dataset.id]; b.setAttribute("aria-checked", String(on)); b.disabled = false; S.board = null; loadBoard().then(draw).catch(() => {}); return; }
+      S.board = null; await load(true);
+      window.scrollTo({top: 0, behavior: "smooth"});
+    }catch(err){ S.mErr = errMsg(err); draw(); }
+    return;
+  }
+});
+
+/* ---------- 7. Navigation, Startseite, Benachrichtigung ---------- */
+const _setTab = setTab;
+setTab = function(id){
+  _setTab(id);
+  if(id === "challenge"){
+    document.querySelectorAll(".tab").forEach(b => b.dataset.tab === "home" ? b.setAttribute("aria-current", "page") : b.removeAttribute("aria-current"));
+    S.gate = null; S.mgr = false; draw(); load();
+  }
+};
+const _setLang = setLang;
+setLang = function(l){ _setLang(l); if(document.getElementById("v-challenge").classList.contains("active")) draw(); };
+
+function homeCard(){
+  if(!F.CLOUD || !F.fam || !F.code || !F.active) return "";
+  const c = lsj(cacheKey(), null);
+  if(c && c.n){
+    return `<button class="lm-chcard" data-go="challenge"><span class="ic" aria-hidden="true">🏆</span><span class="tx"><b>Challenge</b><span>${esc(c.g || "")} · ${fmt(c.pt)} ${L("Punkte diese Woche", "points this week")}</span></span>
+      ${c.rank ? `<span class="rk">${L("Platz", "Place")}<big>${c.rank}</big>${L("von", "of")} ${c.n}</span>` : `<span class="tp">${(c.top || []).map(a => `<i>${esc(a)}</i>`).join("")}</span>`}</button>`;
+  }
+  return `<button class="lm-chcard" data-go="challenge"><span class="ic" aria-hidden="true">🏆</span><span class="tx"><b>Challenge</b><span>${L("Sammle Punkte und fordere andere Familien heraus ⚔️", "Collect points and challenge other families ⚔️")}</span></span><span class="rk" style="font-size:20px">›</span></button>`;
+}
+const _rs = renderStart;
+renderStart = function(){
+  _rs.apply(this, arguments);
+  const html = homeCard(); if(!html) return;
+  const after = document.querySelector("#homeV .lm-gcard") || document.querySelector("#homeV .pt-card");
+  if(after) after.insertAdjacentHTML("afterend", html);
+};
+
+function popDuel(d, from){
+  const p = document.createElement("div"); p.className = "ch-pop";
+  p.innerHTML = `<div role="alertdialog" aria-modal="true"><div class="vs"><span>${esc(from.avatar)}</span><span style="font-size:28px">⚔️</span></div>
+    <h3>${L("Neue Herausforderung!", "New challenge!")}</h3>
+    <p>${L(`<b>${esc(from.name)}</b> fordert dich heraus: Wer schafft diese Woche mehr ${KINDS[d.kind].ic} ${kName(d.kind)}?`, `<b>${esc(from.name)}</b> challenges you: who gets more ${KINDS[d.kind].ic} ${kName(d.kind)} this week?`)}</p>
+    <button class="ch-btn" data-p="go">${L("Herausforderung ansehen", "See challenge")}</button><button class="ch-btn sec" data-p="x">${L("Später", "Later")}</button></div>`;
+  document.body.appendChild(p);
+  p.addEventListener("click", e => { const b = e.target.closest("[data-p]"); if(e.target === p || b){ p.remove(); if(b && b.dataset.p === "go"){ S.r = "w"; setTab("challenge"); } } });
+}
+function checkNewDuels(silent){
+  if(!S.board || S.r !== "w") return;
+  const seen = lsj(seenKey(), 0);
+  const fresh = (S.board.duels || []).filter(d => d.to === F.active && Date.parse(d.at) > seen);
+  if(!fresh.length) return;
+  if(silent){ if(document.getElementById("v-challenge").classList.contains("active")) lss(seenKey(), Date.now()); return; }
+  const from = S.board.kids.find(k => k.id === fresh[0].from); if(!from) return;
+  lss(seenKey(), Date.now()); popDuel(fresh[0], from);
+}
+async function startup(){
+  if(!ready() || document.querySelector(".lmf-pick")) return;
+  try{
+    await loadGroups(); if(!S.gid) return;
+    S.r = "w"; await loadBoard();
+    if(document.querySelector("#v-home.active")) renderStart();
+    if(!document.getElementById("v-challenge").classList.contains("active")) checkNewDuels(false);
+  }catch(e){}
+}
+setTimeout(startup, 2500);
+document.addEventListener("visibilitychange", () => { if(document.visibilityState === "visible" && ready()) setTimeout(() => { if(document.getElementById("v-challenge").classList.contains("active")) load(); else startup(); }, 1500); });
+window.lmChallenge = {refresh, open: () => setTab("challenge")};
 })();
 
 /* ---------- init ---------- */
