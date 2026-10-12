@@ -8324,6 +8324,11 @@ const css = `
 .ch-list{display:grid;gap:8px;margin-top:10px}
 .ch-row{display:flex;width:100%;border:0;font:inherit;color:var(--ink);text-align:left;cursor:pointer;align-items:center;gap:10px;background:var(--surface);border-radius:18px;padding:9px 10px 9px 8px;box-shadow:inset 0 0 0 1px var(--sep)}
 .ch-row:active{transform:scale(.98)}
+.lm-top .lm-trophy{position:relative;width:46px;height:46px;border-radius:50%;border:0;background:linear-gradient(145deg,#FFD976,#E0913A);font-size:24px;line-height:1;display:grid;place-items:center;cursor:pointer;flex:none;padding:0;box-shadow:0 6px 14px -6px rgba(224,145,58,.8),inset 0 0 0 2px rgba(255,255,255,.35)}
+.lm-top .lm-trophy:active{transform:scale(.94)}
+.lm-top:has(.lm-trophy){gap:8px}
+.lm-top:has(.lm-trophy) .lm-word b{font-size:clamp(20px,6.6vw,31px);white-space:nowrap}
+.lm-top .lm-trophy i{position:absolute;right:-3px;bottom:-3px;min-width:20px;height:20px;border-radius:10px;background:#3B2A7A;color:#fff;font-style:normal;font-size:11.5px;font-weight:800;display:grid;place-items:center;padding:0 4px;box-shadow:0 0 0 2px #FFD976}
 .ch-row .rk{font-size:17px}
 .ch-row .tx b{font-size:16.5px!important}
 .ch-me{display:inline-block!important;width:auto!important;margin-left:4px;font-size:11px;font-weight:800;color:#1d1606;background:var(--gold);border-radius:999px;padding:1px 7px;vertical-align:2px}
@@ -8726,8 +8731,16 @@ function homeCard(){
 const _rs = renderStart;
 renderStart = function(){
   _rs.apply(this, arguments);
+  /* Pokal oben im Kopf – immer sichtbar */
+  const top = document.querySelector("#homeV .lm-top");
+  if(top && F.CLOUD && !top.querySelector(".lm-trophy")){
+    const c = F.fam && F.code && F.active ? lsj(cacheKey(), null) : null;
+    const me = top.querySelector(".lmf-me, .nav-btn");
+    const btn = `<button class="lm-trophy" data-go="challenge" aria-label="Challenge${c && c.rank ? `, ${L("Platz", "place")} ${c.rank}` : ""}">🏆${c && c.rank ? `<i>${c.rank}</i>` : ""}</button>`;
+    if(me) me.insertAdjacentHTML("beforebegin", btn); else top.insertAdjacentHTML("beforeend", btn);
+  }
   const html = homeCard(); if(!html) return;
-  const after = document.querySelector("#homeV .lm-gcard") || document.querySelector("#homeV .pt-card");
+  const after = document.querySelector("#homeV .pt-card") || document.querySelector("#homeV .lm-gcard");
   if(after) after.insertAdjacentHTML("afterend", html);
 };
 
@@ -10694,12 +10707,14 @@ function streak(k){
 const W = {
  mulk:{slug:"al-mulk", ic:"🌙", when:["Jeden Abend", "Every evening"], title:["Nicht vergessen: Sūrat al-Mulk", "Don't forget: Sūrat al-Mulk"],
   ask:["Lies heute Abend vor dem Schlafen al-Mulk – 30 Verse, etwa 5 bis 7 Minuten.", "Read al-Mulk tonight before you sleep – 30 verses, about 5 to 7 minutes."],
+  short:["Vor dem Schlafen · 30 Verse · ca. 5 Min.", "Before sleep · 30 verses · about 5 min."],
   ar:"إِنَّ سُورَةً مِنَ الْقُرْآنِ ثَلَاثُونَ آيَةً شَفَعَتْ لِرَجُلٍ حَتَّى غُفِرَ لَهُ، وَهِيَ سُورَةُ تَبَارَكَ الَّذِي بِيَدِهِ الْمُلْكُ",
   hd:["„Eine Sure im Qur'an mit dreißig Versen trat für einen Mann ein, bis ihm vergeben wurde. Es ist die Sure: Tabārakal-ladhī biyadihil-mulk.“", "“There is a sūra in the Qur'an of thirty verses which interceded for a man until he was forgiven. It is the sūra: Tabārakal-ladhī biyadihil-mulk.”"],
   src:"Tirmidhī 2891 (ḥasan); Abū Dāwūd 1400",
   why:["Darum lesen wir sie jeden Abend: Sie kann im Jenseits für uns eintreten. Und der Prophet ﷺ schlief nicht, bevor er as-Sadschda und al-Mulk gelesen hatte (Tirmidhī 2892; al-Albānī: ṣaḥīḥ).", "That is why we read it every evening: it can speak up for us in the Hereafter. And the Prophet ﷺ did not sleep until he had recited as-Sajda and al-Mulk (Tirmidhī 2892; al-Albānī: ṣaḥīḥ)."]},
  kahf:{slug:"al-kahf", ic:"🕌", when:["Jeden Freitag", "Every Friday"], title:["Heute ist Freitag: Sūrat al-Kahf", "It's Friday: Sūrat al-Kahf"],
   ask:["Lies heute al-Kahf. Sie hat 110 Verse – du kannst sie gut über den Tag verteilen.", "Read al-Kahf today. It has 110 verses – you can spread it over the day."],
+  short:["Heute ist Freitag · 110 Verse", "It's Friday · 110 verses"],
   ar:"مَنْ قَرَأَ سُورَةَ الْكَهْفِ فِي يَوْمِ الْجُمُعَةِ أَضَاءَ لَهُ مِنَ النُّورِ مَا بَيْنَ الْجُمُعَتَيْنِ",
   hd:["„Wer am Freitag Sūrat al-Kahf liest, dem leuchtet ein Licht von einem Freitag bis zum nächsten.“", "“Whoever reads Sūrat al-Kahf on Friday, a light will shine for him from one Friday to the next.”"],
   src:"al-Ḥākim, al-Baihaqī – al-Albānī: Ṣaḥīḥ al-Dschāmiʿ 6470",
@@ -10721,8 +10736,8 @@ function homeCard(){
   const S = state(), due = [S.mulkDue && "mulk", S.kahfDue && "kahf"].filter(Boolean);
   if(!due.length) return "";
   return due.map(k => { const w = W[k], st = streak(k);
-    return `<div class="wd-home" data-wd="${k}"><span class="ic" aria-hidden="true">${w.ic}</span><span class="tx"><b>${tx(w.title)}</b><span>${tx(w.ask)}</span>${st ? `<span class="st">🔥 ${st} ${k === "mulk" ? L(st === 1 ? "Abend" : "Abende", st === 1 ? "evening" : "evenings") : L(st === 1 ? "Freitag" : "Freitage", st === 1 ? "Friday" : "Fridays")} ${L("in Folge", "in a row")}</span>` : ""}</span>
-      <span class="bt"><button class="wd-go" data-wdgo="${k}">📖 ${L("Lesen", "Read")}</button><button class="wd-ok" data-wdok="${k}">✓ ${L("Gelesen", "Done")}</button></span></div>`; }).join("");
+    return `<div class="wd-home" data-wd="${k}"><button class="ic" data-wdgo="${k}" aria-hidden="true" tabindex="-1">${w.ic}</button><button class="tx" data-wdgo="${k}"><b>${k === "mulk" ? L("Heute al-Mulk lesen", "Read al-Mulk tonight") : L("Heute al-Kahf lesen", "Read al-Kahf today")}</b><span>${tx(w.short)}${st ? ` · 🔥 ${st}` : ""}</span></button>
+      <button class="wd-ok" data-wdok="${k}" aria-label="${L("Gelesen", "Done")}">✓</button></div>`; }).join("");
 }
 const _rs = renderStart;
 renderStart = function(){
@@ -10845,12 +10860,12 @@ st.textContent = `
 .chev2{width:10px;height:10px;border-right:2.5px solid var(--muted);border-bottom:2.5px solid var(--muted);transform:rotate(45deg);transition:transform .2s;margin:0 4px 4px 0}
 .hzs[open] .chev2{transform:rotate(-135deg);margin:4px 4px 0 0}
 .hzs .group{margin:0;border-radius:0;box-shadow:none;border-top:1px solid var(--sep);background:transparent}
-.wd-home{position:relative;z-index:1;display:grid;grid-template-columns:auto 1fr;gap:6px 12px;align-items:start;background:linear-gradient(135deg,color-mix(in srgb,var(--gold) 20%,var(--surface)),var(--surface));border-radius:22px;padding:14px;margin:12px 0;box-shadow:inset 0 0 0 1.5px color-mix(in srgb,var(--gold) 55%,transparent)}
-.wd-home .ic{font-size:30px;line-height:1.1}
-.wd-home .tx b{display:block;font-size:16px}
-.wd-home .tx>span{display:block;font-size:13.5px;color:var(--muted);font-weight:600;margin-top:2px;line-height:1.4}
-.wd-home .tx .st{color:var(--gold);font-weight:800}
-.wd-home .bt{grid-column:1 / -1;display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:4px}
+.wd-home{position:relative;z-index:1;display:flex;align-items:center;gap:10px;background:linear-gradient(135deg,color-mix(in srgb,var(--gold) 20%,var(--surface)),var(--surface));border-radius:20px;padding:8px 8px 8px 12px;margin:12px 0;box-shadow:inset 0 0 0 1.5px color-mix(in srgb,var(--gold) 55%,transparent)}
+.wd-home .ic{border:0;background:none;padding:0;font-size:28px;line-height:1;cursor:pointer}
+.wd-home .tx{flex:1;min-width:0;border:0;background:none;padding:0;text-align:left;color:var(--ink);font:inherit;cursor:pointer}
+.wd-home .tx b{display:block;font-size:15.5px}
+.wd-home .tx span{display:block;font-size:12.5px;color:var(--muted);font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.wd-home .wd-ok{width:46px;height:46px;padding:0;border-radius:14px;font-size:20px;flex:none;background:var(--gold);color:#1d1606}
 .wd-go,.wd-ok,.wd-b{border:0;border-radius:14px;padding:11px 10px;font:inherit;font-weight:800;font-size:15px;cursor:pointer}
 .wd-go,.wd-b{background:var(--gold);color:#1d1606}
 .wd-ok,.wd-b.sec{background:var(--fill);color:var(--ink)}
