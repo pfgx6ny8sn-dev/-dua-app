@@ -5459,6 +5459,11 @@ const VER = (id) => ({id, langs:[{k:"de", label:{de:"🧕🏼 Erzählerin · Deu
 const vSrc = (id, l, f) => `videos/${id}_${l}${f === "169" ? "_169" : ""}.mp4`;
 const vPoster = (id, l, f) => `videos/${id}_poster_${l}${f === "169" ? "_169" : ""}.jpg`;
 const VIDEO_LIST = [
+ {id:"abubakr", has169:true, ar:"أَبُو بَكْرٍ الصِّدِّيق", tag:{de:"Neu · Film · Sahaba", en:"New · Film · Companions"},
+  versions:{id:"abubakr", langs:[{k:"de", label:{de:"🎙️ Erzählstimme · Deutsch", en:"🎙️ Narrator · German"}}]},
+  title:{de:"Abū Bakr aṣ-Ṣiddīq – der erste Khalif", en:"Abū Bakr aṣ-Ṣiddīq – the first Caliph"},
+  sub:{de:"Der beste Freund des Propheten ﷺ: vom ersten Glauben über die Höhle Thaur bis zum Sammeln des Qur'an. 16 Szenen, ca. 8 Minuten. Der Prophet ﷺ und die Ṣaḥāba werden nicht gezeigt.", en:"The Prophet's ﷺ best friend: from his first belief through the cave of Thawr to collecting the Qur'an. 16 scenes, approx. 8 minutes. The Prophet ﷺ and the Companions are not depicted."},
+  s:"Qur'an 9:40, 3:144; Bukhārī 3653, 3661, 3668, 3905, 4986; Muslim 1028, 2352; Abū Dāwūd 1678"},
  {id:"muhammad", has169:true, ar:"مُحَمَّدٌ ﷺ", tag:{de:"Neu · Film mit Erzählstimme", en:"New · Film with narrator"}, versions:VER("muhammad"),
   title:{de:"Prophet Muhammad ﷺ", en:"Prophet Muhammad ﷺ"},
   sub:{de:"Vom Jahr des Elefanten bis zur Abschiedspilgerfahrt – Barmherzigkeit für alle Welten. 15 Szenen, ca. 7 Minuten. Der Prophet ﷺ und die Ṣaḥāba werden nicht gezeigt.", en:"From the Year of the Elephant to the Farewell Pilgrimage – a mercy to the worlds. 15 scenes, approx. 7 minutes. The Prophet ﷺ and the Companions are not depicted."},
@@ -5486,7 +5491,7 @@ function videoBox(v){
       <button type="button" class="vd-more" aria-label="${L("Stimme und Format", "Voice and format")}" aria-expanded="false"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="5" cy="12" r="2.2"/><circle cx="12" cy="12" r="2.2"/><circle cx="19" cy="12" r="2.2"/></svg></button>
       <div class="vd-menu" hidden>
         <p class="vm-h">${L("Stimme", "Voice")}</p>
-        <div class="vm-g">${v.versions.langs.map(x => `<button type="button" class="${x.k === l ? "on" : ""}" data-vl="${x.k}" aria-pressed="${x.k === l}"><span>${x.k === "de" ? (lang === "en" ? "🧕🏼 German" : "🧕🏼 Deutsch") : "🧔🏻‍♂️ العربية"}</span>${ck}</button>`).join("")}</div>
+        <div class="vm-g">${v.versions.langs.map(x => `<button type="button" class="${x.k === l ? "on" : ""}" data-vl="${x.k}" aria-pressed="${x.k === l}"><span>${v.id === "abubakr" && x.label ? x.label[lang === "en" ? "en" : "de"] : x.k === "de" ? (lang === "en" ? "🧕🏼 German" : "🧕🏼 Deutsch") : "🧔🏻‍♂️ العربية"}</span>${ck}</button>`).join("")}</div>
         ${v.has169 ? `<p class="vm-h">${L("Format", "Format")}</p>
         <div class="vm-g"><button type="button" class="on" data-vf="169" aria-pressed="true"><span>▭ ${L("Querformat", "Landscape")}</span>${ck}</button><button type="button" data-vf="916" aria-pressed="false"><span>▯ ${L("Hochformat", "Portrait")}</span>${ck}</button></div>` : ""}
       </div>
@@ -10984,6 +10989,6 @@ setTab("home");
 if(lang === "en") translateTree(document.body);
 </script>
 <script>if("serviceWorker" in navigator&&location.protocol==="https:"){addEventListener("load",()=>navigator.serviceWorker.register("sw.js").catch(()=>{}));}</script>
-<script>window.LM_BUILD="20261014121108";(function(){function chk(){fetch("version.json?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.json()}).then(function(v){if(!v||!v.b||v.b===window.LM_BUILD)return;try{if(sessionStorage.getItem("lm-upd")===v.b)return;sessionStorage.setItem("lm-upd",v.b)}catch(e){}location.reload()}).catch(function(){})}if(location.protocol==="https:"){addEventListener("load",function(){setTimeout(chk,1500)});document.addEventListener("visibilitychange",function(){if(document.visibilityState==="visible")chk()})}})();</script>
+<script>window.LM_BUILD="20261014180630";(function(){function chk(){fetch("version.json?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.json()}).then(function(v){if(!v||!v.b||v.b===window.LM_BUILD)return;try{if(sessionStorage.getItem("lm-upd")===v.b)return;sessionStorage.setItem("lm-upd",v.b)}catch(e){}location.reload()}).catch(function(){})}if(location.protocol==="https:"){addEventListener("load",function(){setTimeout(chk,1500)});document.addEventListener("visibilitychange",function(){if(document.visibilityState==="visible")chk()})}})();</script>
 </body>
 </html>
