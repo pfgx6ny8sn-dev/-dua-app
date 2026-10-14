@@ -8220,6 +8220,8 @@ function salHTML(){
 const monday = (off) => { const d = new Date(); d.setHours(0, 0, 0, 0); d.setDate(d.getDate() - ((d.getDay() + 6) % 7) + 7 * (off || 0)); return d; };
 function range(r){
   if(r === "all") return {from:"0000-00-00", to:"9999-99-99", wk: dayKey(monday(0))};
+  if(r === "d"){ const t = dayKey(new Date()); return {from:t, to:t, wk: dayKey(monday(0))}; }
+  if(r === "m"){ const n = new Date(), a = new Date(n.getFullYear(), n.getMonth(), 1), b = new Date(n.getFullYear(), n.getMonth() + 1, 0); return {from: dayKey(a), to: dayKey(b), wk: dayKey(monday(0))}; }
   const m = monday(r === "lw" ? -1 : 0), s = new Date(m); s.setDate(m.getDate() + 6);
   return {from: dayKey(m), to: dayKey(s), wk: dayKey(m)};
 }
@@ -8305,7 +8307,7 @@ const css = `
 .ch-chips::-webkit-scrollbar{display:none}
 .ch-chip{flex:none;border:0;border-radius:999px;padding:8px 14px;background:var(--surface);color:var(--ink);font:inherit;font-size:14px;font-weight:700;box-shadow:inset 0 0 0 1px var(--sep);cursor:pointer}
 .ch-chip[aria-pressed="true"]{box-shadow:inset 0 0 0 2px var(--gold);color:var(--gold)}
-.ch-seg{display:grid;grid-template-columns:repeat(3,1fr);gap:4px;background:var(--fill);border-radius:16px;padding:4px;margin:12px 0 4px}
+.ch-seg{display:grid;grid-template-columns:repeat(5,1fr);gap:4px;background:var(--fill);border-radius:16px;padding:4px;margin:12px 0 4px}
 .ch-seg button{border:0;border-radius:12px;padding:9px 4px;background:none;color:var(--muted);font:inherit;font-size:14px;font-weight:800;cursor:pointer}
 .ch-seg button[aria-pressed="true"]{background:var(--surface);color:var(--ink);box-shadow:0 2px 8px rgba(0,0,0,.12)}
 .ch-pod{display:grid;grid-template-columns:repeat(3,1fr);align-items:end;gap:8px;margin:18px 0 6px}
@@ -8324,6 +8326,7 @@ const css = `
 .ch-list{display:grid;gap:8px;margin-top:10px}
 .ch-row{display:flex;width:100%;border:0;font:inherit;color:var(--ink);text-align:left;cursor:pointer;align-items:center;gap:10px;background:var(--surface);border-radius:18px;padding:9px 10px 9px 8px;box-shadow:inset 0 0 0 1px var(--sep)}
 .ch-row:active{transform:scale(.98)}
+#chV .ch-seg button{font-size:13.5px;padding-left:2px;padding-right:2px;white-space:nowrap}
 .lm-top .lm-trophy{position:relative;width:46px;height:46px;border-radius:50%;border:0;background:linear-gradient(145deg,#FFD976,#E0913A);font-size:24px;line-height:1;display:grid;place-items:center;cursor:pointer;flex:none;padding:0;box-shadow:0 6px 14px -6px rgba(224,145,58,.8),inset 0 0 0 2px rgba(255,255,255,.35)}
 .lm-top .lm-trophy:active{transform:scale(.94)}
 .lm-top:has(.lm-trophy){gap:8px}
@@ -8579,15 +8582,17 @@ function draw(){
     const seen = lsj(seenKey(), 0);
     const duels = (S.board && S.board.duels || []).map(d => duelHTML(d, byId, seen)).filter(Boolean);
     const me = byId[F.active], myRank = me ? rankOf(list, me.id) : 0;
+    const RL = {d:L("heute", "today"), w:L("diese Woche", "this week"), m:L("diesen Monat", "this month")};
     const sub = S.r === "all" ? L("Alle Punkte seit Beginn", "All points so far") : S.r === "lw" ? L("Ergebnis der letzten Woche", "Last week’s result") :
-      (me ? (myRank === 1 ? L(`Du bist auf Platz 1 – Māschāʾallāh! 🥇`, `You’re in 1st place – Māshāʾallāh! 🥇`) : L(`Du bist auf Platz ${myRank} von ${list.length} – weiter so!`, `You’re in place ${myRank} of ${list.length} – keep going!`)) : L("Wer sammelt diese Woche die meisten Punkte?", "Who collects the most points this week?"));
+      (me && S.r !== "w" ? (myRank === 1 ? L(`Platz 1 ${RL[S.r]} – Māschāʾallāh! 🥇`, `1st place ${RL[S.r]} – Māshāʾallāh! 🥇`) : L(`Du bist ${RL[S.r]} auf Platz ${myRank} von ${list.length}`, `You’re in place ${myRank} of ${list.length} ${RL[S.r]}`)) :
+      me ? (myRank === 1 ? L(`Du bist auf Platz 1 – Māschāʾallāh! 🥇`, `You’re in 1st place – Māshāʾallāh! 🥇`) : L(`Du bist auf Platz ${myRank} von ${list.length} – weiter so!`, `You’re in place ${myRank} of ${list.length} – keep going!`)) : L("Wer sammelt diese Woche die meisten Punkte?", "Who collects the most points this week?"));
     h = hero(sub) +
       (S.groups.length > 1 ? `<div class="ch-chips">${S.groups.map(x => `<button class="ch-chip" data-c="grp" data-id="${x.id}" aria-pressed="${x.id === g.id}">${esc(x.name || L("Gruppe", "Group"))}</button>`).join("")}</div>` : "") +
-      `<div class="ch-seg">${[["w", L("Diese Woche", "This week")], ["lw", L("Letzte Woche", "Last week")], ["all", L("Gesamt", "All time")]].map(([r, t]) => `<button data-c="r" data-r="${r}" aria-pressed="${S.r === r}">${t}</button>`).join("")}</div>` +
+      `<div class="ch-seg">${[["d", L("Heute", "Today")], ["w", L("Woche", "Week")], ["lw", L("Vorwoche", "Last wk")], ["m", L("Monat", "Month")], ["all", L("Gesamt", "All")]].map(([r, t]) => `<button data-c="r" data-r="${r}" aria-pressed="${S.r === r}">${t}</button>`).join("")}</div>` +
       (S.err ? `<p class="ch-err">${S.err}</p>` : "") +
       (S.loading && !S.board ? `<div class="ch-load"><i></i></div>` : list.length ? pod + `<div class="ch-list">${list.map(R).join("")}</div>`
         : `<div class="ch-empty">${L("Noch niemand in dieser Gruppe.", "Nobody in this group yet.")}</div>`) +
-      (S.r !== "all" ? `<div class="ch-h"><h3>⚔️ ${L("Herausforderungen", "Challenges")}</h3><small>${S.r === "w" ? L("diese Woche", "this week") : L("letzte Woche", "last week")}</small></div>` +
+      (S.r === "w" || S.r === "lw" ? `<div class="ch-h"><h3>⚔️ ${L("Herausforderungen", "Challenges")}</h3><small>${S.r === "w" ? L("diese Woche", "this week") : L("letzte Woche", "last week")}</small></div>` +
         (duels.length ? `<div class="ch-duels">${duels.join("")}</div>` : `<div class="ch-empty">${S.r === "w" ? (meIn ? L("Tippe auf einen Namen und fordere das Kind heraus ⚔️", "Tap a name to challenge that child ⚔️") : L("Noch keine Herausforderungen.", "No challenges yet.")) : L("Letzte Woche gab es keine Herausforderungen.", "There were no challenges last week.")}</div>`) : "") +
       `<div class="ch-card2"><h4>👨‍👩‍👧‍👦 ${esc(g.name || L("Unsere Gruppe", "Our group"))} · ${g.n} ${g.n === 1 ? L("Familie", "family") : L("Familien", "families")}</h4>
         <p class="mut">${L("Andere Familien einladen – sie geben diesen Code unter Challenge → Eltern → „Beitreten“ ein:", "Invite other families – they enter this code under Challenge → Parents → “Join”:")}</p>
@@ -8630,7 +8635,7 @@ function vsSheet(id){
 function kidSheet(id){
   const list = sorted(), k = list.find(x => x.id === id); if(!k) return;
   const s = k.s || {}, meIn = list.some(x => x.id === F.active), rk = rankOf(list, k.id);
-  const per = S.r === "all" ? L("insgesamt", "in total") : S.r === "lw" ? L("letzte Woche", "last week") : L("diese Woche", "this week");
+  const per = {all:L("insgesamt", "in total"), lw:L("letzte Woche", "last week"), d:L("heute", "today"), m:L("diesen Monat", "this month")}[S.r] || L("diese Woche", "this week");
   const rows = [
     ["🕌", L("Gebete eingetragen", "Prayers logged"), s.sn, s.s ? `${fmt(s.s)} ${L("Pkt.", "pts")}` : ""],
     ["📿", L("Tasbīḥ gezählt", "Tasbīḥ counted"), s.t, ""],
@@ -10304,6 +10309,10 @@ const css = `
 .tf-bd{overflow:auto;padding:14px 16px 6px;-webkit-overflow-scrolling:touch}
 .tf-ar{font-family:"Scheherazade New","Amiri",serif;direction:rtl;text-align:right;font-size:28px;line-height:2;margin:0 0 4px}
 .tf-tr{margin:0 0 10px;font-size:15px;color:var(--muted);font-style:italic}
+.tf-tl{margin:0 0 8px;font-size:14.5px;color:var(--muted);font-style:italic;line-height:1.5}
+.tf-mean{background:var(--fill);border-radius:16px;padding:10px 14px;margin:0 0 12px}
+.tf-mean span{display:block;font-size:11.5px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--gold);margin-bottom:2px}
+.tf-mean p{margin:0;font-size:16.5px;line-height:1.55;font-weight:600}
 .tf-chips{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 12px}
 .tf-chip{display:inline-flex;align-items:center;gap:6px;border-radius:999px;padding:5px 11px;font-size:13px;font-weight:800;background:var(--fill)}
 .tf-chip.mk{background:rgba(242,176,74,.18);color:var(--gold)}
@@ -10356,10 +10365,11 @@ function open(s, i){
   if(!ov){ ov = document.createElement("div"); ov.className = "tf-ov"; document.body.appendChild(ov); ov.addEventListener("click", onClick); document.addEventListener("keydown", onKey); }
   document.documentElement.style.overflow = "hidden";
   ov.innerHTML = `<div class="tf-sh" role="dialog" aria-modal="true" aria-label="Tafsīr">
-    <div class="tf-hd"><div class="t"><b>📖 Tafsīr · ${esc2(s.t)} ${n}</b><span>${esc2(s.de)}</span></div><button class="tf-x" data-tf="x" aria-label="${L("Schließen", "Close")}">✕</button></div>
+    <div class="tf-hd"><div class="t"><b>📖 ${L("Bedeutung & Tafsīr", "Meaning & Tafsīr")} · ${esc2(s.t)} ${n}</b><span>${esc2(s.de)}</span></div><button class="tf-x" data-tf="x" aria-label="${L("Schließen", "Close")}">✕</button></div>
     <div class="tf-bd">
       <p class="tf-ar" lang="ar">${v[0]} <span style="color:var(--gold);font-size:.7em">﴿${n.toLocaleString("ar-EG")}﴾</span></p>
-      <p class="tf-tr">${esc2(v[2])}</p>
+      <p class="tf-tl">${esc2(v[1])}</p>
+      <div class="tf-mean"><span>${L("Bedeutung", "Meaning")}</span><p>${esc2(v[2])}</p></div>
       <div class="tf-chips">${chips}</div>
       <div class="tf-h">📖 ${L("Erklärung", "Explanation")}</div>${tfHTML}
       <div class="tf-h">📜 ${L("Anlass der Offenbarung", "Occasion of revelation")}</div>${asHTML}
@@ -10891,6 +10901,80 @@ st.textContent = `
 document.head.appendChild(st);
 })();
 
+/* =================== p41: Qur'an nur Arabisch (Bedeutung beim Antippen) + Geschichte Anas ibn Mālik =================== */
+(function(){
+const lsj = (k, d) => { try{ const v = localStorage.getItem(k); return v == null ? d : JSON.parse(v); }catch(e){ return d; } };
+const lss = (k, v) => { try{ localStorage.setItem(k, JSON.stringify(v)); }catch(e){} };
+
+/* ---------- 1. Sure: nur der arabische Text, Übersetzung + Tafsīr beim Antippen ---------- */
+const TRK = "lm-qx-tr";   // true = Übersetzung unter dem Vers zeigen
+const st = document.createElement("style");
+st.textContent = `
+#v-quran.qx.qx-ar .ayah .tr,#v-quran.qx.qx-ar .ayah .de{display:none}
+#v-quran.qx.qx-ar .ayah .ar{cursor:pointer}
+.qx-tip{display:flex;align-items:center;justify-content:center;gap:6px;margin:8px 4px 0;font-size:13px;font-weight:700;color:var(--muted);text-align:center}
+.qx-sw{display:flex;align-items:center;gap:12px;margin-top:14px;cursor:pointer}
+.qx-sw span{flex:1;font-size:15px;font-weight:700}
+.qx-sw span small{display:block;font-size:12.5px;color:var(--muted);font-weight:600}
+.qx-sw input{appearance:none;-webkit-appearance:none;width:50px;height:30px;border-radius:15px;background:var(--fill);position:relative;flex:none;cursor:pointer;transition:background .2s;margin:0}
+.qx-sw input::after{content:"";position:absolute;top:3px;left:3px;width:24px;height:24px;border-radius:50%;background:#fff;box-shadow:0 1px 4px rgba(0,0,0,.3);transition:transform .2s}
+.qx-sw input:checked{background:var(--gold)}
+.qx-sw input:checked::after{transform:translateX(20px)}
+`;
+document.head.appendChild(st);
+const _rq = renderQuran;
+renderQuran = function(){
+  _rq.apply(this, arguments);
+  const view = document.getElementById("v-quran"), body = document.getElementById("qrBody");
+  const showTr = !!lsj(TRK, false);
+  view.classList.toggle("qx-ar", !!qr.sura && !showTr);
+  if(!qr.sura || !body) return;
+  const pager = body.querySelector(".pager") || body.querySelector(".ayah");
+  if(!showTr && qr.mode === "read" && pager && !body.querySelector(".qx-tip")){
+    const tip = document.createElement("p"); tip.className = "qx-tip";
+    tip.textContent = L("👆 Tippe auf einen Vers – dann siehst du Bedeutung und Tafsīr", "👆 Tap a verse to see its meaning and tafsīr");
+    const host = pager.classList.contains("pager") ? pager : pager.parentElement;
+    host.insertAdjacentElement("afterend", tip);
+  }
+  const inner = body.querySelector(".qx-set .in");
+  if(inner && !inner.querySelector(".qx-sw")){
+    const row = document.createElement("label"); row.className = "qx-sw";
+    row.innerHTML = `<span>${L("Übersetzung unter dem Vers", "Translation under the verse")}<small>${L("Sonst nur Arabisch – Bedeutung beim Antippen", "Otherwise Arabic only – meaning on tap")}</small></span><input type="checkbox" ${showTr ? "checked" : ""} aria-label="${L("Übersetzung zeigen", "Show translation")}">`;
+    row.querySelector("input").addEventListener("change", e => { lss(TRK, e.target.checked); const y = scrollY; renderQuran(); scrollTo(0, y); });
+    inner.appendChild(row);
+  }
+};
+
+/* ---------- 2. Neue Sahaba-Geschichte: Anas ibn Mālik ---------- */
+if(typeof STORIES !== "undefined" && !STORIES.some(s => s.id === "anas")){
+  STORIES.push({id:"anas", g:"s", n:"Anas ibn Mālik", ar:"أَنَسُ بْنُ مَالِكٍ", sub:"Der kleine Helfer des Propheten ﷺ", e:"🗝️",
+    t:["Anas ibn Mālik war noch ein Junge, als der Prophet ﷺ nach Medina kam. Seine Mutter Umm Sulaim brachte ihn zu ihm und sagte: „O Gesandter Allahs, das ist Anas – er soll dir helfen. Bitte Allah für ihn!“ Der Prophet ﷺ machte Duʿāʾ: „O Allah, gib ihm viel Besitz und viele Kinder, und segne ihm, was Du ihm gibst.“",
+       "Zehn Jahre lang half Anas dem Propheten ﷺ. Später erzählte er: „Er hat nie ‚Uff!‘ zu mir gesagt. Und er hat mich nie gefragt: ‚Warum hast du das gemacht?‘ oder ‚Warum hast du das nicht gemacht?‘“",
+       "Einmal schickte der Prophet ﷺ Anas los, um etwas zu erledigen. Unterwegs sah Anas Kinder auf der Straße spielen – und blieb bei ihnen stehen. Da kam der Prophet ﷺ von hinten, fasste ihn sanft am Nacken und lachte: „Unais (kleiner Anas), bist du dorthin gegangen, wohin ich dich geschickt habe?“ Anas sagte: „Ja, ich gehe schon, o Gesandter Allahs!“",
+       "Ein anderes Mal gab der Prophet ﷺ Anas eine geheime Aufgabe. Deshalb kam Anas spät nach Hause. Seine Mutter fragte: „Was hat dich aufgehalten?“ Anas sagte: „Das ist ein Geheimnis.“ Da sagte sie: „Dann erzähle das Geheimnis des Gesandten Allahs niemandem!“ Und Anas hat es nie verraten.",
+       "Allah hat das Bittgebet des Propheten ﷺ erhört. Als Anas alt war, sagte er: „Bei Allah, mein Besitz ist groß, und meine Kinder und Enkel sind heute etwa hundert.“"],
+    v:{ar:"اللَّهُمَّ أَكْثِرْ مَالَهُ وَوَلَدَهُ، وَبَارِكْ لَهُ فِيمَا أَعْطَيْتَهُ", de:"O Allah, gib ihm viel Besitz und viele Kinder, und segne ihm, was Du ihm gibst.", s:"Buchārī 6334"},
+    l:["Der Prophet ﷺ war geduldig und liebevoll mit Kindern – er hat nie mit Anas geschimpft (Buchārī 6038).",
+       "Erst die Aufgabe erledigen, dann spielen (Muslim 2310).",
+       "Ein Geheimnis zu bewahren ist eine Amāna – ein anvertrautes Gut (Muslim 2482).",
+       "Allah erhört Bittgebete – Anas bekam viel Segen (Muslim 2481)."],
+    s:"Buchārī 6334, 6038; Muslim 2480, 2481, 2310, 2482"});
+}
+if(typeof STORIES_EN !== "undefined"){
+  STORIES_EN.anas = ["The Prophet’s ﷺ little helper",
+    ["Anas ibn Mālik was still a boy when the Prophet ﷺ came to Madinah. His mother Umm Sulaim brought him and said: “O Messenger of Allah, this is Anas – let him help you. Please pray to Allah for him!” The Prophet ﷺ made duʿāʾ: “O Allah, give him much wealth and many children, and bless him in what You give him.”",
+     "For ten years Anas helped the Prophet ﷺ. Later he said: “He never once said ‘Uff!’ to me. And he never asked me: ‘Why did you do that?’ or ‘Why didn’t you do that?’”",
+     "Once the Prophet ﷺ sent Anas off on an errand. On the way, Anas saw children playing in the street – and stopped to join them. Then the Prophet ﷺ came up from behind, gently held the back of his neck and laughed: “Unais (little Anas), did you go where I sent you?” Anas said: “Yes, I’m going now, O Messenger of Allah!”",
+     "Another time the Prophet ﷺ gave Anas a secret task, so Anas came home late. His mother asked: “What kept you?” Anas said: “It’s a secret.” She said: “Then never tell anyone the secret of the Messenger of Allah!” And Anas never told it.",
+     "Allah answered the Prophet’s ﷺ prayer. When Anas was old, he said: “By Allah, my wealth is great, and my children and grandchildren today number about a hundred.”"],
+    "O Allah, give him much wealth and many children, and bless him in what You give him.",
+    ["The Prophet ﷺ was patient and loving with children – he never scolded Anas (Buchārī 6038).",
+     "First do the job, then play (Muslim 2310).",
+     "Keeping a secret is an amāna – a trust (Muslim 2482).",
+     "Allah answers prayers – Anas received great blessing (Muslim 2481)."]];
+}
+})();
+
 /* ---------- init ---------- */
 localize(); applyTheme(); applyPrefs(); renderHome(); renderGebet(); renderQuran(); renderQuiz(); renderKids(); renderNames();
 document.querySelectorAll("[data-learn]").forEach(b => b.setAttribute("aria-pressed", b.dataset.learn === learnSub));
@@ -10900,6 +10984,6 @@ setTab("home");
 if(lang === "en") translateTree(document.body);
 </script>
 <script>if("serviceWorker" in navigator&&location.protocol==="https:"){addEventListener("load",()=>navigator.serviceWorker.register("sw.js").catch(()=>{}));}</script>
-<script>window.LM_BUILD="20261012182700";(function(){function chk(){fetch("version.json?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.json()}).then(function(v){if(!v||!v.b||v.b===window.LM_BUILD)return;try{if(sessionStorage.getItem("lm-upd")===v.b)return;sessionStorage.setItem("lm-upd",v.b)}catch(e){}location.reload()}).catch(function(){})}if(location.protocol==="https:"){addEventListener("load",function(){setTimeout(chk,1500)});document.addEventListener("visibilitychange",function(){if(document.visibilityState==="visible")chk()})}})();</script>
+<script>window.LM_BUILD="20261014121108";(function(){function chk(){fetch("version.json?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.json()}).then(function(v){if(!v||!v.b||v.b===window.LM_BUILD)return;try{if(sessionStorage.getItem("lm-upd")===v.b)return;sessionStorage.setItem("lm-upd",v.b)}catch(e){}location.reload()}).catch(function(){})}if(location.protocol==="https:"){addEventListener("load",function(){setTimeout(chk,1500)});document.addEventListener("visibilitychange",function(){if(document.visibilityState==="visible")chk()})}})();</script>
 </body>
 </html>
