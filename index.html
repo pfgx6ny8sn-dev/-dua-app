@@ -10450,11 +10450,12 @@ const lsGet = (k, d) => { try{ const v = localStorage.getItem(k); return v == nu
 const lsSet = (k, v) => { try{ localStorage.setItem(k, JSON.stringify(v)); }catch(e){} };
 
 const css = `
-.wr-in{display:flex;gap:8px;align-items:center;padding:10px 16px;border-bottom:1px solid var(--sep);background:var(--bg2,var(--bg));max-width:760px;width:100%;margin:0 auto;box-sizing:border-box}
-.wr-in input{flex:1;min-width:0;box-sizing:border-box;border:2px solid var(--gold);background:var(--surface);color:var(--ink);border-radius:16px;padding:10px 14px;font-family:"Scheherazade New","Amiri",serif;font-size:28px;line-height:1.4;direction:rtl;text-align:right;outline:none}
-.wr-in input.bad{border-color:#e5675a;animation:rcShake .45s;background:rgba(229,103,90,.12)}
-.wr-in input.ok{border-color:#33B38A}
-.wr-in button{flex:none;border:0;border-radius:14px;padding:12px 12px;font:inherit;font-weight:800;cursor:pointer;background:var(--gold-soft);color:var(--gold)}
+.wr-in{display:flex;flex-direction:column;gap:8px;align-items:stretch;padding:10px 16px;border-bottom:1px solid var(--sep);background:var(--bg2,var(--bg));max-width:760px;width:100%;margin:0 auto;box-sizing:border-box}
+.wr-in textarea{resize:none;min-height:140px;max-height:42vh;overflow-y:auto;flex:1;min-width:0;box-sizing:border-box;border:2px solid var(--gold);background:var(--surface);color:var(--ink);border-radius:16px;padding:10px 14px;font-family:"Scheherazade New","Amiri",serif;font-size:28px;line-height:1.4;direction:rtl;text-align:right;outline:none}
+.wr-in textarea.bad{border-color:#e5675a;animation:rcShake .45s;background:rgba(229,103,90,.12)}
+.wr-in textarea.ok{border-color:#33B38A}
+.wr-tools{display:grid;grid-template-columns:1fr 1fr auto 1.4fr;gap:8px}
+.wr-in button{border:0;border-radius:14px;padding:12px 12px;font:inherit;font-weight:800;cursor:pointer;background:var(--gold-soft);color:var(--gold)}
 .wr-kb{font-size:12.5px;color:var(--muted);text-align:center;margin:6px 16px 0}
 .wr-kb a{color:var(--gold);font-weight:700;cursor:pointer;text-decoration:underline}
 .wr-help{background:var(--surface);border-radius:16px;padding:12px 14px;margin:0 0 12px;font-size:14px;line-height:1.5;box-shadow:inset 0 0 0 1px var(--sep)}
@@ -10462,6 +10463,9 @@ const css = `
 .wr-help ol{margin:6px 0 0;padding-left:20px}
 .wr-boxes{display:flex;flex-wrap:wrap;flex-direction:row;direction:rtl;justify-content:flex-start;gap:8px;margin:6px 0 4px}
 .wr-box{min-width:64px;min-height:54px;padding:4px 10px;border-radius:14px;background:var(--fill);box-shadow:inset 0 0 0 2px var(--sep);display:flex;align-items:center;justify-content:center;font-family:"Scheherazade New","Amiri",serif;font-size:26px;line-height:1.5;direction:rtl;color:var(--ink);transition:background .2s,box-shadow .2s}
+.wr-box[data-wr="delk"]{cursor:pointer;position:relative}
+.wr-box[data-wr="delk"]::after{content:"×";position:absolute;top:-6px;left:-6px;width:18px;height:18px;border-radius:50%;background:var(--muted);color:var(--bg);font:700 13px/18px system-ui;text-align:center;opacity:.8}
+.wr-back{border:0;background:var(--fill);color:var(--ink);border-radius:10px;padding:4px 10px;font:inherit;font-size:12.5px;font-weight:800;cursor:pointer}
 .wr-box.fill{box-shadow:inset 0 0 0 2px var(--gold);background:var(--gold-soft)}
 .wr-box.ok{box-shadow:inset 0 0 0 2px #33B38A;background:rgba(51,179,138,.16);color:#2EA57A}
 .wr-box.bad{box-shadow:inset 0 0 0 2px #e5675a;background:rgba(229,103,90,.16);color:#e5675a;animation:rcShake .45s}
@@ -10512,6 +10516,7 @@ function check(){
   const inp = ov.querySelector("#wrIn"); if(!inp) return;
   const exp = W.verses[W.v], got = toks(inp.value);
   if(!got.length){ inp.focus(); return; }
+  W.typed[W.v] = inp.value;
   const {out, extra} = align(exp, got);
   const wrong = out.filter((x, k) => !x.ok && !W.tips[W.v + ":" + k]).length + extra;
   out.forEach((x, k) => { if(W.tips[W.v + ":" + k] && !x.ok){ x.tip = true; } });
@@ -10527,8 +10532,10 @@ function check(){
   tone("err"); if(navigator.vibrate) navigator.vibrate([60, 40, 60]);
   draw(false);
 }
+function grow(t){ if(!t) return; t.style.height = "auto"; t.style.height = Math.min(t.scrollHeight + 4, innerHeight * .42) + "px"; }
 function onInput(e){
   if(!W || W.done || e.target.id !== "wrIn") return;
+  grow(e.target);
   const v = e.target.value;
   if(v && !hasArabic(v) && /[A-Za-z]/.test(v)) showKbHint();
   W.res = null; drawBody();
@@ -10542,10 +10549,10 @@ function boxesHTML(){
     cells = exp.map((w, k) => { const r = W.res.out[k], tip = W.tips[W.v + ":" + k];
       if(r.ok) return `<span class="wr-box ok">${esc2(r.w)}</span>`;
       if(tip) return `<span class="wr-box tip">${esc2(w)}</span>`;
-      return `<span class="wr-box bad" data-wr="tipk" data-k="${k}">${r.w ? esc2(r.w) : `<span class="n">${k + 1}</span>`}</span>`; });
+      return r.w ? `<span class="wr-box bad" data-wr="delw2" data-w="${esc2(r.w)}">${esc2(r.w)}</span>` : `<span class="wr-box bad" data-wr="tipk" data-k="${k}"><span class="n">${k + 1}</span></span>`; });
   } else {
     cells = exp.map((w, k) => { const tip = W.tips[W.v + ":" + k], g = got[k];
-      if(g) return `<span class="wr-box fill">${esc2(g)}</span>`;
+      if(g) return `<span class="wr-box fill" data-wr="delk" data-k="${k}" title="${L("Antippen zum Löschen", "Tap to delete")}">${esc2(g)}</span>`;
       if(tip) return `<span class="wr-box tip">${esc2(w)}</span>`;
       return `<span class="wr-box" data-wr="tipk" data-k="${k}"><span class="n">${k + 1}</span></span>`; });
   }
@@ -10578,7 +10585,7 @@ function bodyHTML(){
       <li>${L("Weißt du ein Wort nicht? Tippe auf sein Kästchen oder auf „💡“.", "Don’t know a word? Tap its box or “💡”.")}</li>
       <li>${L("Mit dem Finger schreiben: Tastatur <b>Gboard</b> → Arabisch → Handschrift ✍️.", "Write with your finger: <b>Gboard</b> keyboard → Arabic → handwriting ✍️.")}</li></ol>
       <button class="ch-btn sec" data-wr="okhelp" style="margin-top:8px">${L("Verstanden", "Got it")}</button></div>` : ""}
-    <div class="rc-st"><span>${L("Vers", "Verse")} ${ayahNo(s, v)} / ${ayahNo(s, W.verses.length - 1)}</span><span style="margin-left:auto">${L("Fehler", "Mistakes")}: ${W.errs}</span></div>
+    <div class="rc-st">${v > 0 ? `<button class="wr-back" data-wr="prevv">‹ ${L("Vers zurück", "Previous verse")}</button>` : ""}<span>${L("Vers", "Verse")} ${ayahNo(s, v)} / ${ayahNo(s, W.verses.length - 1)}</span><span style="margin-left:auto">${L("Fehler", "Mistakes")}: ${W.errs}</span></div>
     <div class="rc-bar"><i style="width:${pct}%"></i></div>
     ${prev}
     <div class="wr-cur"><div class="hd"><span>${L("Vers", "Verse")} ${ayahNo(s, v)} · ${W.verses[v].length} ${L("Wörter", "words")}</span><span>﴿${ayahNo(s, v).toLocaleString("ar-EG")}﴾</span></div>
@@ -10592,7 +10599,8 @@ function draw(focus){
   const bd = ov.querySelector(".rc-body");
   if(!W.done && ov.querySelector("#wrIn") && bd){ bd.innerHTML = bodyHTML(); if(focus) setTimeout(() => { const i = ov && ov.querySelector("#wrIn"); if(i) try{ i.focus({preventScroll: true}); }catch(_){ i.focus(); } }, 30); return; }
   ov.innerHTML = `<div class="rc-top"><b>✍️ ${esc2(W.s.t)}</b><button data-wr="close">${L("Beenden", "Close")}</button></div>
-    ${W.done ? "" : `<div class="wr-in"><input id="wrIn" lang="ar" dir="rtl" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" enterkeyhint="done" placeholder="${L("Ganzen Vers schreiben …", "Write the whole verse …")}" aria-label="${L("Arabisch schreiben", "Write in Arabic")}"><button data-wr="hint" aria-label="${L("Wort zeigen", "Show word")}">💡</button><button class="chk" data-wr="check">✓ ${L("Prüfen", "Check")}</button></div><p class="wr-kb">${L("Tipp: Arabische Tastatur oder Gboard-Handschrift ✍️", "Tip: Arabic keyboard or Gboard handwriting ✍️")} · <a data-wr="help">${L("Hilfe", "Help")}</a></p>`}
+    ${W.done ? "" : `<div class="wr-in"><textarea id="wrIn" lang="ar" dir="rtl" rows="3" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" enterkeyhint="done" placeholder="${L("Ganzen Vers hier schreiben …", "Write the whole verse here …")}" aria-label="${L("Arabisch schreiben", "Write in Arabic")}"></textarea>
+      <div class="wr-tools"><button data-wr="delw" aria-label="${L("Letztes Wort löschen", "Delete last word")}">⌫ ${L("Wort", "Word")}</button><button data-wr="clr" aria-label="${L("Vers neu schreiben", "Rewrite verse")}">🗑 ${L("Neu", "Clear")}</button><button data-wr="hint" aria-label="${L("Wort zeigen", "Show word")}">💡</button><button class="chk" data-wr="check">✓ ${L("Prüfen", "Check")}</button></div></div><p class="wr-kb">${L("Tipp: Arabische Tastatur oder Gboard-Handschrift ✍️", "Tip: Arabic keyboard or Gboard handwriting ✍️")} · <a data-wr="help">${L("Hilfe", "Help")}</a></p>`}
     <div class="rc-body">${bodyHTML()}</div>
     ${W.done ? `<div class="rc-foot"><button data-wr="again" class="pri">↻ ${L("Nochmal", "Again")}</button><button data-wr="close">${L("Fertig", "Done")}</button></div>` : ""}`;
   const inp = ov.querySelector("#wrIn"); if(inp && focus !== false) setTimeout(() => { try{ inp.focus({preventScroll: true}); }catch(_){ inp.focus(); } }, 30);
@@ -10616,6 +10624,13 @@ function onClick(e){
   if(a === "okhelp"){ W.help = false; lsSet("lm-wr-helped", true); draw(true); return; }
   if(a === "help"){ W.help = !W.help; draw(false); return; }
   if(a === "check"){ check(); return; }
+  const inp = ov.querySelector("#wrIn");
+  const setV = v => { if(!inp) return; inp.value = v; W.res = null; inp.classList.remove("bad", "ok"); drawBody(); grow(inp); try{ inp.focus({preventScroll: true}); }catch(_){} };
+  if(a === "delw"){ const t = toks(inp.value); t.pop(); setV(t.join(" ") + (t.length ? " " : "")); return; }
+  if(a === "clr"){ setV(""); return; }
+  if(a === "delk"){ const t = toks(inp.value); t.splice(+b.dataset.k, 1); setV(t.join(" ") + (t.length ? " " : "")); return; }
+  if(a === "delw2"){ const t = toks(inp.value), i = t.indexOf(b.dataset.w); if(i >= 0) t.splice(i, 1); setV(t.join(" ") + (t.length ? " " : "")); return; }
+  if(a === "prevv"){ if(W.v > 0){ W.v--; W.res = null; setV(W.typed[W.v] || ""); draw(true); } return; }
   if(a === "tipk"){ reveal(+b.dataset.k); return; }
   if(a === "hint"){
     const exp = W.verses[W.v], k = W.res ? W.res.out.findIndex((x, i) => !x.ok && !W.tips[W.v + ":" + i]) : exp.findIndex((_, i) => !W.tips[W.v + ":" + i] && !toks(ov.querySelector("#wrIn").value)[i]);
@@ -12358,6 +12373,6 @@ setTab("home");
 if(lang === "en") translateTree(document.body);
 </script>
 <script>if("serviceWorker" in navigator&&location.protocol==="https:"){addEventListener("load",()=>navigator.serviceWorker.register("sw.js").catch(()=>{}));}</script>
-<script>window.LM_BUILD="20261015201035";(function(){function chk(){fetch("version.json?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.json()}).then(function(v){if(!v||!v.b||v.b===window.LM_BUILD)return;try{if(sessionStorage.getItem("lm-upd")===v.b)return;sessionStorage.setItem("lm-upd",v.b)}catch(e){}location.reload()}).catch(function(){})}if(location.protocol==="https:"){addEventListener("load",function(){setTimeout(chk,1500)});document.addEventListener("visibilitychange",function(){if(document.visibilityState==="visible")chk()})}})();</script>
+<script>window.LM_BUILD="20261015201952";(function(){function chk(){fetch("version.json?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.json()}).then(function(v){if(!v||!v.b||v.b===window.LM_BUILD)return;try{if(sessionStorage.getItem("lm-upd")===v.b)return;sessionStorage.setItem("lm-upd",v.b)}catch(e){}location.reload()}).catch(function(){})}if(location.protocol==="https:"){addEventListener("load",function(){setTimeout(chk,1500)});document.addEventListener("visibilitychange",function(){if(document.visibilityState==="visible")chk()})}})();</script>
 </body>
 </html>
