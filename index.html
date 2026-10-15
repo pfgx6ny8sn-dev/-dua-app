@@ -10426,6 +10426,7 @@ document.getElementById("qrBody").addEventListener("click", e => {
   const t = e.target.closest(".ayah .ar, .ayah .tr, .ayah .de");
   if(t){ const a = t.closest(".ayah"); e.preventDefault(); e.stopPropagation(); open(s, +a.dataset.ayah); }
 }, true);
+window.lmTafsirDE = (s, a) => { const t = TF[s + ":" + a]; return t ? t[2] : null; };
 window.lmTafsir = {open: (slug, i) => { const s = SURAS.find(x => x.slug === slug); if(s) open(s, i); }};
 })();
 
@@ -12115,10 +12116,31 @@ async function verseSheet(v){
   const sh = sheet(`<div class="hd"><b>${name[4]} · ${T2("Vers", "Verse")} ${a}</b><button class="mp-ic" data-mp="x">✕</button></div>
     <div class="bd"><p class="mp-va${lsj("lm-qx-tj", true) ? "" : " notj"}">${verseHTML(v)}</p><p class="mp-vt">…</p><p class="mp-vs"></p>
     <div class="mp-acts"><button class="pr" data-mp="pv" data-v="${v}">▶︎ ${T2("Anhören", "Listen")}</button><button data-mp="pf" data-v="${v}">⏯ ${T2("Ab hier abspielen", "Play from here")}</button>
-    <button data-mp="bmv" data-v="${v}">🔖 ${T2("Lesezeichen", "Bookmark")}</button></div></div>`);
+    <button data-mp="bmv" data-v="${v}">🔖 ${T2("Lesezeichen", "Bookmark")}</button></div>
+    <div class="tf-h" style="margin-top:16px">📖 ${T2("Erklärung (Tafsīr)", "Explanation (tafsīr)")}</div><div class="mp-tf" data-v="${v}"><p class="mp-vs">…</p></div></div>`);
+  tafsirFill(sh.querySelector(".mp-tf"), v);
   try{ await loadTr(); sh.querySelector(".mp-vt").textContent = (lang === "en" ? window.MUSHAF_EN : window.MUSHAF_DE)[v];
     sh.querySelector(".mp-vs").textContent = lang === "en" ? "Saheeh International (Noor International Center) · QuranEnc.com v1.1.2" : "Übers.: Frank Bubenheim & Nadeem Elyas · QuranEnc.com v1.1.4";
   }catch(e){ sh.querySelector(".mp-vt").textContent = T2("Übersetzung braucht Internet.", "Translation needs a connection."); }
+}
+/* Tafsīr al-Mukhtaṣar für den ganzen Qur'an (Arabisch, Englisch); Deutsch bei den Lern-Suren */
+const loadTf = () => Promise.all([window.TAFSIR_AR ? 0 : loadScript("tafsir_ar.js?v=1"), window.TAFSIR_EN ? 0 : loadScript("tafsir_en.js?v=1")]);
+const tfEsc = s => String(s || "").replace(/[&<>]/g, c => ({"&": "&amp;", "<": "&lt;", ">": "&gt;"}[c]));
+async function tafsirFill(box, v){
+  if(!box) return;
+  let L = lsj("lm-tf-lang", lang === "en" ? "en" : "de");
+  try{ await loadTf(); }catch(e){ box.innerHTML = `<p class="mp-vs">${T2("Der Tafsīr braucht beim ersten Mal Internet.", "The tafsīr needs a connection the first time.")}</p>`; return; }
+  const de = window.lmTafsirDE ? window.lmTafsirDE(D.VSU[v], D.VAY[v]) : null;
+  const card = (k) => k === "ar" ? `<div class="tf-card ar main"><div class="lb">العربية<i>المختصر في تفسير القرآن الكريم</i></div><p lang="ar">${tfEsc(TAFSIR_AR[v])}</p></div>`
+    : k === "en" ? `<div class="tf-card main"><div class="lb">English<i>Al-Mukhtaṣar</i></div><p class="tf-keep" lang="en">${tfEsc(TAFSIR_EN[v])}</p></div>`
+    : de ? `<div class="tf-card main"><div class="lb">Deutsch<i>${T2("sinngemäß nach al-Mukhtaṣar", "rendering of al-Mukhtaṣar")}</i></div><p class="tf-keep" lang="de">${tfEsc(de)}</p></div>`
+    : `<p class="mp-vs" style="margin:0 0 8px">${T2("Den Tafsīr auf Deutsch gibt es bisher für die Lern-Suren. Hier auf Englisch:", "German tafsīr is so far available for the learning suras. Here in English:")}</p>${card("en")}`;
+  let g0 = v, g1 = v; while(g0 > 0 && D.VSU[g0 - 1] === D.VSU[v] && TAFSIR_AR[g0 - 1] === TAFSIR_AR[v]) g0--; while(g1 + 1 < TAFSIR_AR.length && D.VSU[g1 + 1] === D.VSU[v] && TAFSIR_AR[g1 + 1] === TAFSIR_AR[v]) g1++;
+  const grp = g1 > g0 ? `<p class="mp-vs" style="margin:0 0 8px">ℹ️ ${T2(`Verse ${D.VAY[g0]}–${D.VAY[g1]} werden gemeinsam erklärt.`, `Verses ${D.VAY[g0]}–${D.VAY[g1]} are explained together.`)}</p>` : "";
+  const order = L === "all" ? ["de", "ar", "en"].filter(k => k !== "de" || de) : [L];
+  box.innerHTML = `<div class="tf-lseg" role="group">${[["de", "Deutsch"], ["ar", "العربية"], ["en", "English"], ["all", T2("Alle", "All")]].map(([k, t]) => `<button data-tfl2="${k}" aria-pressed="${L === k}">${t}</button>`).join("")}</div>${grp}${order.map(card).join("")}
+    <p class="mp-vs" style="margin-top:8px">Tafsīr: al-Mukhtaṣar fī Tafsīr al-Qur'ān al-Karīm (Markaz Tafsīr) – ${T2("Arabisch und Englisch im Wortlaut", "Arabic and English verbatim")}.</p>`;
+  box.querySelectorAll("[data-tfl2]").forEach(b => b.addEventListener("click", ev => { ev.stopPropagation(); lss("lm-tf-lang", b.dataset.tfl2); tafsirFill(box, v); }));
 }
 function indexSheet(tab){
   tab = tab || lsj("lm-mp-ix", "s");
@@ -12618,6 +12640,6 @@ setTab("home");
 if(lang === "en") translateTree(document.body);
 </script>
 <script>if("serviceWorker" in navigator&&location.protocol==="https:"){addEventListener("load",()=>navigator.serviceWorker.register("sw.js").catch(()=>{}));}</script>
-<script>window.LM_BUILD="20261015220545";(function(){function chk(){fetch("version.json?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.json()}).then(function(v){if(!v||!v.b||v.b===window.LM_BUILD)return;try{if(sessionStorage.getItem("lm-upd")===v.b)return;sessionStorage.setItem("lm-upd",v.b)}catch(e){}location.reload()}).catch(function(){})}if(location.protocol==="https:"){addEventListener("load",function(){setTimeout(chk,1500)});document.addEventListener("visibilitychange",function(){if(document.visibilityState==="visible")chk()})}})();</script>
+<script>window.LM_BUILD="20261015222027";(function(){function chk(){fetch("version.json?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.json()}).then(function(v){if(!v||!v.b||v.b===window.LM_BUILD)return;try{if(sessionStorage.getItem("lm-upd")===v.b)return;sessionStorage.setItem("lm-upd",v.b)}catch(e){}location.reload()}).catch(function(){})}if(location.protocol==="https:"){addEventListener("load",function(){setTimeout(chk,1500)});document.addEventListener("visibilitychange",function(){if(document.visibilityState==="visible")chk()})}})();</script>
 </body>
 </html>
