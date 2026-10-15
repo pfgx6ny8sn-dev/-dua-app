@@ -11878,10 +11878,10 @@ body.mr-on .tabbar,body.mr-on .mx-bar,body.mr-on .mini{display:none!important}
 .mr-tr{margin:0;font-size:calc(16.5px * var(--mr-ft,1));line-height:1.5;color:var(--ink)}
 .mr-next{display:block;width:100%;margin:18px 0 0;border:0;border-radius:16px;padding:14px;font:inherit;font-weight:700;background:var(--fill);color:var(--ink);cursor:pointer}
 /* Ausblenden (wie Tarteel) und Vorlesen */
-.mr.hid .mw:not(.rv),.mr.hid .mw:not(.rv) b,.mr.hid .mw:not(.rv) i{color:transparent!important}
-.mr.hid .mw:not(.rv){background:color-mix(in srgb,var(--ink) 9%,transparent);border-radius:7px}
-.mr.hid.fw .mw.f:not(.rv),.mr.hid.fw .mw.f:not(.rv) b{color:var(--ink)!important}
-.mr.hid .mw:not(.rv) .mn{color:var(--ink)!important}
+.mr.hid .mw:not(.mrv),.mr.hid .mw:not(.mrv) b,.mr.hid .mw:not(.mrv) i{color:transparent!important}
+.mr.hid .mw:not(.mrv){background:none}
+.mr.hid.fw .mw.f:not(.mrv),.mr.hid.fw .mw.f:not(.mrv) b{color:var(--ink)!important}
+.mr.hid .mw:not(.mrv) .mn{color:var(--ink)!important}
 .mr .mw.bad{background:rgba(229,103,90,.42)!important;border-radius:7px}
 .mr .mw.okc{background:rgba(51,179,138,.18);border-radius:7px}
 .mr .mw.nx{box-shadow:inset 0 -3px 0 var(--gold)}
@@ -11966,7 +11966,7 @@ function build(page){
 }
 function decorate(root){
   root.querySelectorAll(".mw").forEach(w => { const v = +w.dataset.v, k = w.dataset.k, st = ST.ws[v + ":" + k];
-    if(ST.rv.has(v) || st) w.classList.add("rv"); if(st === "bad") w.classList.add("bad"); if(st === "ok" && !ST.hide) w.classList.add("okc");
+    if(ST.rv.has(v) || st) w.classList.add("mrv"); if(st === "bad") w.classList.add("bad"); if(st === "ok" && !ST.hide) w.classList.add("okc");
     if(v === PG.playV) w.classList.add("ply"); });
 }
 function fill(i){
@@ -12036,12 +12036,12 @@ function setHide(on){
   ST.hide = on; ST.rv.clear(); if(!on) ST.ws = {};
   PG.el.classList.toggle("hid", on); PG.el.querySelector('[data-r="eye"]').classList.toggle("on", on);
   PG.el.querySelector('[data-r="eye"]').textContent = on ? "🙈" : "👁";
-  PG.el.querySelectorAll(".mw").forEach(w => w.classList.remove("rv", "bad", "okc", "nx")); decorate(PG.el);
+  PG.el.querySelectorAll(".mw").forEach(w => w.classList.remove("mrv", "bad", "okc", "nx")); decorate(PG.el);
 }
 
 /* ---------- Vers antippen: Bedeutung, Tafsīr, Übersetzung ---------- */
 function verseTap(v){
-  if(ST.hide){ ST.rv.add(v); PG.el.querySelectorAll(`.mw[data-v="${v}"]`).forEach(m => m.classList.add("rv")); return; }
+  if(ST.hide){ ST.rv.add(v); PG.el.querySelectorAll(`.mw[data-v="${v}"]`).forEach(m => m.classList.add("mrv")); return; }
   PG.sel = v; mark("sel", v); setTimeout(() => { PG.sel = null; mark("sel", null); }, 1500);
   const x = appSuraOfVerse(v);
   if(x && window.lmTafsir){ qr.sura = x.slug; window.lmTafsir.open(x.slug, D.VAY[v] - (x.start || 1)); }
@@ -12144,8 +12144,8 @@ function recStart(){
   const ex = []; for(let v = v0; v < vEnd && ex.length < 400; v++) D.VW[v].forEach((w, k) => { if(v === v0 && k < k0) return; const n = N(plain(w)); if(n) ex.push({v, k, n}); });
   RC = {ex, finals: [], interim: "", errs: 0, lastBad: 0, st: [], stopped: false, s};
   if(recStart.fake){ PG.el.querySelector('[data-r="mic"]').classList.add("on"); return; }
-  const r = new SRc(); RC.r = r; r.lang = "ar-SA"; r.continuous = true; r.interimResults = true;
-  r.onresult = e => { let it = ""; for(let i = e.resultIndex; i < e.results.length; i++){ const t = e.results[i][0].transcript; if(e.results[i].isFinal) RC.finals.push(t); else it += " " + t; } RC.interim = it; recUpdate(); };
+  const r = new SRc(); RC.r = r; r.lang = "ar-SA"; r.continuous = true; r.interimResults = true; r.maxAlternatives = 5;
+  r.onresult = e => { let it = ""; for(let i = e.resultIndex; i < e.results.length; i++){ const res = e.results[i]; if(res.isFinal) RC.finals.push(bestAlt(res)); else it += " " + res[0].transcript; } RC.interim = it; recUpdate(); };
   r.onerror = e => { if(e.error === "not-allowed" || e.error === "service-not-allowed"){ if(typeof toast === "function") toast(T2("Bitte das Mikrofon erlauben.", "Please allow the microphone.")); recStop(); } else if(e.error === "network"){ if(typeof toast === "function") toast(T2("Vorlesen braucht Internet.", "Reciting needs a connection.")); recStop(); } };
   r.onend = () => { if(RC && !RC.stopped){ try{ r.start(); }catch(_){ setTimeout(() => { try{ r.start(); }catch(__){} }, 300); } } };
   try{ r.start(); }catch(e){}
@@ -12153,29 +12153,70 @@ function recStart(){
   PG.main.insertAdjacentHTML("beforeend", `<div class="mr-st"><span class="d"></span><span class="t">${T2("Ich höre zu … lies vor", "Listening … recite now")}</span></div>`);
   try{ window.lmRecite.tone("ok"); }catch(_){}
 }
-function heard(){
+/* tolerant vergleichen: Mushaf-Schreibweise (ٰ, ى/ا, و) vs. normale Schreibweise */
+function sameX(h, e){
+  const S = window.lmRecite.same; if(S(h, e)) return true;
+  const sk = x => x.replace(/[اوي]/g, "").replace(/ه$/, "");
+  const a = sk(h), b = sk(e); return a.length >= 2 && (a === b || (Math.max(a.length, b.length) >= 4 && S(a, b)));
+}
+/* Gehörtes an den Text anlegen – Wiederholungen sind kein Fehler, einzelne Störwörter auch nicht */
+function align2(exp, hw){
+  const st = exp.map(() => "pending"); let p = 0, i = 0, r = -1, bad = 0;
+  const back = (k) => { const h = hw[k], h2 = hw[k + 1];
+    for(let q = p - 1; q >= 0; q--){ if(!sameX(h, exp[q])) continue;
+      if(h2 != null && q + 1 < exp.length){ if(sameX(h2, exp[q + 1]) || (q + 1 === p && sameX(h2, exp[p]))) return q; }
+      else if(p - q <= 12) return q; }
+    return -1; };
+  while(i < hw.length){
+    const h = hw[i];
+    if(r >= 0){
+      if(r < p && sameX(h, exp[r])){ r++; i++; if(r >= p) r = -1; continue; }
+      if(p < exp.length && sameX(h, exp[p])){ r = -1; continue; }
+      const q = back(i); if(q >= 0){ r = q + 1; i++; if(r >= p) r = -1; continue; }
+      i++; continue;
+    }
+    if(p >= exp.length){ const q = back(i); if(q >= 0){ r = q + 1; if(r >= p) r = -1; } i++; continue; }
+    if(sameX(h, exp[p])){ st[p++] = "ok"; i++; continue; }
+    if(p + 1 < exp.length && sameX(h, exp[p] + exp[p + 1])){ st[p++] = "ok"; st[p++] = "ok"; i++; continue; }
+    if(i + 1 < hw.length && sameX(h + hw[i + 1], exp[p])){ st[p++] = "ok"; i += 2; continue; }
+    const q = back(i); if(q >= 0){ r = q + 1; i++; if(r >= p) r = -1; continue; }           // Wiederholung
+    let jump = 0; for(let k = 1; k <= 2 && p + k < exp.length; k++) if(sameX(h, exp[p + k]) && (i + 1 >= hw.length || p + k + 1 >= exp.length || sameX(hw[i + 1], exp[p + k + 1]))){ jump = k; break; }
+    if(jump){ for(let k = 0; k < jump; k++){ st[p + k] = "skip"; bad++; } p += jump; st[p++] = "ok"; i++; continue; }   // ausgelassen
+    if(i + 1 < hw.length && p + 1 < exp.length && sameX(hw[i + 1], exp[p + 1])){ st[p++] = "skip"; bad++; i++; continue; }   // falsch gelesen
+    i++;                                                                                       // Störwort – kein Fehler
+  }
+  return {st, p, bad};
+}
+function bestAlt(res){
+  if(!RC || res.length < 2) return res[0].transcript;
+  const N = window.lmRecite.norm, base = align2(RC.ex.map(x => x.n), heard(true)).p;
+  let best = res[0].transcript, sc = -1;
+  for(let a = 0; a < res.length; a++){ const w = res[a].transcript.split(/\s+/).map(N).filter(Boolean); let s = 0, q = base;
+    w.forEach(x => { for(let k = q; k < Math.min(q + 3, RC.ex.length); k++) if(sameX(x, RC.ex[k].n)){ s++; q = k + 1; break; } });
+    if(s > sc){ sc = s; best = res[a].transcript; } }
+  return best;
+}
+function heard(finalsOnly){
   const N = window.lmRecite.norm, same = window.lmRecite.same;
-  let w = (RC.finals.join(" ") + " " + RC.interim).split(/\s+/).map(N).filter(Boolean);
+  let w = (RC.finals.join(" ") + (finalsOnly ? "" : " " + RC.interim)).split(/\s+/).map(N).filter(Boolean);
   const drop = pre => { if(w.length >= 2 && same(w[0], pre[0]) && same(w[1], pre[1])){ let k = 0; while(k < pre.length && k < w.length && same(w[k], pre[k])) k++; w = w.slice(k); } };
   drop(["اعوذ", "بالله", "من", "الشيطان", "الرجيم"]); if(RC.s !== 1) drop(["بسم", "الله", "الرحمن", "الرحيم"]);
   return w;
 }
 function recUpdate(){
   if(!RC) return;
-  const res = window.lmRecite.align(RC.ex.map(x => x.n), heard());
-  let bad = 0;
-  res.st.forEach((st, i) => { const x = RC.ex[i], key = x.v + ":" + x.k;
-    if(st === "ok" || st === "skip"){ const val = st === "ok" ? "ok" : "bad"; if(st === "skip") bad++;
-      if(ST.ws[key] !== val){ ST.ws[key] = val; PG.el.querySelectorAll(`.mw[data-v="${x.v}"][data-k="${x.k}"]`).forEach(m => { m.classList.add("rv"); m.classList.toggle("bad", val === "bad"); m.classList.toggle("okc", val === "ok" && !ST.hide); }); } } });
-  bad += res.wrong.length;
-  if(bad > RC.lastBad){ RC.errs += bad - RC.lastBad; try{ window.lmRecite.tone("err"); }catch(_){} if(navigator.vibrate) navigator.vibrate([60, 40, 60]); }
-  RC.lastBad = bad;
+  const ex = RC.ex.map(x => x.n), live = align2(ex, heard(false)), fin = align2(ex, heard(true));
+  live.st.forEach((st, i) => { const x = RC.ex[i], key = x.v + ":" + x.k;
+    const val = fin.st[i] === "skip" ? "bad" : st === "ok" ? "ok" : null; if(!val || ST.ws[key] === val) return;
+    ST.ws[key] = val; PG.el.querySelectorAll(`.mw[data-v="${x.v}"][data-k="${x.k}"]`).forEach(m => { m.classList.add("mrv"); m.classList.toggle("bad", val === "bad"); m.classList.toggle("okc", val === "ok" && !ST.hide); }); });
+  if(fin.bad > RC.lastBad){ RC.errs += fin.bad - RC.lastBad; try{ window.lmRecite.tone("err"); }catch(_){} if(navigator.vibrate) navigator.vibrate([60, 40, 60]); }
+  RC.lastBad = Math.max(RC.lastBad, fin.bad);
   PG.el.querySelectorAll(".mw.nx").forEach(m => m.classList.remove("nx"));
-  const nx = RC.ex[res.p];
+  const nx = RC.ex[live.p];
   if(nx){ PG.el.querySelectorAll(`.mw[data-v="${nx.v}"][data-k="${nx.k}"]`).forEach(m => m.classList.add("nx")); if(ST.mode === "page" ? D.vpage[nx.v] !== PG.cur : true) showVerse(nx.v); }
   const t = PG.el.querySelector(".mr-st .t");
   if(t) t.textContent = `${T2("Ich höre zu", "Listening")} · ${T2("Fehler", "Mistakes")}: ${RC.errs}`;
-  if(res.p >= RC.ex.length){ recStop(); if(typeof toast === "function") toast(RC && RC.errs === 0 ? "🌟 Mā shāʾ Allāh – fehlerfrei!" : T2("👏 Geschafft!", "👏 Done!")); }
+  if(fin.p >= RC.ex.length){ const ok = RC.errs === 0; recStop(); if(typeof toast === "function") toast(ok ? "🌟 Mā shāʾ Allāh – fehlerfrei!" : T2("👏 Geschafft!", "👏 Done!")); }
 }
 function recStop(){
   if(RC){ RC.stopped = true; try{ RC.r.stop(); }catch(_){} RC = null; }
@@ -12296,7 +12337,7 @@ document.addEventListener("click", e => {
   if(sl){ const x = appSuras().find(y => y.slug === sl); if(x){ e.preventDefault(); e.stopPropagation(); qr.sura = x.slug; renderQuran();
     load().then(() => openReader(D.vpage[D.SV[x.n] + (x.start || 1) - 1])).catch(() => {}); } }
 }, true);
-window.lmMushaf = {_feed: t => { if(!RC){ recStart.fake = true; if(!ST.hide) setHide(true); recStart(); recStart.fake = false; } RC.finals.push(t); recUpdate(); }, open: p => openAt(p == null ? lsj("lm-mp-page", 0) : p), openSura: n => load().then(() => openReader(D.vpage[D.SV[n]]))};
+window.lmMushaf = {_feed: t => { if(!RC){ recStart.fake = true; if(!ST.hide) setHide(true); recStart(); recStart.fake = false; } RC.finals.push(t); RC.interim = ""; recUpdate(); }, open: p => openAt(p == null ? lsj("lm-mp-page", 0) : p), openSura: n => load().then(() => openReader(D.vpage[D.SV[n]]))};
 /* Wenn eine Sure auf anderem Weg geöffnet wird (z. B. Abend-Wird): ebenfalls im Vollbild lesen */
 const _rq2 = renderQuran;
 renderQuran = function(){
@@ -12317,6 +12358,6 @@ setTab("home");
 if(lang === "en") translateTree(document.body);
 </script>
 <script>if("serviceWorker" in navigator&&location.protocol==="https:"){addEventListener("load",()=>navigator.serviceWorker.register("sw.js").catch(()=>{}));}</script>
-<script>window.LM_BUILD="20261015195335";(function(){function chk(){fetch("version.json?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.json()}).then(function(v){if(!v||!v.b||v.b===window.LM_BUILD)return;try{if(sessionStorage.getItem("lm-upd")===v.b)return;sessionStorage.setItem("lm-upd",v.b)}catch(e){}location.reload()}).catch(function(){})}if(location.protocol==="https:"){addEventListener("load",function(){setTimeout(chk,1500)});document.addEventListener("visibilitychange",function(){if(document.visibilityState==="visible")chk()})}})();</script>
+<script>window.LM_BUILD="20261015201035";(function(){function chk(){fetch("version.json?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.json()}).then(function(v){if(!v||!v.b||v.b===window.LM_BUILD)return;try{if(sessionStorage.getItem("lm-upd")===v.b)return;sessionStorage.setItem("lm-upd",v.b)}catch(e){}location.reload()}).catch(function(){})}if(location.protocol==="https:"){addEventListener("load",function(){setTimeout(chk,1500)});document.addEventListener("visibilitychange",function(){if(document.visibilityState==="visible")chk()})}})();</script>
 </body>
 </html>
