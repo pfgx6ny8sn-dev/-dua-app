@@ -12364,6 +12364,113 @@ renderQuran = function(){
 };
 })();
 
+/* =================== p47: Gebets-Erinnerungen als Kalender (.ics) fürs Handy =================== */
+(function(){
+const lsj = (k, d) => { try{ const v = localStorage.getItem(k); return v == null ? d : JSON.parse(v); }catch(e){ return d; } };
+const lss = (k, v) => { try{ localStorage.setItem(k, JSON.stringify(v)); }catch(e){} };
+const T2 = (de, en) => lang === "en" ? en : de;
+const NAMES = {fajr: ["Fadschr", "Fajr"], dhuhr: ["Dhuhr", "Dhuhr"], asr: ["ʿAṣr", "ʿAsr"], maghrib: ["Maghrib", "Maghrib"], isha: ["ʿIschāʾ", "ʿIshāʾ"], sunrise: ["Schurūq (Sonnenaufgang)", "Sunrise"]};
+const AR = {fajr: "الفجر", dhuhr: "الظهر", asr: "العصر", maghrib: "المغرب", isha: "العشاء", sunrise: "الشروق"};
+const css = document.createElement("style");
+css.textContent = `
+.pr-card{background:var(--surface);border-radius:22px;padding:16px;margin:14px 0;box-shadow:inset 0 0 0 1px var(--sep)}
+.pr-card h3{margin:0 0 4px;font-size:18px;display:flex;align-items:center;gap:8px}
+.pr-card p{margin:0 0 10px;font-size:14px;color:var(--muted);line-height:1.45}
+.pr-lbl{display:block;font-size:12px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;color:var(--muted);margin:12px 2px 6px}
+.pr-seg{display:grid;gap:4px;background:var(--fill);border-radius:12px;padding:3px}
+.pr-seg button{border:0;border-radius:10px;padding:9px 4px;background:none;color:var(--muted);font:inherit;font-size:13.5px;font-weight:700;cursor:pointer}
+.pr-seg button[aria-pressed="true"]{background:var(--bg2,var(--bg));color:var(--ink);box-shadow:0 1px 6px rgba(0,0,0,.18)}
+.pr-chips{display:flex;flex-wrap:wrap;gap:6px}
+.pr-chips button{border:0;border-radius:999px;padding:7px 12px;font:inherit;font-size:13.5px;font-weight:700;cursor:pointer;background:var(--fill);color:var(--muted)}
+.pr-chips button[aria-pressed="true"]{background:var(--gold-soft);color:var(--gold);box-shadow:inset 0 0 0 1.5px var(--gold)}
+.pr-go{display:block;width:100%;margin-top:14px;border:0;border-radius:16px;padding:14px;font:inherit;font-size:16px;font-weight:800;cursor:pointer;color:#fff;background:linear-gradient(135deg,#1F7A5A,#33B38A)}
+.pr-share{display:block;width:100%;margin-top:8px;border:0;border-radius:14px;padding:11px;font:inherit;font-size:14px;font-weight:700;cursor:pointer;background:var(--fill);color:var(--ink)}
+.pr-ok{margin-top:10px;font-size:13.5px;font-weight:700;color:#2EA57A}
+.pr-warn{margin-top:10px;font-size:13.5px;font-weight:700;color:var(--gold)}
+.pr-steps{margin:10px 0 0;padding-left:20px;font-size:13.5px;color:var(--muted);line-height:1.5}
+`;
+document.head.appendChild(css);
+
+const cfg = () => Object.assign({days: 30, alarm: "0", pr: ["fajr", "dhuhr", "asr", "maghrib", "isha"]}, lsj("lm-pr-cfg", {}));
+const pad = n => String(n).padStart(2, "0");
+const icsDate = d => `${d.getUTCFullYear()}${pad(d.getUTCMonth() + 1)}${pad(d.getUTCDate())}T${pad(d.getUTCHours())}${pad(d.getUTCMinutes())}00Z`;
+const esc = s => String(s).replace(/\\/g, "\\\\").replace(/;/g, "\\;").replace(/,/g, "\\,").replace(/\n/g, "\\n");
+function buildICS(){
+  const c = cfg(), now = new Date(), lines = [];
+  const pl = ptTimes(0).place, en = lang === "en";
+  lines.push("BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//Little Muslim//Gebetszeiten//DE", "CALSCALE:GREGORIAN", "METHOD:PUBLISH",
+    "X-WR-CALNAME:" + esc(T2("Gebetszeiten", "Prayer times") + " – " + pl.n), "X-WR-TIMEZONE:" + pl.tz);
+  for(let o = 0; o < c.days; o++){
+    const day = ptTimes(o);
+    c.pr.forEach(k => {
+      const at = day.t[k]; if(!at || isNaN(at) || at < now) return;
+      const nm = NAMES[k][en ? 1 : 0], uid = `lm-${k}-${day.d.y}${pad(day.d.m)}${pad(day.d.d)}-${pl.n.replace(/\W/g, "")}@little-muslim`;
+      lines.push("BEGIN:VEVENT", "UID:" + uid, "DTSTAMP:" + icsDate(now), "DTSTART:" + icsDate(at), "DURATION:PT15M",
+        "SUMMARY:" + esc(`🕌 ${nm} · ${AR[k]}`),
+        "DESCRIPTION:" + esc(k === "sunrise" ? T2("Sonnenaufgang – Ende der Fadschr-Zeit.", "Sunrise – end of Fajr time.") : T2(`Zeit für das ${nm}-Gebet (${pl.n}). Gebetszeiten aus der App Little Muslim.`, `Time for ${nm} prayer (${pl.n}). Prayer times from the Little Muslim app.`)),
+        "TRANSP:TRANSPARENT");
+      const al = c.alarm === "both" ? ["-PT10M", "PT0M"] : c.alarm === "10" ? ["-PT10M"] : c.alarm === "15" ? ["-PT15M"] : ["PT0M"];
+      al.forEach(tr => lines.push("BEGIN:VALARM", "ACTION:DISPLAY", "DESCRIPTION:" + esc(tr === "PT0M" ? T2(`Jetzt: ${nm}`, `Now: ${nm}`) : T2(`Gleich: ${nm}`, `Soon: ${nm}`)), "TRIGGER:" + tr, "END:VALARM"));
+      lines.push("END:VEVENT");
+    });
+  }
+  lines.push("END:VCALENDAR");
+  const enc = new TextEncoder();
+  const fold = l => { if(enc.encode(l).length <= 74) return l; const out = []; let cur = "", n = 0;
+    for(const ch of l){ const b = enc.encode(ch).length; if(n + b > (out.length ? 73 : 74)){ out.push(cur); cur = ""; n = 0; } cur += ch; n += b; }
+    out.push(cur); return out.join("\r\n "); };
+  return {text: lines.map(fold).join("\r\n"), place: pl};
+}
+function untilText(){ const s = lsj("lm-pr-made", null); if(!s) return ""; const left = Math.ceil((s.until - Date.now()) / 864e5);
+  return left > 7 ? `<p class="pr-ok">✓ ${T2(`Kalender übernommen für ${s.place} – gilt noch ${left} Tage.`, `Calendar added for ${s.place} – valid for ${left} more days.`)}</p>`
+    : `<p class="pr-warn">⏰ ${left > 0 ? T2(`Dein Gebets-Kalender läuft in ${left} Tagen ab – bitte neu erstellen.`, `Your prayer calendar ends in ${left} days – please create a new one.`) : T2("Dein Gebets-Kalender ist abgelaufen – bitte neu erstellen.", "Your prayer calendar has ended – please create a new one.")}</p>`; }
+function cardHTML(){
+  const c = cfg(), pl = ptTimes(0).place;
+  const seg = (key, opts) => `<div class="pr-seg" style="grid-template-columns:repeat(${opts.length},1fr)">${opts.map(([v, t]) => `<button data-pr="${key}:${v}" aria-pressed="${String(c[key]) === String(v)}">${t}</button>`).join("")}</div>`;
+  return `<section class="pr-card" id="prCard"><h3>🔔 ${T2("Erinnerung aufs Handy", "Reminders on your phone")}</h3>
+    <p>${T2(`Die Gebetszeiten für <b>${pl.n}</b> kommen als Kalender auf dein Handy – mit Hinweis zu jedem Gebet. Klappt auch ohne Internet.`, `The prayer times for <b>${pl.n}</b> go into your phone’s calendar – with an alert for each prayer. Works offline too.`)}</p>
+    <span class="pr-lbl">${T2("Erinnern", "Remind me")}</span>${seg("alarm", [["0", T2("Pünktlich", "On time")], ["10", T2("10 Min. vorher", "10 min before")], ["both", T2("Beides", "Both")]])}
+    <span class="pr-lbl">${T2("Gebete", "Prayers")}</span><div class="pr-chips">${["fajr", "sunrise", "dhuhr", "asr", "maghrib", "isha"].map(k => `<button data-prk="${k}" aria-pressed="${c.pr.includes(k)}">${NAMES[k][lang === "en" ? 1 : 0].replace(" (Sonnenaufgang)", "")}</button>`).join("")}</div>
+    <span class="pr-lbl">${T2("Zeitraum", "Period")}</span>${seg("days", [[30, T2("30 Tage", "30 days")], [60, T2("60 Tage", "60 days")], [90, T2("90 Tage", "90 days")]])}
+    <button class="pr-go" data-pr="make">📅 ${T2("Zum Kalender hinzufügen", "Add to calendar")}</button>
+    ${navigator.canShare ? `<button class="pr-share" data-pr="share">📤 ${T2("Kalender-Datei teilen …", "Share calendar file …")}</button>` : ""}
+    ${untilText()}
+    <ol class="pr-steps"><li>${T2("Tippe auf „Zum Kalender hinzufügen“.", "Tap “Add to calendar”.")}</li><li>${T2("Auf dem iPhone erscheint „Alle hinzufügen“ – antippen.", "On iPhone tap “Add All”.")}</li><li>${T2("Fertig – das Handy erinnert dich zu jedem Gebet. Nach Ablauf hier einfach neu erstellen.", "Done – your phone reminds you of each prayer. When it ends, just create it again here.")}</li></ol>
+  </section>`;
+}
+function file(){ const r = buildICS(); return {r, blob: new Blob([r.text], {type: "text/calendar;charset=utf-8"}), name: `Gebetszeiten-${r.place.n.replace(/\W+/g, "_")}.ics`}; }
+function made(r){ lss("lm-pr-made", {until: Date.now() + cfg().days * 864e5, place: r.place.n}); const c = document.getElementById("prCard"); if(c) c.outerHTML = cardHTML(); }
+async function make(share){
+  const {r, blob, name} = file();
+  if(share && navigator.canShare){ try{ const f = new File([blob], name, {type: "text/calendar"}); if(navigator.canShare({files: [f]})){ await navigator.share({files: [f], title: name}); made(r); return; } }catch(e){ if(e && e.name === "AbortError") return; } }
+  const url = URL.createObjectURL(blob), a = document.createElement("a");
+  const iOS = /iP(hone|ad|od)/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+  a.href = url; if(!iOS) a.download = name; a.rel = "noopener"; document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 60000);
+  made(r);
+  if(typeof toast === "function") toast(T2("Kalender erstellt – auf „Alle hinzufügen“ tippen", "Calendar created – tap “Add All”"));
+}
+document.addEventListener("click", e => {
+  const b = e.target.closest("#prCard [data-pr], #prCard [data-prk]"); if(!b) return;
+  const c = cfg();
+  if(b.dataset.prk){ const k = b.dataset.prk; c.pr = c.pr.includes(k) ? c.pr.filter(x => x !== k) : c.pr.concat(k); if(!c.pr.length) c.pr = [k]; lss("lm-pr-cfg", c); document.getElementById("prCard").outerHTML = cardHTML(); return; }
+  const [k, v] = b.dataset.pr.split(":");
+  if(k === "make") return make(false);
+  if(k === "share") return make(true);
+  c[k] = k === "days" ? +v : v; lss("lm-pr-cfg", c); document.getElementById("prCard").outerHTML = cardHTML();
+});
+/* Karte auf der Gebetszeiten-Seite */
+if(typeof renderTimes === "function"){
+  const _rt = renderTimes;
+  renderTimes = function(){
+    _rt.apply(this, arguments);
+    const host = document.getElementById("ptV"); if(!host || host.querySelector("#prCard")) return;
+    host.insertAdjacentHTML("beforeend", cardHTML());
+  };
+}
+window.lmPrayerCal = {ics: () => buildICS().text};
+})();
+
 /* ---------- init ---------- */
 localize(); applyTheme(); applyPrefs(); renderHome(); renderGebet(); renderQuran(); renderQuiz(); renderKids(); renderNames();
 document.querySelectorAll("[data-learn]").forEach(b => b.setAttribute("aria-pressed", b.dataset.learn === learnSub));
@@ -12373,6 +12480,6 @@ setTab("home");
 if(lang === "en") translateTree(document.body);
 </script>
 <script>if("serviceWorker" in navigator&&location.protocol==="https:"){addEventListener("load",()=>navigator.serviceWorker.register("sw.js").catch(()=>{}));}</script>
-<script>window.LM_BUILD="20261015201952";(function(){function chk(){fetch("version.json?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.json()}).then(function(v){if(!v||!v.b||v.b===window.LM_BUILD)return;try{if(sessionStorage.getItem("lm-upd")===v.b)return;sessionStorage.setItem("lm-upd",v.b)}catch(e){}location.reload()}).catch(function(){})}if(location.protocol==="https:"){addEventListener("load",function(){setTimeout(chk,1500)});document.addEventListener("visibilitychange",function(){if(document.visibilityState==="visible")chk()})}})();</script>
+<script>window.LM_BUILD="20261015202620";(function(){function chk(){fetch("version.json?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.json()}).then(function(v){if(!v||!v.b||v.b===window.LM_BUILD)return;try{if(sessionStorage.getItem("lm-upd")===v.b)return;sessionStorage.setItem("lm-upd",v.b)}catch(e){}location.reload()}).catch(function(){})}if(location.protocol==="https:"){addEventListener("load",function(){setTimeout(chk,1500)});document.addEventListener("visibilitychange",function(){if(document.visibilityState==="visible")chk()})}})();</script>
 </body>
 </html>
