@@ -10325,6 +10325,9 @@ const css = `
 .tf-chip.mk{background:rgba(242,176,74,.18);color:var(--gold)}
 .tf-chip.md{background:rgba(51,179,138,.18);color:#2EA57A}
 .tf-h{display:flex;align-items:center;gap:8px;margin:14px 2px 8px;font-family:var(--display);font-size:18px;font-weight:800}
+.tf-lseg{display:grid;grid-template-columns:repeat(4,1fr);gap:2px;background:var(--fill);border-radius:12px;padding:3px;margin:0 0 10px}
+.tf-lseg button{border:0;border-radius:10px;padding:8px 2px;background:none;color:var(--muted);font:inherit;font-size:13.5px;font-weight:700;cursor:pointer}
+.tf-lseg button[aria-pressed="true"]{background:var(--bg2,var(--bg));color:var(--ink);box-shadow:0 1px 6px rgba(0,0,0,.18)}
 .tf-card{background:var(--surface);border-radius:18px;padding:12px 14px;box-shadow:inset 0 0 0 1px var(--sep);margin-bottom:8px}
 .tf-card .lb{display:flex;align-items:center;gap:8px;font-size:11.5px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;color:var(--muted);margin-bottom:6px}
 .tf-card .lb i{font-style:normal;background:var(--fill);border-radius:6px;padding:1px 6px;letter-spacing:0}
@@ -10357,8 +10360,10 @@ function open(s, i){
     {k:"ar", lb:"العربية", sub:"المختصر في تفسير القرآن", t:tf[0]},
     {k:"en", lb:"English", sub:"Al-Mukhtaṣar", t:tf[1]}
   ];
-  const order = EN() ? ["en", "ar", "de"] : ["de", "ar", "en"];
-  const tfHTML = order.map((k, j) => { const b = blocks.find(x => x.k === k);
+  let tfL = "all"; try{ tfL = JSON.parse(localStorage.getItem("lm-tf-lang")) || (EN() ? "en" : "de"); }catch(_){ tfL = EN() ? "en" : "de"; }
+  const order = tfL === "all" ? (EN() ? ["en", "ar", "de"] : ["de", "ar", "en"]) : [tfL];
+  const tfSeg = `<div class="tf-lseg" role="group">${[["de", "Deutsch"], ["ar", "العربية"], ["en", "English"], ["all", L("Alle", "All")]].map(([k, t]) => `<button data-tfl="${k}" aria-pressed="${tfL === k}">${t}</button>`).join("")}</div>`;
+  const tfHTML = tfSeg + order.map((k, j) => { const b = blocks.find(x => x.k === k);
     return `<div class="tf-card ${k === "ar" ? "ar" : ""} ${j === 0 ? "main" : ""}"><div class="lb">${b.lb}<i>${esc2(b.sub)}</i></div><p ${k === "ar" ? 'lang="ar"' : `class="arabic tf-keep" lang="${k}"`}>${esc2(b.t)}</p></div>`; }).join("");
   const asHTML = asb.length ? asb.map(x => `<div class="tf-card main"><div class="lb">${x.kind === "anlass" ? L("Anlass", "Occasion") : L("Hintergrund", "Background")} · ${L("Vers", "verse")} ${x.a === x.b ? x.a : x.a + "–" + x.b}</div><p class="arabic tf-keep" lang="${EN() ? "en" : "de"}">${esc2(EN() ? x.en : x.de)}</p><p class="src">${L("Quelle", "Source")}: ${srcLinks(x.src)}</p></div>
       <div class="tf-card ar"><div class="lb">العربية</div><p lang="ar">${esc2(x.ar)}</p></div>
@@ -10390,6 +10395,7 @@ function close(){ if(ov){ ov.remove(); ov = null; document.removeEventListener("
 function onKey(e){ if(!cur) return; if(e.key === "Escape") close(); if(e.key === "ArrowRight" || e.key === "ArrowLeft"){ const d = (e.key === "ArrowRight") === EN() ? 1 : -1; const j = cur.i + d; if(j >= 0 && j < cur.s.a.length) open(cur.s, j); } }
 function onClick(e){
   if(e.target === ov){ close(); return; }
+  const tl = e.target.closest("[data-tfl]"); if(tl && cur){ try{ localStorage.setItem("lm-tf-lang", JSON.stringify(tl.dataset.tfl)); }catch(_){} const y = ov.querySelector(".tf-bd").scrollTop; open(cur.s, cur.i); ov.querySelector(".tf-bd").scrollTop = y; return; }
   const b = e.target.closest("[data-tf]"); if(!b || !cur) return;
   const a = b.dataset.tf;
   if(a === "x") close();
@@ -12612,6 +12618,6 @@ setTab("home");
 if(lang === "en") translateTree(document.body);
 </script>
 <script>if("serviceWorker" in navigator&&location.protocol==="https:"){addEventListener("load",()=>navigator.serviceWorker.register("sw.js").catch(()=>{}));}</script>
-<script>window.LM_BUILD="20261015220059";(function(){function chk(){fetch("version.json?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.json()}).then(function(v){if(!v||!v.b||v.b===window.LM_BUILD)return;try{if(sessionStorage.getItem("lm-upd")===v.b)return;sessionStorage.setItem("lm-upd",v.b)}catch(e){}location.reload()}).catch(function(){})}if(location.protocol==="https:"){addEventListener("load",function(){setTimeout(chk,1500)});document.addEventListener("visibilitychange",function(){if(document.visibilityState==="visible")chk()})}})();</script>
+<script>window.LM_BUILD="20261015220545";(function(){function chk(){fetch("version.json?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.json()}).then(function(v){if(!v||!v.b||v.b===window.LM_BUILD)return;try{if(sessionStorage.getItem("lm-upd")===v.b)return;sessionStorage.setItem("lm-upd",v.b)}catch(e){}location.reload()}).catch(function(){})}if(location.protocol==="https:"){addEventListener("load",function(){setTimeout(chk,1500)});document.addEventListener("visibilitychange",function(){if(document.visibilityState==="visible")chk()})}})();</script>
 </body>
 </html>
