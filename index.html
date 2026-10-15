@@ -11808,7 +11808,7 @@ function pageHTML(p){
       items.push(`<span class="mw${wi === 0 ? " f" : ""}" data-v="${vi}" data-k="${wi}">${dec(w)}${num}</span>`);
       c--; if(last){ vi++; wi = 0; } else wi++;
     }
-    return `<div class="mp-l${short ? " c" : ""}">${items.join("")}</div>`;
+    return `<div class="mp-l${short ? " c" : ""}">${items.join(" ")}</div>`;
   }).join("");
   return `<div class="mp-page"><div class="mp-hd"><span>الجزء ${meta[0]}</span><span class="sn">${D.M.S[meta[2] - 1][0]}</span></div>
     <div class="mp-lines${short ? " short" : ""}">${out}</div>
@@ -11817,7 +11817,10 @@ function pageHTML(p){
 function fit(slot){
   const L = slot.querySelector(".mp-lines"); if(!L) return;
   const w = L.clientWidth, h = L.clientHeight || slot.clientHeight * .85;
-  const fs = Math.max(14, Math.min(w / 15.6, h / 15 / 1.62)) * (slot.closest(".mr") ? Math.min(1.12, lsj("lm-mr-pz", 1)) : 1);
+  const zoom = slot.closest(".mr") ? lsj("lm-mr-fa", 1) : 1;
+  L.classList.toggle("flow", zoom > 1.001);
+  if(zoom > 1.001){ L.style.fontSize = (Math.max(14, Math.min(w / 15.6, h / 15 / 1.62)) * zoom) + "px"; L.querySelectorAll(".mp-l").forEach(l => l.style.fontSize = ""); [...L.children].forEach(x => x.style.minHeight = ""); return; }
+  const fs = Math.max(14, Math.min(w / 15.6, h / 15 / 1.62));
   L.style.fontSize = fs + "px";
   if(L.classList.contains("short")) [...L.children].forEach(x => x.style.minHeight = (h / 15) + "px");
   const need = l => { let s = 0; for(const c of l.children) s += c.getBoundingClientRect().width; return s + (l.children.length - 1) * parseFloat(getComputedStyle(l).fontSize) * .1; };
@@ -11853,6 +11856,11 @@ body.mr-on .tabbar,body.mr-on .mx-bar,body.mr-on .mini{display:none!important}
 .mr .mp-sc{height:100%}
 .mr .mp-hd{display:none}
 .mr .mp-page{padding:6px 12px 2px}
+.mr .mp-lines.flow{display:block;overflow-y:auto;-webkit-overflow-scrolling:touch;line-height:2.15;text-align:justify;text-align-last:right;padding:0 2px 10px}
+.mr .mp-lines.flow .mp-l{display:inline;white-space:normal}
+.mr .mp-lines.flow .mp-l::after{content:" "}
+.mr .mp-lines.flow .mp-sh{display:flex;height:2.2em;margin:.3em 0;font-size:.85em}
+.mr .mp-lines.flow .mp-bs{display:block;text-align:center;text-align-last:center;margin:.1em 0 .2em}
 .mr .mn{background-image:${MEDAL2};color:var(--ink)}
 .mr .mp-sh{background:color-mix(in srgb,var(--gold) 8%,var(--surface));box-shadow:inset 0 0 0 3px color-mix(in srgb,var(--gold) 8%,var(--surface)),inset 0 0 0 4px var(--pb)}
 .mr .mp-sh::before,.mr .mp-sh::after{background-image:${ROSE2}}
@@ -12183,14 +12191,14 @@ function fsSheet(){
     <div class="row"><b>${T2("Arabisch", "Arabic")}</b><button data-fs="lm-mr-fa:-1" aria-label="${T2("kleiner", "smaller")}">A−</button><span class="v" data-v="lm-mr-fa">${pct("lm-mr-fa")}</span><button data-fs="lm-mr-fa:1" aria-label="${T2("größer", "larger")}">A+</button></div>
     <div class="row"><b>${T2("Übersetzung", "Translation")}</b><button data-fs="lm-mr-ft:-1">A−</button><span class="v" data-v="lm-mr-ft">${pct("lm-mr-ft")}</span><button data-fs="lm-mr-ft:1">A+</button></div>
     <div class="pv"><p class="a">${D.VW[D.SV[67]].map(dec).join(" ")}</p><p class="t">${T2("Segensreich ist Derjenige, in Dessen Hand die Herrschaft ist …", "Blessed is He in whose hand is dominion …")}</p></div>
-    <p class="hint">${T2("Auf den Mushaf-Seiten ist die Schrift so groß, wie die Zeilen des Mushaf es erlauben. Für noch größere Schrift wechsle mit 文A zur Versliste – dort gilt diese Größe.", "On the Mushaf pages the text is as large as the Mushaf lines allow. For larger text switch to the verse list with 文A – this size applies there.")}</p></div>`);
+    <p class="hint">${T2("Bei 100 % siehst du die Zeilen genau wie im Mushaf. Größer: Die Zeilen der Seite brechen um, und du scrollst auf der Seite nach unten. Die Größe gilt für die Seiten und die Versliste.", "At 100 % you see the lines exactly as in the Mushaf. Larger: the lines of the page wrap and you scroll down within the page. The size applies to the pages and the verse list.")}</p></div>`);
   sh.querySelector(".mr-fs").style.setProperty("--mr-fa", lsj("lm-mr-fa", 1)); sh.querySelector(".mr-fs").style.setProperty("--mr-ft", lsj("lm-mr-ft", 1));
   sh.addEventListener("click", e => {
     const b = e.target.closest("[data-fs]"); if(!b) return;
     const [k, d] = b.dataset.fs.split(":"); const v = Math.round(Math.min(FS_MAX, Math.max(FS_MIN, lsj(k, 1) + (+d) * .1)) * 10) / 10;
     lss(k, v); sh.querySelector(`[data-v="${k}"]`).textContent = Math.round(v * 100) + " %";
     sh.querySelector(".mr-fs").style.setProperty(k === "lm-mr-fa" ? "--mr-fa" : "--mr-ft", v); applyFs();
-    if(k === "lm-mr-fa" && v > 1 && ST.mode === "page" && !sh._told){ sh._told = true; if(typeof toast === "function") toast(T2("Tipp: Mit 文A siehst du die größere Schrift", "Tip: tap 文A to see the larger text")); }
+    if(k === "lm-mr-fa" && PG.sc){ [...PG.sc.children].forEach(s => { if(s.dataset.done){ s.innerHTML = ""; delete s.dataset.done; } }); const i = PG.cur; PG.cur = -1; setCur(i); }
   });
 }
 /* ---------- Klicks ---------- */
@@ -12309,6 +12317,6 @@ setTab("home");
 if(lang === "en") translateTree(document.body);
 </script>
 <script>if("serviceWorker" in navigator&&location.protocol==="https:"){addEventListener("load",()=>navigator.serviceWorker.register("sw.js").catch(()=>{}));}</script>
-<script>window.LM_BUILD="20261015194140";(function(){function chk(){fetch("version.json?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.json()}).then(function(v){if(!v||!v.b||v.b===window.LM_BUILD)return;try{if(sessionStorage.getItem("lm-upd")===v.b)return;sessionStorage.setItem("lm-upd",v.b)}catch(e){}location.reload()}).catch(function(){})}if(location.protocol==="https:"){addEventListener("load",function(){setTimeout(chk,1500)});document.addEventListener("visibilitychange",function(){if(document.visibilityState==="visible")chk()})}})();</script>
+<script>window.LM_BUILD="20261015195335";(function(){function chk(){fetch("version.json?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.json()}).then(function(v){if(!v||!v.b||v.b===window.LM_BUILD)return;try{if(sessionStorage.getItem("lm-upd")===v.b)return;sessionStorage.setItem("lm-upd",v.b)}catch(e){}location.reload()}).catch(function(){})}if(location.protocol==="https:"){addEventListener("load",function(){setTimeout(chk,1500)});document.addEventListener("visibilitychange",function(){if(document.visibilityState==="visible")chk()})}})();</script>
 </body>
 </html>
