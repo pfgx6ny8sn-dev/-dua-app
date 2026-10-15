@@ -11817,7 +11817,7 @@ function pageHTML(p){
 function fit(slot){
   const L = slot.querySelector(".mp-lines"); if(!L) return;
   const w = L.clientWidth, h = L.clientHeight || slot.clientHeight * .85;
-  const fs = Math.max(14, Math.min(w / 15.6, h / 15 / 1.62));
+  const fs = Math.max(14, Math.min(w / 15.6, h / 15 / 1.62)) * (slot.closest(".mr") ? Math.min(1.12, lsj("lm-mr-pz", 1)) : 1);
   L.style.fontSize = fs + "px";
   if(L.classList.contains("short")) [...L.children].forEach(x => x.style.minHeight = (h / 15) + "px");
   const need = l => { let s = 0; for(const c of l.children) s += c.getBoundingClientRect().width; return s + (l.children.length - 1) * parseFloat(getComputedStyle(l).fontSize) * .1; };
@@ -11865,9 +11865,9 @@ body.mr-on .tabbar,body.mr-on .mx-bar,body.mr-on .mini{display:none!important}
 .mr-vh{display:flex;align-items:center;justify-content:space-between}
 .mr-vh .bd{border:1.5px solid var(--sep);border-radius:8px;padding:2px 8px;font-size:14px;font-variant-numeric:tabular-nums;color:var(--muted)}
 .mr-vh button{border:0;background:none;color:var(--muted);font-size:22px;line-height:1;padding:2px 8px;cursor:pointer}
-.mr-ar{font-family:"Amiri Quran","Amiri","Scheherazade New",serif;direction:rtl;text-align:right;font-size:calc(var(--ar-size) * 1.05);line-height:2.25;margin:4px 0 6px}
+.mr-ar{font-family:"Amiri Quran","Amiri","Scheherazade New",serif;direction:rtl;text-align:right;font-size:calc(var(--ar-size) * 1.05 * var(--mr-fa,1));line-height:2.25;margin:4px 0 6px}
 .mr-ar .mw{display:inline}
-.mr-tr{margin:0;font-size:16.5px;line-height:1.5;color:var(--ink)}
+.mr-tr{margin:0;font-size:calc(16.5px * var(--mr-ft,1));line-height:1.5;color:var(--ink)}
 .mr-next{display:block;width:100%;margin:18px 0 0;border:0;border-radius:16px;padding:14px;font:inherit;font-weight:700;background:var(--fill);color:var(--ink);cursor:pointer}
 /* Ausblenden (wie Tarteel) und Vorlesen */
 .mr.hid .mw:not(.rv),.mr.hid .mw:not(.rv) b,.mr.hid .mw:not(.rv) i{color:transparent!important}
@@ -11886,6 +11886,15 @@ body.mr-on .tabbar,body.mr-on .mx-bar,body.mr-on .mini{display:none!important}
 .mr-bot .mic{background:linear-gradient(135deg,#F29A3B,#F2B84B)}
 .mr-bot .mic.on{background:#e5675a;animation:rcPulse 1.4s infinite}
 .mr-bot .play{width:66px;height:66px;font-size:28px;background:radial-gradient(circle at 35% 30%,#7EE0A6,#2EA57A);box-shadow:0 0 0 8px rgba(46,165,122,.18),0 12px 26px -8px rgba(46,165,122,.7)}
+.mr-fs .row{display:flex;align-items:center;gap:10px;margin:10px 0}
+.mr-fs .row b{flex:1;font-size:15px}
+.mr-fs .row button{width:48px;height:44px;border:0;border-radius:12px;background:var(--fill);color:var(--ink);font:inherit;font-weight:800;cursor:pointer}
+.mr-fs .row .v{min-width:56px;text-align:center;font-weight:800;font-variant-numeric:tabular-nums}
+.mr-fs .pv{background:var(--surface);border-radius:16px;padding:10px 14px;margin-top:6px;box-shadow:inset 0 0 0 1px var(--sep)}
+.mr-fs .pv p{margin:0}
+.mr-fs .pv .a{font-family:"Amiri Quran","Amiri","Scheherazade New",serif;direction:rtl;text-align:right;font-size:calc(var(--ar-size) * 1.05 * var(--mr-fa,1));line-height:2.1}
+.mr-fs .pv .t{font-size:calc(16.5px * var(--mr-ft,1));line-height:1.5}
+.mr-fs .hint{font-size:12.5px;color:var(--muted);margin:10px 2px 0}
 .mr-st{position:absolute;left:50%;transform:translateX(-50%);bottom:10px;z-index:4;display:flex;align-items:center;gap:10px;padding:8px 14px;border-radius:999px;background:color-mix(in srgb,var(--surface) 92%,transparent);box-shadow:var(--shadow),inset 0 0 0 1px var(--sep);font-size:13.5px;font-weight:700;white-space:nowrap}
 .mr-st .d{width:10px;height:10px;border-radius:50%;background:#e5675a;animation:rcPulse 1.4s infinite}
 /* Blätter */
@@ -11923,9 +11932,9 @@ function openReader(page, mode){
       <button class="mr-pill" data-r="ix"><span class="x"><b></b><small></small></span><span class="bm" data-r="bm" role="button" aria-label="${T2("Lesezeichen", "Bookmark")}">🔖</span></button>
       <button class="mr-ib" data-r="ix" aria-label="Fihris">☰</button><button class="mr-ib" data-r="set" aria-label="${T2("Einstellungen", "Settings")}">⚙︎</button></header>
     <div class="mr-main"></div>
-    <footer class="mr-bot"><button class="sb" data-r="tr" aria-label="${T2("Übersetzung", "Translation")}">文A</button><button class="sb" data-r="eye" aria-label="${T2("Verse ausblenden", "Hide verses")}">👁</button><button class="sb" data-r="wr" aria-label="${T2("Schreiben", "Write")}">✍️</button>
+    <footer class="mr-bot"><button class="sb" data-r="tr" aria-label="${T2("Übersetzung", "Translation")}">文A</button><button class="sb" data-r="eye" aria-label="${T2("Verse ausblenden", "Hide verses")}">👁</button><button class="sb" data-r="wr" aria-label="${T2("Schreiben", "Write")}">✍️</button><button class="sb" data-r="fs" aria-label="${T2("Schriftgröße", "Text size")}">Aa</button>
       <span class="sp"></span><button class="fab mic" data-r="mic" aria-label="${T2("Vorlesen & prüfen", "Recite & check")}">🎙️</button><button class="fab play" data-r="play" aria-label="${T2("Anhören", "Listen")}">▶︎</button></footer>`;
-  document.body.appendChild(el); document.body.classList.add("mr-on");
+  document.body.appendChild(el); document.body.classList.add("mr-on"); applyFs(el);
   PG.el = el; PG.main = el.querySelector(".mr-main"); PG.cur = -1;
   el.addEventListener("click", onReaderClick);
   ST.sura = pageSura(page);
@@ -12165,6 +12174,25 @@ function recStop(){
   if(PG.el){ const m = PG.el.querySelector('[data-r="mic"]'); if(m) m.classList.remove("on"); PG.el.querySelectorAll(".mr-st").forEach(x => x.remove()); PG.el.querySelectorAll(".mw.nx").forEach(x => x.classList.remove("nx")); }
 }
 
+/* ---------- Schriftgröße ---------- */
+const FS_MIN = .8, FS_MAX = 2;
+function applyFs(el){ el = el || PG.el; if(!el) return; el.style.setProperty("--mr-fa", lsj("lm-mr-fa", 1)); el.style.setProperty("--mr-ft", lsj("lm-mr-ft", 1)); }
+function fsSheet(){
+  const pct = k => Math.round(lsj(k, 1) * 100) + " %";
+  const sh = sheet(`<div class="hd"><b>Aa ${T2("Schriftgröße", "Text size")}</b><button class="mp-ic" data-mp="x">✕</button></div><div class="bd mr-fs">
+    <div class="row"><b>${T2("Arabisch", "Arabic")}</b><button data-fs="lm-mr-fa:-1" aria-label="${T2("kleiner", "smaller")}">A−</button><span class="v" data-v="lm-mr-fa">${pct("lm-mr-fa")}</span><button data-fs="lm-mr-fa:1" aria-label="${T2("größer", "larger")}">A+</button></div>
+    <div class="row"><b>${T2("Übersetzung", "Translation")}</b><button data-fs="lm-mr-ft:-1">A−</button><span class="v" data-v="lm-mr-ft">${pct("lm-mr-ft")}</span><button data-fs="lm-mr-ft:1">A+</button></div>
+    <div class="pv"><p class="a">${D.VW[D.SV[67]].map(dec).join(" ")}</p><p class="t">${T2("Segensreich ist Derjenige, in Dessen Hand die Herrschaft ist …", "Blessed is He in whose hand is dominion …")}</p></div>
+    <p class="hint">${T2("Auf den Mushaf-Seiten ist die Schrift so groß, wie die Zeilen des Mushaf es erlauben. Für noch größere Schrift wechsle mit 文A zur Versliste – dort gilt diese Größe.", "On the Mushaf pages the text is as large as the Mushaf lines allow. For larger text switch to the verse list with 文A – this size applies there.")}</p></div>`);
+  sh.querySelector(".mr-fs").style.setProperty("--mr-fa", lsj("lm-mr-fa", 1)); sh.querySelector(".mr-fs").style.setProperty("--mr-ft", lsj("lm-mr-ft", 1));
+  sh.addEventListener("click", e => {
+    const b = e.target.closest("[data-fs]"); if(!b) return;
+    const [k, d] = b.dataset.fs.split(":"); const v = Math.round(Math.min(FS_MAX, Math.max(FS_MIN, lsj(k, 1) + (+d) * .1)) * 10) / 10;
+    lss(k, v); sh.querySelector(`[data-v="${k}"]`).textContent = Math.round(v * 100) + " %";
+    sh.querySelector(".mr-fs").style.setProperty(k === "lm-mr-fa" ? "--mr-fa" : "--mr-ft", v); applyFs();
+    if(k === "lm-mr-fa" && v > 1 && ST.mode === "page" && !sh._told){ sh._told = true; if(typeof toast === "function") toast(T2("Tipp: Mit 文A siehst du die größere Schrift", "Tip: tap 文A to see the larger text")); }
+  });
+}
 /* ---------- Klicks ---------- */
 function onReaderClick(e){
   const vm = e.target.closest("[data-vmenu]"); if(vm){ const v = +vm.dataset.vmenu; const was = ST.hide; ST.hide = false; verseTap(v); ST.hide = was; return; }
@@ -12177,6 +12205,7 @@ function onReaderClick(e){
     else if(k === "set") settingsSheet();
     else if(k === "tr"){ const v = firstVerse(); ST.mode = ST.mode === "page" ? "list" : "page"; lss("lm-mr-mode", ST.mode); recStop(); if(ST.mode === "list"){ PG.sc = null; build(D.vpage[v]); buildList(D.VSU[v], v); } else build(D.vpage[v]); }
     else if(k === "eye") setHide(!ST.hide);
+    else if(k === "fs") fsSheet();
     else if(k === "nexts"){ const s = ST.listS + 1; buildList(s, D.SV[s]); }
     else if(k === "play"){ if(auOn) auStop(); else playFrom(firstVerse(), false); }
     else if(k === "mic"){ if(RC) recStop(); else { if(!ST.hide) setHide(true); recStart(); } }
@@ -12230,6 +12259,6 @@ setTab("home");
 if(lang === "en") translateTree(document.body);
 </script>
 <script>if("serviceWorker" in navigator&&location.protocol==="https:"){addEventListener("load",()=>navigator.serviceWorker.register("sw.js").catch(()=>{}));}</script>
-<script>window.LM_BUILD="20261015192257";(function(){function chk(){fetch("version.json?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.json()}).then(function(v){if(!v||!v.b||v.b===window.LM_BUILD)return;try{if(sessionStorage.getItem("lm-upd")===v.b)return;sessionStorage.setItem("lm-upd",v.b)}catch(e){}location.reload()}).catch(function(){})}if(location.protocol==="https:"){addEventListener("load",function(){setTimeout(chk,1500)});document.addEventListener("visibilitychange",function(){if(document.visibilityState==="visible")chk()})}})();</script>
+<script>window.LM_BUILD="20261015193214";(function(){function chk(){fetch("version.json?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.json()}).then(function(v){if(!v||!v.b||v.b===window.LM_BUILD)return;try{if(sessionStorage.getItem("lm-upd")===v.b)return;sessionStorage.setItem("lm-upd",v.b)}catch(e){}location.reload()}).catch(function(){})}if(location.protocol==="https:"){addEventListener("load",function(){setTimeout(chk,1500)});document.addEventListener("visibilitychange",function(){if(document.visibilityState==="visible")chk()})}})();</script>
 </body>
 </html>
