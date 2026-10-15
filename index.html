@@ -10156,7 +10156,7 @@ document.addEventListener("click", e => {
   if(typeof stopQuranAudio === "function") try{ stopQuranAudio(); }catch(_){}
   start(s);
 });
-window.lmRecite = {norm, same, align};
+window.lmRecite = {norm, same, align, tone};
 })();
 
 /* =================== p36: Qur'an-Sure aufgeräumt – Text oben, Bedienung darunter, Einstellungen gebündelt =================== */
@@ -11681,9 +11681,8 @@ const ROSE = `url("data:image/svg+xml,${encodeURIComponent('<svg xmlns="http://w
 const css = document.createElement("style");
 css.textContent = `
 .mp{display:flex;flex-direction:column;--pp:#fbf7ee;--pi:#1b1a17;--pm:#8a7a62;--pb:#c9b48f;--pf:#efe5cf;--sel:rgba(214,170,90,.28);--ply:rgba(46,165,122,.22);
-  --tj-s:#a0a6ab;--tj-g:#169b4e;--tj-q:#1e6fd0;--tj-m2:#c9871a;--tj-m4:#e2711d;--tj-m5:#d62828;--tj-m6:#9b0d1f;--tj-wq:#a8875a;
   background:var(--pp);color:var(--pi)}
-.mp.night{--pp:#1c1a16;--pi:#ece4d2;--pm:#a8987c;--pb:#6d5d43;--pf:#2a261f;--sel:rgba(214,170,90,.25);--tj-s:#7f8790;--tj-g:#4fd483;--tj-q:#6cb6ff;--tj-m2:#ffc56b;--tj-m4:#ff9f4a;--tj-m5:#ff6f61;--tj-m6:#ff4d6d;--tj-wq:#c9a36a}
+.mp.night{--pp:#1c1a16;--pi:#ece4d2;--pm:#a8987c;--pb:#6d5d43;--pf:#2a261f;--sel:rgba(214,170,90,.25)}
 @keyframes mpIn{from{opacity:0;transform:scale(.985)}to{opacity:1;transform:none}}
 .mp-sc{flex:1;min-height:0;display:flex;overflow-x:auto;overflow-y:hidden;scroll-snap-type:x mandatory;direction:rtl;scrollbar-width:none;-webkit-overflow-scrolling:touch;overscroll-behavior:contain}
 .mp-sc::-webkit-scrollbar{display:none}
@@ -11806,7 +11805,7 @@ function pageHTML(p){
     while(c > 0){
       const w = D.VW[vi][wi], last = wi === D.VW[vi].length - 1, endLine = c === 1;
       const num = last && !(endLine && nextOrphan(k)) ? `<span class="mn${D.VAY[vi] > 99 ? " n3" : ""}">${AD(D.VAY[vi])}</span>` : "";
-      items.push(`<span class="mw${wi === 0 ? " f" : ""}" data-v="${vi}">${dec(w)}${num}</span>`);
+      items.push(`<span class="mw${wi === 0 ? " f" : ""}" data-v="${vi}" data-k="${wi}">${dec(w)}${num}</span>`);
       c--; if(last){ vi++; wi = 0; } else wi++;
     }
     return `<div class="mp-l${short ? " c" : ""}">${items.join("")}</div>`;
@@ -11831,100 +11830,215 @@ function fit(slot){
   if(L.scrollHeight > L.clientHeight + 2){ const k = L.clientHeight / L.scrollHeight; L.style.fontSize = (parseFloat(L.style.fontSize) * k) + "px"; }
 }
 
-/* ---------- Eingebettet in die Qur'an-Ansicht: Seiten zum Wischen ---------- */
+/* ---------- Leseansicht im Vollbild (wie Tarteel): Seiten zum Wischen oder Versliste mit Übersetzung ---------- */
+const GOLD = "#d6aa5a";
+const MEDAL2 = `url("data:image/svg+xml,${encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40"><g fill="none" stroke="' + GOLD + '" stroke-width="1.4"><circle cx="20" cy="20" r="13.5"/><circle cx="20" cy="20" r="11" stroke-width=".8"/>' + Array.from({length:12}, (_, i) => { const a = i * Math.PI / 6, x = 20 + Math.cos(a) * 16.2, y = 20 + Math.sin(a) * 16.2; return `<circle cx="${x.toFixed(2)}" cy="${y.toFixed(2)}" r="2.4"/>`; }).join("") + '</g></svg>')}")`;
+const ROSE2 = `url("data:image/svg+xml,${encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 60 60"><g fill="none" stroke="' + GOLD + '" stroke-width="1.6">' + Array.from({length:8}, (_, i) => `<ellipse cx="30" cy="15" rx="6" ry="12" transform="rotate(${i * 45} 30 30)"/>`).join("") + '<circle cx="30" cy="30" r="8"/><circle cx="30" cy="30" r="3" fill="' + GOLD + '"/></g></svg>')}")`;
 const css2 = document.createElement("style");
 css2.textContent = `
-#v-quran.mq-on #qrTop{display:none}
-.mq{position:relative;height:calc(100vh - 262px);height:calc(100dvh - 262px - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px));min-height:470px;border-radius:22px;overflow:hidden;margin:2px 0 10px;box-shadow:0 18px 40px -24px rgba(0,0,0,.65),inset 0 0 0 1px rgba(168,135,90,.4)}
-.mq .mp-page{padding:6px 12px 4px}
-.mq .mp-hd,.mq .mp-ft{font-size:13.5px;padding:4px 4px}
-.mq.m-mask .mw:not(.rv),.mq.m-first .mw:not(.f):not(.rv){filter:blur(6px);opacity:.45}
-.mq-info{display:flex;align-items:center;gap:8px;margin:6px 0 8px}
-.mq-info .t{flex:1;min-width:0;text-align:center;font-size:13px;font-weight:700;color:var(--muted);font-variant-numeric:tabular-nums}
-.mq-info .t b{color:var(--ink);font-size:15px;display:block}
-.mq-info button{border:0;border-radius:12px;padding:8px 12px;background:var(--fill);color:var(--ink);font:inherit;font-size:13.5px;font-weight:700;cursor:pointer;flex:none}
-.mq-load{display:grid;place-items:center;height:100%;color:#8a7a62;font-weight:600}
-.mp.mp-sheet{position:fixed;inset:0;z-index:130;display:flex;flex-direction:row;align-items:flex-end;justify-content:center;background:rgba(10,8,5,.45);animation:mpFade .2s}
+.mr,.mr-s{--pp:var(--bg);--pi:var(--ink);--pm:var(--muted);--pb:color-mix(in srgb,${GOLD} 60%,transparent);--pf:var(--surface);--sel:color-mix(in srgb,var(--gold) 22%,transparent);--ply:rgba(51,179,138,.22)}
+.mr{position:fixed;inset:0;z-index:90;display:flex;flex-direction:column;background:var(--bg);color:var(--ink);animation:mrIn .22s ease}
+@keyframes mrIn{from{opacity:0}}
+body.mr-on{overflow:hidden}
+body.mr-on .tabbar,body.mr-on .mx-bar,body.mr-on .mini{display:none!important}
+.mr-top{flex:none;display:flex;align-items:center;gap:8px;padding:calc(8px + env(safe-area-inset-top,0px)) 10px 8px;border-bottom:1px solid var(--sep);background:var(--bg)}
+.mr-ib{flex:none;width:42px;height:42px;border:0;border-radius:12px;background:none;color:var(--ink);font-size:22px;cursor:pointer;display:grid;place-items:center}
+.mr-ib:active{background:var(--fill)}
+.mr-pill{flex:1;min-width:0;display:flex;align-items:center;gap:8px;border:0;border-radius:12px;padding:7px 12px;background:var(--fill);color:var(--ink);font:inherit;text-align:left;cursor:pointer}
+.mr-pill .x{flex:1;min-width:0}
+.mr-pill b{display:block;font-size:16px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mr-pill small{display:block;font-size:12.5px;color:var(--muted);font-variant-numeric:tabular-nums}
+.mr-pill .bm{font-size:20px;opacity:.85}
+.mr-main{flex:1;min-height:0;position:relative}
+.mr .mp-sc{height:100%}
+.mr .mp-hd{display:none}
+.mr .mp-page{padding:6px 12px 2px}
+.mr .mn{background-image:${MEDAL2};color:var(--ink)}
+.mr .mp-sh{background:color-mix(in srgb,var(--gold) 8%,var(--surface));box-shadow:inset 0 0 0 3px color-mix(in srgb,var(--gold) 8%,var(--surface)),inset 0 0 0 4px var(--pb)}
+.mr .mp-sh::before,.mr .mp-sh::after{background-image:${ROSE2}}
+.mr .mp-ft .pg{background:var(--surface);color:var(--ink)}
+/* Versliste */
+.mr-list{position:absolute;inset:0;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:10px 16px 30px}
+.mr-list .mp-sh{height:62px;margin:6px 0 4px;font-family:"Amiri Quran","Amiri","Scheherazade New",serif;font-size:24px}
+.mr-list .mp-bs{font-family:"Amiri Quran","Amiri","Scheherazade New",serif;font-size:26px;margin:8px 0 6px}
+.mr-v{padding:12px 0 14px;border-bottom:1px solid var(--sep)}
+.mr-vh{display:flex;align-items:center;justify-content:space-between}
+.mr-vh .bd{border:1.5px solid var(--sep);border-radius:8px;padding:2px 8px;font-size:14px;font-variant-numeric:tabular-nums;color:var(--muted)}
+.mr-vh button{border:0;background:none;color:var(--muted);font-size:22px;line-height:1;padding:2px 8px;cursor:pointer}
+.mr-ar{font-family:"Amiri Quran","Amiri","Scheherazade New",serif;direction:rtl;text-align:right;font-size:calc(var(--ar-size) * 1.05);line-height:2.25;margin:4px 0 6px}
+.mr-ar .mw{display:inline}
+.mr-tr{margin:0;font-size:16.5px;line-height:1.5;color:var(--ink)}
+.mr-next{display:block;width:100%;margin:18px 0 0;border:0;border-radius:16px;padding:14px;font:inherit;font-weight:700;background:var(--fill);color:var(--ink);cursor:pointer}
+/* Ausblenden (wie Tarteel) und Vorlesen */
+.mr.hid .mw:not(.rv),.mr.hid .mw:not(.rv) b,.mr.hid .mw:not(.rv) i{color:transparent!important}
+.mr.hid .mw:not(.rv){background:color-mix(in srgb,var(--ink) 9%,transparent);border-radius:7px}
+.mr.hid.fw .mw.f:not(.rv),.mr.hid.fw .mw.f:not(.rv) b{color:var(--ink)!important}
+.mr.hid .mw:not(.rv) .mn{color:var(--ink)!important}
+.mr .mw.bad{background:rgba(229,103,90,.42)!important;border-radius:7px}
+.mr .mw.okc{background:rgba(51,179,138,.18);border-radius:7px}
+.mr .mw.nx{box-shadow:inset 0 -3px 0 var(--gold)}
+/* untere Leiste */
+.mr-bot{flex:none;display:flex;align-items:center;gap:10px;padding:10px 14px calc(12px + env(safe-area-inset-bottom,0px));border-top:1px solid var(--sep);background:var(--bg)}
+.mr-bot .sb{width:46px;height:46px;border-radius:50%;border:0;background:var(--surface);color:var(--ink);font:inherit;font-size:18px;font-weight:800;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.25),inset 0 0 0 1px var(--sep);display:grid;place-items:center}
+.mr-bot .sb.on{background:var(--gold);color:var(--on-acc,#1b1a17)}
+.mr-bot .sp{flex:1}
+.mr-bot .fab{width:58px;height:58px;border-radius:50%;border:0;cursor:pointer;display:grid;place-items:center;font-size:24px;color:#fff;box-shadow:0 10px 24px -8px rgba(0,0,0,.6)}
+.mr-bot .mic{background:linear-gradient(135deg,#F29A3B,#F2B84B)}
+.mr-bot .mic.on{background:#e5675a;animation:rcPulse 1.4s infinite}
+.mr-bot .play{width:66px;height:66px;font-size:28px;background:radial-gradient(circle at 35% 30%,#7EE0A6,#2EA57A);box-shadow:0 0 0 8px rgba(46,165,122,.18),0 12px 26px -8px rgba(46,165,122,.7)}
+.mr-st{position:absolute;left:50%;transform:translateX(-50%);bottom:10px;z-index:4;display:flex;align-items:center;gap:10px;padding:8px 14px;border-radius:999px;background:color-mix(in srgb,var(--surface) 92%,transparent);box-shadow:var(--shadow),inset 0 0 0 1px var(--sep);font-size:13.5px;font-weight:700;white-space:nowrap}
+.mr-st .d{width:10px;height:10px;border-radius:50%;background:#e5675a;animation:rcPulse 1.4s infinite}
+/* Blätter */
+.mp.mp-sheet{position:fixed;inset:0;z-index:130;display:flex;flex-direction:row;align-items:flex-end;justify-content:center;background:rgba(0,0,0,.45);animation:mpFade .2s}
 .mp-sh2.full{max-height:92%;height:92%;border-radius:24px 24px 0 0}
-.mx-bar button:disabled{opacity:.35}
+.mr-s .mp-sh2{background:var(--bg2,var(--bg));color:var(--ink)}
+.mr-set h4{margin:16px 2px 8px;font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.mr-rcs{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.mr-rcs button{border:0;border-radius:14px;padding:10px;text-align:left;font:inherit;background:var(--fill);color:var(--ink);cursor:pointer}
+.mr-rcs button b{display:block;font-size:14px}.mr-rcs button span{font-size:12px;color:var(--muted)}
+.mr-rcs button[aria-pressed="true"]{box-shadow:inset 0 0 0 2px var(--gold)}
+.mr-set .qx-sw{margin-top:12px}
+.mr-set .wd-card,.mr-set .tj-key{margin-top:12px}
+.mp-entry{display:flex;align-items:center;gap:14px;width:100%;margin:4px 0 14px;padding:14px 16px;border:0;border-radius:22px;cursor:pointer;text-align:left;font:inherit;color:var(--ink);background:var(--surface);box-shadow:inset 0 0 0 1px var(--sep)}
+.mp-entry .ic{flex:none;width:52px;height:52px;border-radius:14px;display:grid;place-items:center;font-size:28px;background:var(--gold-soft)}
+.mp-entry b{display:block;font-size:17px}
+.mp-entry span{display:block;font-size:13px;color:var(--muted)}
 `;
 document.head.appendChild(css2);
 
-const PG = {el: null, cur: -1, rev: new Set(), playV: null, sel: null};
+const PG = {el: null, cur: -1, playV: null, sel: null};
+const ST = {mode: "page", hide: false, rv: new Set(), ws: {}, list: null, sura: 0};
 const appSuras = () => (typeof SURAS !== "undefined" ? SURAS : []);
 const sRange = x => { const a0 = D.SV[x.n] + (x.start || 1) - 1; return [a0, a0 + x.a.length - 1]; };
-const pRange = p => [D.PS[p][0], (p + 1 < D.PS.length ? (D.PS[p + 1][1] === 0 ? D.PS[p + 1][0] - 1 : D.PS[p + 1][0]) : D.VW.length - 1)];
-const hits = (p, x) => { const [a, b] = pRange(p), [c, d] = sRange(x); return a <= d && c <= b; };
 const appSuraOfVerse = v => appSuras().find(x => { const [a, b] = sRange(x); return v >= a && v <= b; });
-function appSuraForPage(p){
-  const cur = qr.sura && appSuras().find(x => x.slug === qr.sura);
-  if(cur && hits(p, cur)) return cur;
-  const [a, b] = pRange(p);
-  for(let v = a; v <= b; v++){ const x = appSuraOfVerse(v); if(x) return x; }
-  return null;
+const pageSura = p => D.M.M[p][2];
+
+/* ---------- Öffnen / Schließen ---------- */
+function openReader(page, mode){
+  loadFont();
+  if(PG.el) PG.el.remove();
+  ST.mode = mode || lsj("lm-mr-mode", "page"); ST.hide = false; ST.rv.clear(); ST.ws = {};
+  const el = document.createElement("div"); el.className = "mp mr" + (lsj("lm-qx-tj", true) ? "" : " notj") + (lsj("lm-mr-fw", false) ? " fw" : "");
+  el.innerHTML = `<header class="mr-top"><button class="mr-ib" data-r="back" aria-label="${T2("Zurück", "Back")}">‹</button>
+      <button class="mr-pill" data-r="ix"><span class="x"><b></b><small></small></span><span class="bm" data-r="bm" role="button" aria-label="${T2("Lesezeichen", "Bookmark")}">🔖</span></button>
+      <button class="mr-ib" data-r="ix" aria-label="Fihris">☰</button><button class="mr-ib" data-r="set" aria-label="${T2("Einstellungen", "Settings")}">⚙︎</button></header>
+    <div class="mr-main"></div>
+    <footer class="mr-bot"><button class="sb" data-r="tr" aria-label="${T2("Übersetzung", "Translation")}">文A</button><button class="sb" data-r="eye" aria-label="${T2("Verse ausblenden", "Hide verses")}">👁</button><button class="sb" data-r="wr" aria-label="${T2("Schreiben", "Write")}">✍️</button>
+      <span class="sp"></span><button class="fab mic" data-r="mic" aria-label="${T2("Vorlesen & prüfen", "Recite & check")}">🎙️</button><button class="fab play" data-r="play" aria-label="${T2("Anhören", "Listen")}">▶︎</button></footer>`;
+  document.body.appendChild(el); document.body.classList.add("mr-on");
+  PG.el = el; PG.main = el.querySelector(".mr-main"); PG.cur = -1;
+  el.addEventListener("click", onReaderClick);
+  ST.sura = pageSura(page);
+  build(page);
 }
-function ensurePager(){
-  if(PG.el) return PG.el;
-  const el = document.createElement("div"); el.className = "mp mq";
-  el.innerHTML = `<div class="mp-sc">${D.M.P.map((_, i) => `<div class="mp-slot" data-p="${i}"></div>`).join("")}</div>`;
-  PG.el = el; PG.sc = el.querySelector(".mp-sc");
-  PG.sc.addEventListener("scroll", () => { cancelAnimationFrame(PG.raf); PG.raf = requestAnimationFrame(onScroll); clearTimeout(PG.st); PG.st = setTimeout(suraSync, 380); }, {passive: true});
-  el.addEventListener("click", onPageClick);
-  window.addEventListener("resize", () => { if(!PG.el.isConnected) return; [...PG.sc.children].forEach(s => { if(s.dataset.done) fit(s); }); const i = PG.cur; PG.cur = -1; go(i); });
-  return el;
+function closeReader(){
+  recStop(); auStop();
+  if(PG.el){ PG.el.remove(); PG.el = null; } document.body.classList.remove("mr-on");
+  qr.sura = null; qr.mp = null; qr.revealed = new Set();
+  if(typeof renderQuran === "function"){ renderQuran(); scrollTo(0, 0); }
+}
+function build(page){
+  PG.main.innerHTML = ""; PG.sc = null; ST.list = null;
+  PG.el.querySelector('[data-r="tr"]').classList.toggle("on", ST.mode === "list");
+  if(ST.mode === "page"){
+    PG.main.innerHTML = `<div class="mp-sc">${D.M.P.map((_, i) => `<div class="mp-slot" data-p="${i}"></div>`).join("")}</div>`;
+    PG.sc = PG.main.querySelector(".mp-sc");
+    PG.sc.addEventListener("scroll", () => { cancelAnimationFrame(PG.raf); PG.raf = requestAnimationFrame(onScroll); }, {passive: true});
+    PG.cur = -1; go(page);
+  } else buildList(pageSura(page), D.PS[page][0]);
+}
+function decorate(root){
+  root.querySelectorAll(".mw").forEach(w => { const v = +w.dataset.v, k = w.dataset.k, st = ST.ws[v + ":" + k];
+    if(ST.rv.has(v) || st) w.classList.add("rv"); if(st === "bad") w.classList.add("bad"); if(st === "ok" && !ST.hide) w.classList.add("okc");
+    if(v === PG.playV) w.classList.add("ply"); });
 }
 function fill(i){
   const s = PG.sc.children[i]; if(!s || s.dataset.done) return;
-  s.innerHTML = pageHTML(i); s.dataset.done = "1"; fit(s);
-  s.querySelectorAll(".mw").forEach(w => { const v = +w.dataset.v; if(PG.rev.has(v)) w.classList.add("rv"); if(v === PG.playV) w.classList.add("ply"); if(v === PG.sel) w.classList.add("sel"); });
+  s.innerHTML = pageHTML(i); s.dataset.done = "1"; fit(s); decorate(s);
 }
 function setCur(i){
   if(i === PG.cur) return; PG.cur = i; qr.mp = i; lss("lm-mp-page", i);
-  for(let k = i - 2; k <= i + 2; k++) if(k >= 0 && k < D.M.P.length) fill(k);
-  [...PG.sc.children].forEach((s, k) => { if(s.dataset.done && Math.abs(k - i) > 4){ s.innerHTML = ""; delete s.dataset.done; } });
-  info();
+  if(PG.sc){
+    for(let k = i - 2; k <= i + 2; k++) if(k >= 0 && k < D.M.P.length) fill(k);
+    [...PG.sc.children].forEach((s, k) => { if(s.dataset.done && Math.abs(k - i) > 4){ s.innerHTML = ""; delete s.dataset.done; } });
+  }
+  ST.sura = pageSura(i); head();
 }
-function info(){
-  const box = document.querySelector("#qrBody .mq-info"); if(!box || PG.cur < 0) return;
-  const m = D.M.M[PG.cur], bm = lsj("lm-mp-bm", []);
-  const cs = qr.sura && SURAS.find(x => x.slug === qr.sura), nm = cs ? `${cs.t} · ${D.M.S[cs.n - 1][0]}` : `${D.M.S[m[2] - 1][4]} · ${D.M.S[m[2] - 1][0]}`;
-  box.querySelector(".t").innerHTML = `<b>${nm}</b>${T2("Seite", "Page")} ${PG.cur + 1} · Juz ${m[0]} · Ḥizb ${Math.ceil(m[1] / 4)}`;
-  box.querySelector('[data-mq="bm"]').textContent = bm.includes(PG.cur) ? "📑" : "🔖";
-  if(!qr.sura) document.getElementById("qrNavT").textContent = D.M.S[m[2] - 1][4];
+function head(){
+  if(!PG.el || PG.cur < 0) return;
+  const m = D.M.M[PG.cur], s = ST.mode === "list" ? ST.listS : m[2], bm = lsj("lm-mp-bm", []);
+  const app = appSuras().find(x => x.n === s && !x.start);
+  PG.el.querySelector(".mr-pill b").textContent = `${app ? app.t : D.M.S[s - 1][4]} · ${D.M.S[s - 1][0]}`;
+  PG.el.querySelector(".mr-pill small").textContent = `${T2("Seite", "Page")} ${PG.cur + 1} | Juz ${m[0]} | Ḥizb ${Math.ceil(m[1] / 4)}`;
+  PG.el.querySelector(".mr-pill .bm").textContent = bm.includes(PG.cur) ? "📑" : "🔖";
 }
 function go(i){
-  i = Math.max(0, Math.min(D.M.P.length - 1, i)); fill(i);
-  const w = PG.sc.clientWidth; PG.sc.style.scrollSnapType = "none"; PG.sc.scrollLeft = -i * w;
+  i = Math.max(0, Math.min(D.M.P.length - 1, i));
+  if(!PG.sc){ PG.cur = -1; setCur(i); return; }
+  fill(i); const w = PG.sc.clientWidth; PG.sc.style.scrollSnapType = "none"; PG.sc.scrollLeft = -i * w;
   if(Math.abs(Math.abs(PG.sc.scrollLeft) - i * w) > 2) PG.sc.children[i].scrollIntoView({inline: "start", block: "nearest"});
-  requestAnimationFrame(() => { PG.sc.style.scrollSnapType = ""; setCur(i); });
+  requestAnimationFrame(() => { if(PG.sc) PG.sc.style.scrollSnapType = ""; setCur(i); });
 }
-function onScroll(){ if(!PG.el || !PG.el.isConnected) return; const i = Math.round(Math.abs(PG.sc.scrollLeft) / PG.sc.clientWidth); if(i !== PG.cur) setCur(i); }
-function suraSync(){
-  if(!PG.el || !PG.el.isConnected || PG.cur < 0) return;
-  const x = appSuraForPage(PG.cur), slug = x ? x.slug : null;
-  if(slug !== qr.sura){ qr.sura = slug; qr.revealed = new Set(); PG.rev.clear(); const y = scrollY; renderQuran(); scrollTo(0, y); }
+function onScroll(){ if(!PG.sc) return; const i = Math.round(Math.abs(PG.sc.scrollLeft) / PG.sc.clientWidth); if(i !== PG.cur) setCur(i); }
+window.addEventListener("resize", () => { if(!PG.sc || !PG.el) return; [...PG.sc.children].forEach(s => { if(s.dataset.done) fit(s); }); const i = PG.cur; PG.cur = -1; go(i); });
+
+/* ---------- Versliste mit Übersetzung ---------- */
+async function buildList(s, scrollToV){
+  ST.listS = s; ST.sura = s;
+  PG.main.innerHTML = `<div class="mr-list"><p class="mq-load" style="text-align:center;color:var(--muted);margin-top:40px">…</p></div>`;
+  try{ await loadTr(); }catch(e){}
+  const TR = lang === "en" ? window.MUSHAF_EN : window.MUSHAF_DE, v0 = D.SV[s], n = D.M.S[s - 1][1];
+  let html = `<div class="mp-sh">سُورَةُ ${D.M.S[s - 1][0]}</div>${s !== 1 && s !== 9 ? `<div class="mp-bs">بِسْمِ ٱللَّهِ ٱلرَّحْمَٰنِ ٱلرَّحِيمِ</div>` : ""}`;
+  for(let v = v0; v < v0 + n; v++){
+    html += `<div class="mr-v" data-vv="${v}"><div class="mr-vh"><span class="bd">${s}:${D.VAY[v]}</span><button data-vmenu="${v}" aria-label="${T2("Mehr zum Vers", "More")}">⋮</button></div>
+      <p class="mr-ar">${D.VW[v].map((w, k) => `<span class="mw${k === 0 ? " f" : ""}" data-v="${v}" data-k="${k}">${dec(w)}${k === D.VW[v].length - 1 ? `<span class="mn${D.VAY[v] > 99 ? " n3" : ""}">${AD(D.VAY[v])}</span>` : ""}</span>`).join(" ")}</p>
+      <p class="mr-tr">${TR ? TR[v] : ""}</p></div>`;
+  }
+  if(s < 114) html += `<button class="mr-next" data-r="nexts">${T2("Nächste Sure", "Next sura")}: ${D.M.S[s][4]} ›</button>`;
+  const L = PG.main.querySelector(".mr-list"); L.innerHTML = html; ST.list = L; decorate(L);
+  L.addEventListener("scroll", () => { cancelAnimationFrame(PG.raf2); PG.raf2 = requestAnimationFrame(() => { const v = topVerse(); if(v != null){ const p = D.vpage[v]; if(p !== PG.cur){ PG.cur = p; qr.mp = p; lss("lm-mp-page", p); head(); } } }); }, {passive: true});
+  const tv = scrollToV != null && D.VSU[scrollToV] === s ? scrollToV : v0;
+  const el = L.querySelector(`[data-vv="${tv}"]`); if(el && tv !== v0) L.scrollTop = el.offsetTop - 8;
+  PG.cur = D.vpage[tv]; qr.mp = PG.cur; head();
+}
+function topVerse(){
+  if(!ST.list) return null; const top = ST.list.getBoundingClientRect().top + 4;
+  for(const x of ST.list.querySelectorAll(".mr-v")){ if(x.getBoundingClientRect().bottom > top) return +x.dataset.vv; }
+  return null;
+}
+function firstVerse(){ return ST.mode === "list" ? (topVerse() ?? D.SV[ST.listS]) : D.PS[PG.cur][0]; }
+function showVerse(v){
+  if(ST.mode === "list"){ if(D.VSU[v] !== ST.listS) return; const el = ST.list && ST.list.querySelector(`[data-vv="${v}"]`); if(el){ const r = el.getBoundingClientRect(), L = ST.list.getBoundingClientRect(); if(r.top < L.top || r.bottom > L.bottom) ST.list.scrollTo({top: el.offsetTop - 60, behavior: "smooth"}); } }
+  else { const p = D.vpage[v]; if(p !== PG.cur) go(p); }
 }
 function mark(cls, v){
-  PG.el && PG.el.querySelectorAll(`.mw.${cls}`).forEach(x => x.classList.remove(cls));
-  if(v != null && PG.el) PG.el.querySelectorAll(`.mw[data-v="${v}"]`).forEach(x => x.classList.add(cls));
+  if(!PG.el) return; PG.el.querySelectorAll(`.mw.${cls}`).forEach(x => x.classList.remove(cls));
+  if(v != null) PG.el.querySelectorAll(`.mw[data-v="${v}"]`).forEach(x => x.classList.add(cls));
 }
-function onPageClick(e){
-  const w = e.target.closest(".mw"); if(!w) return;
-  const v = +w.dataset.v, x = appSuraOfVerse(v);
-  if(qr.sura && qr.mode !== "read"){ PG.rev.has(v) ? PG.rev.delete(v) : PG.rev.add(v); PG.el.querySelectorAll(`.mw[data-v="${v}"]`).forEach(m => m.classList.toggle("rv", PG.rev.has(v))); return; }
-  PG.sel = v; mark("sel", v); setTimeout(() => { PG.sel = null; mark("sel", null); }, 1600);
-  if(x && window.lmTafsir) window.lmTafsir.open(x.slug, D.VAY[v] - (x.start || 1));
+function setHide(on){
+  ST.hide = on; ST.rv.clear(); if(!on) ST.ws = {};
+  PG.el.classList.toggle("hid", on); PG.el.querySelector('[data-r="eye"]').classList.toggle("on", on);
+  PG.el.querySelector('[data-r="eye"]').textContent = on ? "🙈" : "👁";
+  PG.el.querySelectorAll(".mw").forEach(w => w.classList.remove("rv", "bad", "okc", "nx")); decorate(PG.el);
+}
+
+/* ---------- Vers antippen: Bedeutung, Tafsīr, Übersetzung ---------- */
+function verseTap(v){
+  if(ST.hide){ ST.rv.add(v); PG.el.querySelectorAll(`.mw[data-v="${v}"]`).forEach(m => m.classList.add("rv")); return; }
+  PG.sel = v; mark("sel", v); setTimeout(() => { PG.sel = null; mark("sel", null); }, 1500);
+  const x = appSuraOfVerse(v);
+  if(x && window.lmTafsir){ qr.sura = x.slug; window.lmTafsir.open(x.slug, D.VAY[v] - (x.start || 1)); }
   else verseSheet(v);
 }
-/* App-Blätter */
 function sheet(html, full){
   document.querySelectorAll(".mp.mp-sheet").forEach(x => x.remove());
-  const sh = document.createElement("div"); sh.className = "mp mp-sheet" + (lsj("lm-mp-night", false) ? " night" : "");
+  const sh = document.createElement("div"); sh.className = "mp mp-sheet mr-s";
   sh.innerHTML = `<div class="mp-sh2${full ? " full" : ""}">${html}</div>`;
   sh.addEventListener("click", e => {
     if(e.target === sh || e.target.closest('[data-mp="x"]')){ sh.remove(); return; }
-    const g = e.target.closest("[data-go]"); if(g){ sh.remove(); go(+g.dataset.go); setTimeout(suraSync, 450); return; }
+    const g = e.target.closest("[data-go]"); if(g){ sh.remove(); const p = +g.dataset.go; ST.mode === "list" ? buildList(pageSura(p), D.PS[p][0]) : go(p); return; }
     const ix = e.target.closest("[data-ix]"); if(ix){ lss("lm-mp-ix", ix.dataset.ix); indexSheet(ix.dataset.ix); return; }
+    const rc = e.target.closest("[data-rcx]"); if(rc){ qr.reciter = rc.dataset.rcx; try{ store.set("qr-reciter", qr.reciter); }catch(_){} sh.querySelectorAll("[data-rcx]").forEach(b => b.setAttribute("aria-pressed", b === rc)); return; }
     const b = e.target.closest("[data-mp]"); if(!b) return; const v = +b.dataset.v;
     if(b.dataset.mp === "pv") playFrom(v, true);
     if(b.dataset.mp === "pf"){ sh.remove(); playFrom(v, false); }
@@ -11935,7 +12049,7 @@ function sheet(html, full){
 async function verseSheet(v){
   const s = D.VSU[v], a = D.VAY[v], name = D.M.S[s - 1];
   const sh = sheet(`<div class="hd"><b>${name[4]} · ${T2("Vers", "Verse")} ${a}</b><button class="mp-ic" data-mp="x">✕</button></div>
-    <div class="bd${lsj("lm-qx-tj", true) ? "" : " notj"}"><p class="mp-va">${verseHTML(v)}</p><p class="mp-vt">…</p><p class="mp-vs"></p>
+    <div class="bd"><p class="mp-va${lsj("lm-qx-tj", true) ? "" : " notj"}">${verseHTML(v)}</p><p class="mp-vt">…</p><p class="mp-vs"></p>
     <div class="mp-acts"><button class="pr" data-mp="pv" data-v="${v}">▶︎ ${T2("Anhören", "Listen")}</button><button data-mp="pf" data-v="${v}">⏯ ${T2("Ab hier abspielen", "Play from here")}</button>
     <button data-mp="bmv" data-v="${v}">🔖 ${T2("Lesezeichen", "Bookmark")}</button></div></div>`);
   try{ await loadTr(); sh.querySelector(".mp-vt").textContent = (lang === "en" ? window.MUSHAF_EN : window.MUSHAF_DE)[v];
@@ -11944,7 +12058,7 @@ async function verseSheet(v){
 }
 function indexSheet(tab){
   tab = tab || lsj("lm-mp-ix", "s");
-  const curS = PG.cur >= 0 ? D.M.M[PG.cur][2] : 0, bm = lsj("lm-mp-bm", []);
+  const curS = ST.sura, bm = lsj("lm-mp-bm", []);
   let body = bm.length ? `<p class="mp-jh">🔖 الفواصل</p>` + bm.slice().reverse().map(p => `<button class="mp-row" data-go="${p}"><span class="n">${p + 1}</span><span class="x"><b>${D.M.S[D.M.M[p][2] - 1][0]}</b><span>الصفحة ${p + 1} - الجزء ${D.M.M[p][0]}</span></span></button>`).join("") : "";
   if(tab === "s"){
     let lastJ = 0;
@@ -11961,107 +12075,150 @@ function indexSheet(tab){
     <div class="bd"><p class="mp-ixh">الفهرس</p>${body}<p class="mp-note">Text: Tanzil.net (Uthmani, Ḥafṣ ʿan ʿĀṣim) · ${T2("Seitenaufbau", "Page layout")}: Madīna-Mushaf (QPC, ${T2("über", "via")} Quran.com) · Tajwīd: quran-tajweed (cpfair)</p></div>`, true);
   const c = sh.querySelector(".mp-row.cur"); if(c) setTimeout(() => c.scrollIntoView({block: "center"}), 30);
 }
-function toggleBm(p){ let bm = lsj("lm-mp-bm", []); const had = bm.includes(p); bm = had ? bm.filter(x => x !== p) : bm.concat(p); lss("lm-mp-bm", bm); info(); if(typeof toast === "function") toast(had ? T2("Lesezeichen entfernt", "Bookmark removed") : T2("Lesezeichen gesetzt", "Bookmark saved")); }
-/* Audio für Suren, die (noch) nicht in der Lernliste sind */
+function settingsSheet(){
+  const app = appSuras().find(x => x.n === ST.sura && !x.start) || appSuras().find(x => x.n === ST.sura);
+  const r = (typeof reciter === "function" ? reciter() : RECITERS[0]);
+  const sw = (k, on, t, d) => `<label class="qx-sw"><span>${t}<small>${d}</small></span><input type="checkbox" data-sw="${k}" ${on ? "checked" : ""}></label>`;
+  const sh = sheet(`<div class="hd"><b>⚙︎ ${T2("Einstellungen", "Settings")}</b><button class="mp-ic" data-mp="x">✕</button></div><div class="bd mr-set">
+    <h4>${T2("Rezitator", "Reciter")}</h4><div class="mr-rcs">${RECITERS.map(x => `<button data-rcx="${x.id}" aria-pressed="${x.id === r.id}"><b>${x.n}</b><span>${x.d}</span></button>`).join("")}</div>
+    ${sw("tj", lsj("lm-qx-tj", true), T2("Tajwīd-Farben", "Tajwīd colours"), T2("Farbige Buchstaben zeigen die Tajwīd-Regeln", "Coloured letters show the tajwīd rules"))}
+    ${sw("fw", lsj("lm-mr-fw", false), T2("Beim Ausblenden erstes Wort zeigen", "Show first word when hidden"), T2("Hilfe beim Auswendiglernen", "A hint for memorising"))}
+    <div class="mr-slot-app"></div></div>`, true);
+  sh.querySelectorAll("[data-sw]").forEach(i => i.addEventListener("change", () => {
+    if(i.dataset.sw === "tj"){ lss("lm-qx-tj", i.checked); PG.el.classList.toggle("notj", !i.checked); }
+    if(i.dataset.sw === "fw"){ lss("lm-mr-fw", i.checked); PG.el.classList.toggle("fw", i.checked); }
+  }));
+  /* Abend-Wird, „gelernt“ und Tajwīd-Legende der Lern-Sure hierher holen */
+  if(app){
+    if(qr.sura !== app.slug){ qr.sura = app.slug; renderQuran(); }
+    const slot = sh.querySelector(".mr-slot-app"), body = document.getElementById("qrBody");
+    ["wd-card", "learned-btn", "tj-key"].forEach(c => { const e = body.querySelector("." + c); if(e) slot.appendChild(e); });
+  }
+}
+function toggleBm(p){ let bm = lsj("lm-mp-bm", []); const had = bm.includes(p); bm = had ? bm.filter(x => x !== p) : bm.concat(p); lss("lm-mp-bm", bm); head(); if(typeof toast === "function") toast(had ? T2("Lesezeichen entfernt", "Bookmark removed") : T2("Lesezeichen gesetzt", "Bookmark saved")); }
+
+/* ---------- Anhören: Vers für Vers, blättert mit ---------- */
 let AU = null, auSingle = false, auOn = false;
 function rec(){ return (typeof reciter === "function" ? reciter() : null) || {f: "Yasser_Ad-Dussary_128kbps"}; }
 function playFrom(v, single){
-  if(typeof stopAudio === "function") stopAudio();
-  auStop(); auOn = true; auSingle = single;
+  if(typeof stopAudio === "function") try{ stopAudio(); }catch(_){}
+  auStop(); recStop(); auOn = true; auSingle = single;
   if(!AU){ AU = new Audio(); AU.addEventListener("ended", () => { if(!auOn) return; if(auSingle || PG.playV + 1 >= D.VW.length) return auStop(); auStep(PG.playV + 1); });
     AU.addEventListener("error", () => { if(typeof toast === "function") toast(T2("Audio konnte nicht geladen werden", "Audio could not be loaded")); auStop(); }); }
   auStep(v);
 }
 function auStep(v){
-  PG.playV = v; mark("ply", v); const p = D.vpage[v]; if(!auSingle && p >= 0 && p !== PG.cur && PG.el && PG.el.isConnected) go(p);
+  PG.playV = v; mark("ply", v);
+  if(!auSingle && PG.el){ if(ST.mode === "list" && D.VSU[v] !== ST.listS) buildList(D.VSU[v], v).then(() => mark("ply", v)); else showVerse(v); }
   AU.src = `https://everyayah.com/data/${rec().f}/${pad3(D.VSU[v])}${pad3(D.VAY[v])}.mp3`; AU.play().catch(() => {});
-  const b = document.querySelector('.mx-bar [data-mqb="play"]'); if(b) b.innerHTML = `<span class="i">■</span>${T2("Stopp", "Stop")}`;
+  const b = PG.el && PG.el.querySelector('[data-r="play"]'); if(b) b.textContent = "■";
 }
-function auStop(){ auOn = false; if(AU) AU.pause(); PG.playV = null; mark("ply", null); const b = document.querySelector('.mx-bar [data-mqb="play"]'); if(b) b.innerHTML = `<span class="i">▶︎</span>${T2("Anhören", "Listen")}`; }
-/* Anhören der Lern-Suren: Vers auf der Seite markieren und mitblättern */
-if(typeof startItem === "function"){
-  const _si = startItem;
-  startItem = function(){ _si.apply(this, arguments);
-    try{ const it = P.queue[P.qi], s = qr.sura && SURAS.find(x => x.slug === qr.sura);
-      if(D && PG.el && PG.el.isConnected && s && it && it.ayah != null){ const v = D.SV[s.n] + ayahNo(s, it.ayah) - 1; PG.playV = v; mark("ply", v); const p = D.vpage[v]; if(p !== PG.cur) go(p); } }catch(e){} };
-}
-if(typeof stopAudio === "function"){ const _sa = stopAudio; stopAudio = function(){ _sa.apply(this, arguments); if(!auOn){ PG.playV = null; mark("ply", null); } }; }
+function auStop(){ auOn = false; if(AU) AU.pause(); PG.playV = null; mark("ply", null); const b = PG.el && PG.el.querySelector('[data-r="play"]'); if(b) b.textContent = "▶︎"; }
 
-/* ---------- In renderQuran einhängen ---------- */
-const _rq = renderQuran;
-renderQuran = function(){
-  _rq.apply(this, arguments);
-  const view = document.getElementById("v-quran"), body = document.getElementById("qrBody"); if(!body) return;
-  const s = qr.sura && SURAS.find(x => x.slug === qr.sura);
-  const pagerMode = (s && !lsj("lm-qx-tr", false)) || (!s && qr.mp != null);
-  view.classList.toggle("mq-on", !!pagerMode);
-  if(!pagerMode){
-    if(!qr.sura && !body.querySelector(".mp-entry")){
-      const last = lsj("lm-mp-page", null);
-      body.insertAdjacentHTML("afterbegin", `<button class="mp-entry" data-mpopen><span class="ic">📖</span><span><b>${T2("Mushaf – der ganze Qur'an", "Mushaf – the whole Qur'an")}</b><span>${last != null ? T2(`Weiterlesen auf Seite ${last + 1}`, `Continue on page ${last + 1}`) : T2("604 Seiten wie im Madīna-Mushaf · mit Tajwīd", "604 pages like the Madīna Mushaf · with tajwīd")}</span></span></button>`);
+/* ---------- Vorlesen direkt auf der Seite (wie Tarteel) ---------- */
+const SRc = window.SpeechRecognition || window.webkitSpeechRecognition;
+let RC = null;
+const plain = w => w.replace(/\{[sgq2456]/g, "").replace(/\}/g, "").replace(/[‍۞۩]/g, "").replace(/ٰ/g, "ا");
+function recStart(){
+  if(!window.lmRecite || (!SRc && !recStart.fake)){ if(typeof toast === "function") toast(T2("Vorlesen geht hier nicht – bitte Safari oder Chrome nutzen.", "Reciting is not available here – please use Safari or Chrome.")); return; }
+  auStop(); recStop();
+  const N = window.lmRecite.norm, v0 = firstVerse(), s = D.VSU[v0], vEnd = D.SV[s] + D.M.S[s - 1][1];
+  const k0 = ST.mode === "page" && D.PS[PG.cur][0] === v0 ? D.PS[PG.cur][1] : 0;
+  const ex = []; for(let v = v0; v < vEnd && ex.length < 400; v++) D.VW[v].forEach((w, k) => { if(v === v0 && k < k0) return; const n = N(plain(w)); if(n) ex.push({v, k, n}); });
+  RC = {ex, finals: [], interim: "", errs: 0, lastBad: 0, st: [], stopped: false, s};
+  if(recStart.fake){ PG.el.querySelector('[data-r="mic"]').classList.add("on"); return; }
+  const r = new SRc(); RC.r = r; r.lang = "ar-SA"; r.continuous = true; r.interimResults = true;
+  r.onresult = e => { let it = ""; for(let i = e.resultIndex; i < e.results.length; i++){ const t = e.results[i][0].transcript; if(e.results[i].isFinal) RC.finals.push(t); else it += " " + t; } RC.interim = it; recUpdate(); };
+  r.onerror = e => { if(e.error === "not-allowed" || e.error === "service-not-allowed"){ if(typeof toast === "function") toast(T2("Bitte das Mikrofon erlauben.", "Please allow the microphone.")); recStop(); } else if(e.error === "network"){ if(typeof toast === "function") toast(T2("Vorlesen braucht Internet.", "Reciting needs a connection.")); recStop(); } };
+  r.onend = () => { if(RC && !RC.stopped){ try{ r.start(); }catch(_){ setTimeout(() => { try{ r.start(); }catch(__){} }, 300); } } };
+  try{ r.start(); }catch(e){}
+  PG.el.querySelector('[data-r="mic"]').classList.add("on");
+  PG.main.insertAdjacentHTML("beforeend", `<div class="mr-st"><span class="d"></span><span class="t">${T2("Ich höre zu … lies vor", "Listening … recite now")}</span></div>`);
+  try{ window.lmRecite.tone("ok"); }catch(_){}
+}
+function heard(){
+  const N = window.lmRecite.norm, same = window.lmRecite.same;
+  let w = (RC.finals.join(" ") + " " + RC.interim).split(/\s+/).map(N).filter(Boolean);
+  const drop = pre => { if(w.length >= 2 && same(w[0], pre[0]) && same(w[1], pre[1])){ let k = 0; while(k < pre.length && k < w.length && same(w[k], pre[k])) k++; w = w.slice(k); } };
+  drop(["اعوذ", "بالله", "من", "الشيطان", "الرجيم"]); if(RC.s !== 1) drop(["بسم", "الله", "الرحمن", "الرحيم"]);
+  return w;
+}
+function recUpdate(){
+  if(!RC) return;
+  const res = window.lmRecite.align(RC.ex.map(x => x.n), heard());
+  let bad = 0;
+  res.st.forEach((st, i) => { const x = RC.ex[i], key = x.v + ":" + x.k;
+    if(st === "ok" || st === "skip"){ const val = st === "ok" ? "ok" : "bad"; if(st === "skip") bad++;
+      if(ST.ws[key] !== val){ ST.ws[key] = val; PG.el.querySelectorAll(`.mw[data-v="${x.v}"][data-k="${x.k}"]`).forEach(m => { m.classList.add("rv"); m.classList.toggle("bad", val === "bad"); m.classList.toggle("okc", val === "ok" && !ST.hide); }); } } });
+  bad += res.wrong.length;
+  if(bad > RC.lastBad){ RC.errs += bad - RC.lastBad; try{ window.lmRecite.tone("err"); }catch(_){} if(navigator.vibrate) navigator.vibrate([60, 40, 60]); }
+  RC.lastBad = bad;
+  PG.el.querySelectorAll(".mw.nx").forEach(m => m.classList.remove("nx"));
+  const nx = RC.ex[res.p];
+  if(nx){ PG.el.querySelectorAll(`.mw[data-v="${nx.v}"][data-k="${nx.k}"]`).forEach(m => m.classList.add("nx")); if(ST.mode === "page" ? D.vpage[nx.v] !== PG.cur : true) showVerse(nx.v); }
+  const t = PG.el.querySelector(".mr-st .t");
+  if(t) t.textContent = `${T2("Ich höre zu", "Listening")} · ${T2("Fehler", "Mistakes")}: ${RC.errs}`;
+  if(res.p >= RC.ex.length){ recStop(); if(typeof toast === "function") toast(RC && RC.errs === 0 ? "🌟 Mā shāʾ Allāh – fehlerfrei!" : T2("👏 Geschafft!", "👏 Done!")); }
+}
+function recStop(){
+  if(RC){ RC.stopped = true; try{ RC.r.stop(); }catch(_){} RC = null; }
+  if(PG.el){ const m = PG.el.querySelector('[data-r="mic"]'); if(m) m.classList.remove("on"); PG.el.querySelectorAll(".mr-st").forEach(x => x.remove()); PG.el.querySelectorAll(".mw.nx").forEach(x => x.classList.remove("nx")); }
+}
+
+/* ---------- Klicks ---------- */
+function onReaderClick(e){
+  const vm = e.target.closest("[data-vmenu]"); if(vm){ const v = +vm.dataset.vmenu; const was = ST.hide; ST.hide = false; verseTap(v); ST.hide = was; return; }
+  const b = e.target.closest("[data-r]");
+  if(b){
+    const k = b.dataset.r;
+    if(k === "back") closeReader();
+    else if(k === "bm"){ e.stopPropagation(); toggleBm(PG.cur); }
+    else if(k === "ix") indexSheet();
+    else if(k === "set") settingsSheet();
+    else if(k === "tr"){ const v = firstVerse(); ST.mode = ST.mode === "page" ? "list" : "page"; lss("lm-mr-mode", ST.mode); recStop(); if(ST.mode === "list"){ PG.sc = null; build(D.vpage[v]); buildList(D.VSU[v], v); } else build(D.vpage[v]); }
+    else if(k === "eye") setHide(!ST.hide);
+    else if(k === "nexts"){ const s = ST.listS + 1; buildList(s, D.SV[s]); }
+    else if(k === "play"){ if(auOn) auStop(); else playFrom(firstVerse(), false); }
+    else if(k === "mic"){ if(RC) recStop(); else { if(!ST.hide) setHide(true); recStart(); } }
+    else if(k === "wr"){
+      const x = appSuraOfVerse(firstVerse()) || appSuras().find(y => y.n === ST.sura);
+      if(!x){ if(typeof toast === "function") toast(T2("Schreiben gibt es für die Lern-Suren.", "Writing is available for the learning suras.")); return; }
+      qr.sura = x.slug; renderQuran(); const w = document.querySelector("#qrBody .wr-btn"); if(w) w.click();
     }
     return;
   }
-  loadFont();
-  if(!D){
-    const ph = document.createElement("div"); ph.className = "mp mq"; ph.innerHTML = `<div class="mq-load">${T2("Mushaf wird geladen …", "Loading Mushaf …")}</div>`;
-    if(s){ const mp = body.querySelector(".mx-page"); mp ? mp.replaceWith(ph) : body.prepend(ph); } else { body.innerHTML = ""; body.appendChild(ph); }
-    load().then(() => { if(document.getElementById("v-quran").classList.contains("mq-on")){ const y = scrollY; renderQuran(); scrollTo(0, y); } })
-      .catch(() => { ph.querySelector(".mq-load").textContent = T2("Mushaf braucht beim ersten Mal Internet.", "The Mushaf needs a connection the first time."); });
-    return;
+  const w = e.target.closest(".mw"); if(w){ verseTap(+w.dataset.v); }
+}
+
+/* ---------- Einstieg aus der Suren-Liste ---------- */
+const _rq = renderQuran;
+renderQuran = function(){
+  _rq.apply(this, arguments);
+  const body = document.getElementById("qrBody"); if(!body) return;
+  if(!qr.sura && !body.querySelector(".mp-entry")){
+    const last = lsj("lm-mp-page", null);
+    body.insertAdjacentHTML("afterbegin", `<button class="mp-entry" data-mpopen><span class="ic">📖</span><span><b>${T2("Mushaf – der ganze Qur'an", "Mushaf – the whole Qur'an")}</b><span>${last != null ? T2(`Weiterlesen auf Seite ${last + 1}`, `Continue on page ${last + 1}`) : T2("604 Seiten wie im Madīna-Mushaf · mit Tajwīd", "604 pages like the Madīna Mushaf · with tajwīd")}</span></span></button>`);
   }
-  const el = ensurePager();
-  el.classList.toggle("night", lsj("lm-mp-night", false)); el.classList.toggle("notj", !lsj("lm-qx-tj", true));
-  el.classList.toggle("m-mask", !!s && qr.mode === "mask"); el.classList.toggle("m-first", !!s && qr.mode === "first");
-  let page = qr.mp;
-  if(s && (page == null || !hits(page, s))){ page = D.vpage[D.SV[s.n] + (s.start || 1) - 1]; PG.rev.clear(); }
-  const bar0 = `<div class="mq-info"><button data-mq="ix">☰ ${T2("Fihris", "Index")}</button><span class="t"></span><button data-mq="bm">🔖</button></div>`;
-  const tmp = document.createElement("div"); tmp.innerHTML = bar0; const infoEl = tmp.firstChild;
-  if(s){
-    const old = body.querySelector(".mx-page"), seg = body.querySelector(".mx-seg");
-    if(old) old.remove();
-    const anchor = seg || body.firstChild; body.insertBefore(infoEl, anchor); body.insertBefore(el, anchor);
-    const cap = body.querySelector(".mx-cap"); if(cap) cap.textContent = qr.mode === "read" ? T2("Wische für die nächste Seite · Tippe auf einen Vers: Bedeutung, Tafsīr und Anhören", "Swipe for the next page · Tap a verse: meaning, tafsīr and listening") : T2("Tippe auf einen Vers, um ihn aufzudecken", "Tap a verse to reveal it");
-  } else {
-    document.getElementById("qrBack").hidden = false;
-    body.innerHTML = ""; body.appendChild(infoEl); body.appendChild(el);
-    body.insertAdjacentHTML("beforeend", `<p class="mx-cap">${T2("Diese Sure ist (noch) nicht in der Lernliste – Vorlesen & Schreiben gibt es für die Lern-Suren. Tippe auf einen Vers für Übersetzung und Anhören.", "This sura is not in the learning list yet – reciting & writing are available for the learning suras. Tap a verse for translation and listening.")}</p>`);
-    let bar = document.querySelector(".mx-bar");
-    if(!bar){ bar = document.createElement("nav"); bar.className = "mx-bar"; document.body.appendChild(bar); }
-    bar.hidden = false; document.body.classList.add("mx-on");
-    bar.innerHTML = `<button type="button" data-mqb="play"><span class="i">▶︎</span>${T2("Anhören", "Listen")}</button><button type="button" data-mqb="ix"><span class="i">☰</span>${T2("Fihris", "Index")}</button><button type="button" data-mqb="tj"><span class="i">🎨</span>${T2("Tajwīd", "Tajwīd")}</button><button type="button" data-mqb="night"><span class="i">🌙</span>${T2("Nacht", "Night")}</button>`;
-  }
-  PG.cur = -1; go(page);
 };
+function openAt(page){ loadFont(); return load().then(() => openReader(page)).catch(() => { if(typeof toast === "function") toast(T2("Der Mushaf braucht beim ersten Mal Internet.", "The Mushaf needs a connection the first time.")); }); }
 document.addEventListener("click", e => {
-  if(e.target.closest("#qrBack")){ qr.mp = null; auStop(); return; }
-  if(e.target.closest("[data-mpopen]")){
-    const p = lsj("lm-mp-page", 0); qr.mp = p;
-    load().then(() => { const x = appSuraForPage(p); qr.sura = x ? x.slug : null; qr.mp = p; renderQuran(); scrollTo(0, 0); }).catch(() => { renderQuran(); });
-    return;
-  }
-  if(e.target.closest("[data-sura]") && !qr.sura){ qr.mp = null; }
-  const q = e.target.closest("[data-mq], [data-mqb]"); if(!q || !D) return;
-  const k = q.dataset.mq || q.dataset.mqb;
-  if(k === "ix") indexSheet();
-  else if(k === "bm") toggleBm(PG.cur);
-  else if(k === "play"){ if(auOn) auStop(); else playFrom(D.PS[PG.cur][0], false); }
-  else if(k === "tj"){ lss("lm-qx-tj", !lsj("lm-qx-tj", true)); PG.el.classList.toggle("notj", !lsj("lm-qx-tj", true)); }
-  else if(k === "night"){ lss("lm-mp-night", !lsj("lm-mp-night", false)); PG.el.classList.toggle("night", lsj("lm-mp-night", false)); }
+  if(PG.el && PG.el.contains(e.target)) return;
+  if(e.target.closest("[data-mpopen]")){ openAt(lsj("lm-mp-page", 0)); return; }
+  const row = e.target.closest("#qrBody [data-sura], .wd-home [data-sura], [data-wdopen]");
+  const sl = row && row.dataset.sura;
+  if(sl){ const x = appSuras().find(y => y.slug === sl); if(x){ e.preventDefault(); e.stopPropagation(); qr.sura = x.slug; renderQuran();
+    load().then(() => openReader(D.vpage[D.SV[x.n] + (x.start || 1) - 1])).catch(() => {}); } }
 }, true);
-/* Einstellung „Mushaf-Seite dunkel“ in den Sure-Einstellungen */
+window.lmMushaf = {_feed: t => { if(!RC){ recStart.fake = true; if(!ST.hide) setHide(true); recStart(); recStart.fake = false; } RC.finals.push(t); recUpdate(); }, open: p => openAt(p == null ? lsj("lm-mp-page", 0) : p), openSura: n => load().then(() => openReader(D.vpage[D.SV[n]]))};
+/* Wenn eine Sure auf anderem Weg geöffnet wird (z. B. Abend-Wird): ebenfalls im Vollbild lesen */
 const _rq2 = renderQuran;
-renderQuran = function(){ _rq2.apply(this, arguments);
-  const inner = document.querySelector("#qrBody .qx-set .in");
-  if(inner && !inner.querySelector(".mq-sw")){
-    const row = document.createElement("label"); row.className = "qx-sw mq-sw"; const on = lsj("lm-mp-night", false);
-    row.innerHTML = `<span>${T2("Mushaf-Seite dunkel", "Dark Mushaf page")}<small>${T2("Für das Lesen am Abend", "For reading in the evening")}</small></span><input type="checkbox" ${on ? "checked" : ""}>`;
-    row.querySelector("input").addEventListener("change", e => { lss("lm-mp-night", e.target.checked); if(PG.el) PG.el.classList.toggle("night", e.target.checked); });
-    inner.appendChild(row);
+renderQuran = function(){
+  _rq2.apply(this, arguments);
+  if(qr.sura && !PG.el && document.querySelector("#v-quran.active") && !renderQuran._quiet){
+    const x = appSuras().find(y => y.slug === qr.sura);
+    if(x) load().then(() => { if(!PG.el && qr.sura === x.slug) openReader(D.vpage[D.SV[x.n] + (x.start || 1) - 1]); }).catch(() => {});
   }
 };
-window.lmMushaf = {go: p => { qr.mp = p; load().then(() => { const x = appSuraForPage(p); qr.sura = x ? x.slug : null; qr.mp = p; if(typeof setTab === "function") setTab("quran"); renderQuran(); }); }};
-if(document.querySelector("#v-quran.active")) try{ renderQuran(); }catch(e){}
 })();
 
 /* ---------- init ---------- */
@@ -12073,6 +12230,6 @@ setTab("home");
 if(lang === "en") translateTree(document.body);
 </script>
 <script>if("serviceWorker" in navigator&&location.protocol==="https:"){addEventListener("load",()=>navigator.serviceWorker.register("sw.js").catch(()=>{}));}</script>
-<script>window.LM_BUILD="20261015191219";(function(){function chk(){fetch("version.json?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.json()}).then(function(v){if(!v||!v.b||v.b===window.LM_BUILD)return;try{if(sessionStorage.getItem("lm-upd")===v.b)return;sessionStorage.setItem("lm-upd",v.b)}catch(e){}location.reload()}).catch(function(){})}if(location.protocol==="https:"){addEventListener("load",function(){setTimeout(chk,1500)});document.addEventListener("visibilitychange",function(){if(document.visibilityState==="visible")chk()})}})();</script>
+<script>window.LM_BUILD="20261015192257";(function(){function chk(){fetch("version.json?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.json()}).then(function(v){if(!v||!v.b||v.b===window.LM_BUILD)return;try{if(sessionStorage.getItem("lm-upd")===v.b)return;sessionStorage.setItem("lm-upd",v.b)}catch(e){}location.reload()}).catch(function(){})}if(location.protocol==="https:"){addEventListener("load",function(){setTimeout(chk,1500)});document.addEventListener("visibilitychange",function(){if(document.visibilityState==="visible")chk()})}})();</script>
 </body>
 </html>
