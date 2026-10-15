@@ -10980,6 +10980,265 @@ if(typeof STORIES_EN !== "undefined"){
 }
 })();
 
+/* =================== p42: Athkār aṣ-Ṣabāḥ & al-Masāʾ – Zählmodus + Erinnerung im Home =================== */
+/* Texte nach Ḥiṣn al-Muslim mit authentischen Quellen; Qur'an-Text: Tanzil (Quran Simple). */
+(function(){
+const EN = () => lang === "en";
+const lsj = (k, d) => { try{ const v = localStorage.getItem(k); return v == null ? d : JSON.parse(v); }catch(e){ return d; } };
+const lss = (k, v) => { try{ localStorage.setItem(k, JSON.stringify(v)); }catch(e){} };
+const ymd = d => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+const KEY = "lm-athkar";
+const tx = (de, en) => EN() ? en : de;
+
+/* ---------- Inhalte ---------- */
+/* je Eintrag: ar (Morgen) / arM (Abend), tl/tlM, de/deM, en/enM, n = Wiederholungen, s = Quelle, w = Nutzen */
+const ITEMS = [
+ {k:"kursi", q:true, n:1, s:"Qur'an 2:255 – al-Ḥākim 1/562; an-Nasāʾī (al-Kubrā); al-Albānī: ṣaḥīḥ",
+  ar:"اللَّهُ لَا إِلَٰهَ إِلَّا هُوَ الْحَيُّ الْقَيُّومُ لَا تَأْخُذُهُ سِنَةٌ وَلَا نَوْمٌ لَّهُ مَا فِي السَّمَاوَاتِ وَمَا فِي الْأَرْضِ مَن ذَا الَّذِي يَشْفَعُ عِندَهُ إِلَّا بِإِذْنِهِ يَعْلَمُ مَا بَيْنَ أَيْدِيهِمْ وَمَا خَلْفَهُمْ وَلَا يُحِيطُونَ بِشَيْءٍ مِّنْ عِلْمِهِ إِلَّا بِمَا شَاءَ وَسِعَ كُرْسِيُّهُ السَّمَاوَاتِ وَالْأَرْضَ وَلَا يَئُودُهُ حِفْظُهُمَا وَهُوَ الْعَلِيُّ الْعَظِيمُ",
+  title:["Āyat al-Kursī", "Āyat al-Kursī"],
+  tl:"Allāhu lā ilāha illā huwal-ḥayyul-qayyūm, lā taʾkhudhuhū sinatun wa lā naum, lahū mā fis-samāwāti wa mā fil-arḍ, man dhal-ladhī yaschfaʿu ʿindahū illā bi-idhnih, yaʿlamu mā baina aidīhim wa mā khalfahum, wa lā yuḥīṭūna bi-schaiʾin min ʿilmihī illā bimā schāʾ, wasiʿa kursiyyuhus-samāwāti wal-arḍ, wa lā yaʾūduhū ḥifẓuhumā, wa huwal-ʿaliyyul-ʿaẓīm.",
+  de:"Allah – es gibt keinen Gott außer Ihm, dem Lebendigen, dem Beständigen. Ihn überkommt weder Schlummer noch Schlaf. Ihm gehört, was in den Himmeln und auf der Erde ist. Wer könnte bei Ihm Fürsprache einlegen ohne Seine Erlaubnis? Er weiß, was vor ihnen und was hinter ihnen liegt, und sie erfassen nichts von Seinem Wissen – außer was Er will. Sein Thron umfasst die Himmel und die Erde, und ihre Bewahrung fällt Ihm nicht schwer. Er ist der Erhabene, der Gewaltige.",
+  en:"Allah – there is no god but Him, the Ever-Living, the Sustainer. Neither drowsiness nor sleep overtakes Him. To Him belongs whatever is in the heavens and on the earth. Who could intercede with Him except by His permission? He knows what is before them and what is behind them, and they grasp nothing of His knowledge except what He wills. His Footstool extends over the heavens and the earth, and guarding them does not tire Him. He is the Most High, the Magnificent.",
+  w:["Wer ihn am Morgen liest, ist bis zum Abend vor den Dschinn beschützt – und wer ihn am Abend liest, bis zum Morgen.", "Whoever recites it in the morning is protected from the jinn until the evening – and in the evening, until the morning."]},
+ {k:"quls", q:true, n:3, s:"Abū Dāwūd 5082; Tirmidhī 3575",
+  ar:"قُلْ هُوَ اللَّهُ أَحَدٌ ﴿١﴾ اللَّهُ الصَّمَدُ ﴿٢﴾ لَمْ يَلِدْ وَلَمْ يُولَدْ ﴿٣﴾ وَلَمْ يَكُن لَّهُ كُفُوًا أَحَدٌ ﴿٤﴾\nقُلْ أَعُوذُ بِرَبِّ الْفَلَقِ ﴿١﴾ مِن شَرِّ مَا خَلَقَ ﴿٢﴾ وَمِن شَرِّ غَاسِقٍ إِذَا وَقَبَ ﴿٣﴾ وَمِن شَرِّ النَّفَّاثَاتِ فِي الْعُقَدِ ﴿٤﴾ وَمِن شَرِّ حَاسِدٍ إِذَا حَسَدَ ﴿٥﴾\nقُلْ أَعُوذُ بِرَبِّ النَّاسِ ﴿١﴾ مَلِكِ النَّاسِ ﴿٢﴾ إِلَٰهِ النَّاسِ ﴿٣﴾ مِن شَرِّ الْوَسْوَاسِ الْخَنَّاسِ ﴿٤﴾ الَّذِي يُوَسْوِسُ فِي صُدُورِ النَّاسِ ﴿٥﴾ مِنَ الْجِنَّةِ وَالنَّاسِ ﴿٦﴾",
+  title:["al-Ikhlāṣ, al-Falaq, an-Nās", "al-Ikhlāṣ, al-Falaq, an-Nās"],
+  tl:"Qul huwallāhu aḥad … · Qul aʿūdhu bi-rabbil-falaq … · Qul aʿūdhu bi-rabbin-nās …",
+  de:"Die drei letzten Suren des Qur'an – jede dreimal (mit Basmala).", en:"The last three sūras of the Qur'an – each three times (with the basmala).",
+  w:["Sie genügen dir gegen alles.", "They will suffice you against everything."]},
+ {k:"asbahna", n:1, s:"Muslim 2723",
+  ar:"أَصْبَحْنَا وَأَصْبَحَ الْمُلْكُ لِلَّهِ، وَالْحَمْدُ لِلَّهِ، لَا إِلَٰهَ إِلَّا اللَّهُ وَحْدَهُ لَا شَرِيكَ لَهُ، لَهُ الْمُلْكُ وَلَهُ الْحَمْدُ وَهُوَ عَلَى كُلِّ شَيْءٍ قَدِيرٌ، رَبِّ أَسْأَلُكَ خَيْرَ مَا فِي هَٰذَا الْيَوْمِ وَخَيْرَ مَا بَعْدَهُ، وَأَعُوذُ بِكَ مِنْ شَرِّ مَا فِي هَٰذَا الْيَوْمِ وَشَرِّ مَا بَعْدَهُ، رَبِّ أَعُوذُ بِكَ مِنَ الْكَسَلِ وَسُوءِ الْكِبَرِ، رَبِّ أَعُوذُ بِكَ مِنْ عَذَابٍ فِي النَّارِ وَعَذَابٍ فِي الْقَبْرِ",
+  arM:"أَمْسَيْنَا وَأَمْسَى الْمُلْكُ لِلَّهِ، وَالْحَمْدُ لِلَّهِ، لَا إِلَٰهَ إِلَّا اللَّهُ وَحْدَهُ لَا شَرِيكَ لَهُ، لَهُ الْمُلْكُ وَلَهُ الْحَمْدُ وَهُوَ عَلَى كُلِّ شَيْءٍ قَدِيرٌ، رَبِّ أَسْأَلُكَ خَيْرَ مَا فِي هَٰذِهِ اللَّيْلَةِ وَخَيْرَ مَا بَعْدَهَا، وَأَعُوذُ بِكَ مِنْ شَرِّ مَا فِي هَٰذِهِ اللَّيْلَةِ وَشَرِّ مَا بَعْدَهَا، رَبِّ أَعُوذُ بِكَ مِنَ الْكَسَلِ وَسُوءِ الْكِبَرِ، رَبِّ أَعُوذُ بِكَ مِنْ عَذَابٍ فِي النَّارِ وَعَذَابٍ فِي الْقَبْرِ",
+  tl:"Aṣbaḥnā wa aṣbaḥal-mulku lillāh, wal-ḥamdu lillāh, lā ilāha illallāhu waḥdahū lā scharīka lah, lahul-mulku wa lahul-ḥamdu wa huwa ʿalā kulli schaiʾin qadīr. Rabbi asʾaluka khaira mā fī hādhal-yaumi wa khaira mā baʿdah, wa aʿūdhu bika min scharri mā fī hādhal-yaumi wa scharri mā baʿdah. Rabbi aʿūdhu bika minal-kasali wa sūʾil-kibar. Rabbi aʿūdhu bika min ʿadhābin fin-nāri wa ʿadhābin fil-qabr.",
+  tlM:"Amsainā wa amsal-mulku lillāh, wal-ḥamdu lillāh, lā ilāha illallāhu waḥdahū lā scharīka lah, lahul-mulku wa lahul-ḥamdu wa huwa ʿalā kulli schaiʾin qadīr. Rabbi asʾaluka khaira mā fī hādhihil-lailati wa khaira mā baʿdahā, wa aʿūdhu bika min scharri mā fī hādhihil-lailati wa scharri mā baʿdahā. Rabbi aʿūdhu bika minal-kasali wa sūʾil-kibar. Rabbi aʿūdhu bika min ʿadhābin fin-nāri wa ʿadhābin fil-qabr.",
+  de:"Wir haben den Morgen erreicht, und die Herrschaft gehört Allah. Alles Lob gebührt Allah. Es gibt keinen Gott außer Allah allein, ohne Partner. Ihm gehört die Herrschaft und das Lob, und Er hat Macht über alles. Mein Herr, ich bitte Dich um das Gute dieses Tages und das Gute danach, und ich suche Zuflucht bei Dir vor dem Schlechten dieses Tages und dem Schlechten danach. Mein Herr, ich suche Zuflucht bei Dir vor Faulheit und den Beschwerden des Alters. Mein Herr, ich suche Zuflucht bei Dir vor einer Strafe im Feuer und einer Strafe im Grab.",
+  deM:"Wir haben den Abend erreicht, und die Herrschaft gehört Allah. Alles Lob gebührt Allah. Es gibt keinen Gott außer Allah allein, ohne Partner. Ihm gehört die Herrschaft und das Lob, und Er hat Macht über alles. Mein Herr, ich bitte Dich um das Gute dieser Nacht und das Gute danach, und ich suche Zuflucht bei Dir vor dem Schlechten dieser Nacht und dem Schlechten danach. Mein Herr, ich suche Zuflucht bei Dir vor Faulheit und den Beschwerden des Alters. Mein Herr, ich suche Zuflucht bei Dir vor einer Strafe im Feuer und einer Strafe im Grab.",
+  en:"We have reached the morning, and the dominion belongs to Allah. All praise is for Allah. There is no god but Allah alone, without partner. His is the dominion and His is the praise, and He has power over all things. My Lord, I ask You for the good of this day and the good after it, and I seek refuge in You from the evil of this day and the evil after it. My Lord, I seek refuge in You from laziness and the hardships of old age. My Lord, I seek refuge in You from punishment in the Fire and punishment in the grave.",
+  enM:"We have reached the evening, and the dominion belongs to Allah. All praise is for Allah. There is no god but Allah alone, without partner. His is the dominion and His is the praise, and He has power over all things. My Lord, I ask You for the good of this night and the good after it, and I seek refuge in You from the evil of this night and the evil after it. My Lord, I seek refuge in You from laziness and the hardships of old age. My Lord, I seek refuge in You from punishment in the Fire and punishment in the grave."},
+ {k:"bika", n:1, s:"Tirmidhī 3391; Abū Dāwūd 5068",
+  ar:"اللَّهُمَّ بِكَ أَصْبَحْنَا، وَبِكَ أَمْسَيْنَا، وَبِكَ نَحْيَا، وَبِكَ نَمُوتُ، وَإِلَيْكَ النُّشُورُ",
+  arM:"اللَّهُمَّ بِكَ أَمْسَيْنَا، وَبِكَ أَصْبَحْنَا، وَبِكَ نَحْيَا، وَبِكَ نَمُوتُ، وَإِلَيْكَ الْمَصِيرُ",
+  tl:"Allāhumma bika aṣbaḥnā, wa bika amsainā, wa bika naḥyā, wa bika namūtu, wa ilaikan-nuschūr.",
+  tlM:"Allāhumma bika amsainā, wa bika aṣbaḥnā, wa bika naḥyā, wa bika namūtu, wa ilaikal-maṣīr.",
+  de:"O Allah, durch Dich erreichen wir den Morgen und den Abend, durch Dich leben wir und sterben wir, und zu Dir ist die Auferstehung.",
+  deM:"O Allah, durch Dich erreichen wir den Abend und den Morgen, durch Dich leben wir und sterben wir, und zu Dir ist die Rückkehr.",
+  en:"O Allah, by You we reach the morning and the evening, by You we live and die, and to You is the resurrection.",
+  enM:"O Allah, by You we reach the evening and the morning, by You we live and die, and to You is the return."},
+ {k:"sayyid", n:1, s:"Buchārī 6306",
+  ar:"اللَّهُمَّ أَنْتَ رَبِّي لَا إِلَٰهَ إِلَّا أَنْتَ، خَلَقْتَنِي وَأَنَا عَبْدُكَ، وَأَنَا عَلَى عَهْدِكَ وَوَعْدِكَ مَا اسْتَطَعْتُ، أَعُوذُ بِكَ مِنْ شَرِّ مَا صَنَعْتُ، أَبُوءُ لَكَ بِنِعْمَتِكَ عَلَيَّ، وَأَبُوءُ بِذَنْبِي، فَاغْفِرْ لِي، فَإِنَّهُ لَا يَغْفِرُ الذُّنُوبَ إِلَّا أَنْتَ",
+  title:["Sayyid al-Istighfār", "Sayyid al-Istighfār"],
+  tl:"Allāhumma anta rabbī lā ilāha illā ant, khalaqtanī wa ana ʿabduk, wa ana ʿalā ʿahdika wa waʿdika mastaṭaʿt, aʿūdhu bika min scharri mā ṣanaʿt, abūʾu laka bi-niʿmatika ʿalayya, wa abūʾu bi-dhanbī, faghfir lī, fa-innahū lā yaghfirudh-dhunūba illā ant.",
+  de:"O Allah, Du bist mein Herr, es gibt keinen Gott außer Dir. Du hast mich erschaffen, und ich bin Dein Diener. Ich halte an Deinem Bund und Versprechen fest, so gut ich kann. Ich suche Zuflucht bei Dir vor dem Schlechten, das ich getan habe. Ich erkenne Deine Gaben an mich an, und ich bekenne meine Sünde. So vergib mir, denn niemand vergibt die Sünden außer Dir.",
+  en:"O Allah, You are my Lord, there is no god but You. You created me and I am Your servant. I hold to Your covenant and promise as best I can. I seek refuge in You from the evil I have done. I acknowledge Your blessings upon me, and I admit my sin. So forgive me, for none forgives sins but You.",
+  w:["Das beste Bittgebet um Vergebung. Wer es mit Überzeugung sagt und an diesem Tag oder in dieser Nacht stirbt, kommt ins Paradies.", "The best prayer for forgiveness. Whoever says it with conviction and dies that day or night enters Paradise."]},
+ {k:"afini", n:3, s:"Abū Dāwūd 5090",
+  ar:"اللَّهُمَّ عَافِنِي فِي بَدَنِي، اللَّهُمَّ عَافِنِي فِي سَمْعِي، اللَّهُمَّ عَافِنِي فِي بَصَرِي، لَا إِلَٰهَ إِلَّا أَنْتَ",
+  tl:"Allāhumma ʿāfinī fī badanī, allāhumma ʿāfinī fī samʿī, allāhumma ʿāfinī fī baṣarī, lā ilāha illā ant.",
+  de:"O Allah, schenke mir Gesundheit in meinem Körper. O Allah, schenke mir Gesundheit in meinem Hören. O Allah, schenke mir Gesundheit in meinem Sehen. Es gibt keinen Gott außer Dir.",
+  en:"O Allah, grant me well-being in my body. O Allah, grant me well-being in my hearing. O Allah, grant me well-being in my sight. There is no god but You."},
+ {k:"afw", n:1, s:"Abū Dāwūd 5074; Ibn Mādscha 3871",
+  ar:"اللَّهُمَّ إِنِّي أَسْأَلُكَ الْعَفْوَ وَالْعَافِيَةَ فِي الدُّنْيَا وَالْآخِرَةِ، اللَّهُمَّ إِنِّي أَسْأَلُكَ الْعَفْوَ وَالْعَافِيَةَ فِي دِينِي وَدُنْيَايَ وَأَهْلِي وَمَالِي، اللَّهُمَّ اسْتُرْ عَوْرَاتِي، وَآمِنْ رَوْعَاتِي، اللَّهُمَّ احْفَظْنِي مِنْ بَيْنِ يَدَيَّ، وَمِنْ خَلْفِي، وَعَنْ يَمِينِي، وَعَنْ شِمَالِي، وَمِنْ فَوْقِي، وَأَعُوذُ بِعَظَمَتِكَ أَنْ أُغْتَالَ مِنْ تَحْتِي",
+  tl:"Allāhumma innī asʾalukal-ʿafwa wal-ʿāfiyata fid-dunyā wal-ākhira. Allāhumma innī asʾalukal-ʿafwa wal-ʿāfiyata fī dīnī wa dunyāya wa ahlī wa mālī. Allāhummastur ʿaurātī wa āmin rauʿātī. Allāhummaḥfaẓnī min baini yadayya wa min khalfī wa ʿan yamīnī wa ʿan schimālī wa min fauqī, wa aʿūdhu bi-ʿaẓamatika an ughtāla min taḥtī.",
+  de:"O Allah, ich bitte Dich um Vergebung und Wohlergehen in dieser Welt und im Jenseits. O Allah, ich bitte Dich um Vergebung und Wohlergehen in meiner Religion, meinem Leben, meiner Familie und meinem Besitz. O Allah, bedecke meine Schwächen und nimm mir meine Ängste. O Allah, beschütze mich von vorn und von hinten, von rechts und von links und von oben. Und ich suche Zuflucht bei Deiner Größe davor, von unten her überfallen zu werden.",
+  en:"O Allah, I ask You for pardon and well-being in this world and the Hereafter. O Allah, I ask You for pardon and well-being in my religion, my worldly life, my family and my wealth. O Allah, cover my faults and calm my fears. O Allah, protect me from in front and behind, from my right and my left, and from above me. And I seek refuge in Your greatness from being seized from beneath me."},
+ {k:"alim", n:1, s:"Tirmidhī 3392; Abū Dāwūd 5067",
+  ar:"اللَّهُمَّ عَالِمَ الْغَيْبِ وَالشَّهَادَةِ، فَاطِرَ السَّمَاوَاتِ وَالْأَرْضِ، رَبَّ كُلِّ شَيْءٍ وَمَلِيكَهُ، أَشْهَدُ أَنْ لَا إِلَٰهَ إِلَّا أَنْتَ، أَعُوذُ بِكَ مِنْ شَرِّ نَفْسِي، وَمِنْ شَرِّ الشَّيْطَانِ وَشِرْكِهِ",
+  tl:"Allāhumma ʿālimal-ghaibi wasch-schahāda, fāṭiras-samāwāti wal-arḍ, rabba kulli schaiʾin wa malīkah, aschhadu an lā ilāha illā ant, aʿūdhu bika min scharri nafsī wa min scharrisch-schaiṭāni wa schirkih.",
+  de:"O Allah, Kenner des Verborgenen und des Sichtbaren, Schöpfer der Himmel und der Erde, Herr und Besitzer aller Dinge: Ich bezeuge, dass es keinen Gott gibt außer Dir. Ich suche Zuflucht bei Dir vor dem Schlechten in mir selbst und vor dem Schlechten des Satans und seiner Verführung zum Götzendienst.",
+  en:"O Allah, Knower of the unseen and the seen, Creator of the heavens and the earth, Lord and Owner of all things: I bear witness that there is no god but You. I seek refuge in You from the evil within myself and from the evil of Satan and his call to associate partners with You.",
+  w:["Der Prophet ﷺ lehrte es Abū Bakr für morgens, abends und vor dem Schlafen.", "The Prophet ﷺ taught it to Abū Bakr for the morning, the evening and bedtime."]},
+ {k:"bismillah", n:3, s:"Abū Dāwūd 5088; Tirmidhī 3388",
+  ar:"بِسْمِ اللَّهِ الَّذِي لَا يَضُرُّ مَعَ اسْمِهِ شَيْءٌ فِي الْأَرْضِ وَلَا فِي السَّمَاءِ، وَهُوَ السَّمِيعُ الْعَلِيمُ",
+  tl:"Bismillāhil-ladhī lā yaḍurru maʿasmihī schaiʾun fil-arḍi wa lā fis-samāʾ, wa huwas-samīʿul-ʿalīm.",
+  de:"Im Namen Allahs, mit dessen Namen nichts auf der Erde und nichts im Himmel schaden kann. Er ist der Allhörende, der Allwissende.",
+  en:"In the name of Allah, with whose name nothing on earth or in the heavens can cause harm. He is the All-Hearing, the All-Knowing.",
+  w:["Wer es dreimal sagt, dem schadet bis zum Abend (bzw. Morgen) nichts Plötzliches.", "Whoever says it three times will not be struck by sudden harm until evening (or morning)."]},
+ {k:"tammat", n:3, only:"m", s:"Muslim 2709",
+  ar:"أَعُوذُ بِكَلِمَاتِ اللَّهِ التَّامَّاتِ مِنْ شَرِّ مَا خَلَقَ",
+  tl:"Aʿūdhu bi-kalimātillāhit-tāmmāti min scharri mā khalaq.",
+  de:"Ich suche Zuflucht bei den vollkommenen Worten Allahs vor dem Schlechten dessen, was Er erschaffen hat.",
+  en:"I seek refuge in the perfect words of Allah from the evil of what He has created."},
+ {k:"subhan", n:100, s:"Muslim 2692",
+  ar:"سُبْحَانَ اللَّهِ وَبِحَمْدِهِ",
+  tl:"Subḥānallāhi wa bi-ḥamdih.", de:"Gepriesen sei Allah, und Lob sei Ihm.", en:"Glory be to Allah, and praise be to Him.",
+  w:["Wer es morgens und abends hundertmal sagt, mit dem kommt am Tag der Auferstehung niemand mit etwas Besserem – außer wer dasselbe oder mehr gesagt hat.", "Whoever says it a hundred times morning and evening – no one will come on the Day of Resurrection with anything better, except someone who said the same or more."]},
+ {k:"tahlil", n:10, s:"Muslim 2693",
+  ar:"لَا إِلَٰهَ إِلَّا اللَّهُ وَحْدَهُ لَا شَرِيكَ لَهُ، لَهُ الْمُلْكُ وَلَهُ الْحَمْدُ، وَهُوَ عَلَى كُلِّ شَيْءٍ قَدِيرٌ",
+  tl:"Lā ilāha illallāhu waḥdahū lā scharīka lah, lahul-mulku wa lahul-ḥamd, wa huwa ʿalā kulli schaiʾin qadīr.",
+  de:"Es gibt keinen Gott außer Allah allein, ohne Partner. Ihm gehört die Herrschaft und das Lob, und Er hat Macht über alle Dinge.",
+  en:"There is no god but Allah alone, without partner. His is the dominion and His is the praise, and He has power over all things.",
+  w:["Wer es zehnmal sagt, ist wie jemand, der vier Menschen aus den Nachkommen Ismāʿīls befreit hat.", "Whoever says it ten times is like one who freed four people from the descendants of Ismāʿīl."]}
+];
+const SETS = {
+ s:{key:"sabah", ic:"☀️", ar:"أَذْكَارُ الصَّبَاح", de:"Athkār aṣ-Ṣabāḥ", en:"Athkār aṣ-Ṣabāḥ", sub:["Morgen-Adhkār", "Morning adhkār"], when:["nach dem Fadschr", "after Fajr"]},
+ m:{key:"masa", ic:"🌙", ar:"أَذْكَارُ المَسَاء", de:"Athkār al-Masāʾ", en:"Athkār al-Masāʾ", sub:["Abend-Adhkār", "Evening adhkār"], when:["nach dem ʿAṣr", "after ʿAṣr"]}
+};
+const list = t => ITEMS.filter(x => !x.only || x.only === t);
+const field = (x, f, t) => (t === "m" && x[f + "M"]) || x[f];
+
+/* ---------- Zeiten ---------- */
+function tms(){ try{ const t = ptTimes(0).t; if(t && t.fajr && t.dhuhr && t.asr) return t; }catch(e){} return null; }
+function at(h, m){ const d = new Date(); d.setHours(h, m, 0, 0); return d; }
+function due(){
+  const now = new Date(), t = tms(), fj = t ? t.fajr : at(4, 30), dh = t ? t.dhuhr : at(12, 15), as = t ? t.asr : at(15, 30);
+  const st = lsj(KEY, {}) || {};
+  const sKey = ymd(now), d = new Date(now); if(now < fj) d.setDate(d.getDate() - 1); const mKey = ymd(d);
+  return {sabah: now >= fj && now < dh && st.sabah !== sKey, masa: (now >= as || now < fj) && st.masa !== mKey, sKey, mKey, st};
+}
+function markDone(t){
+  const D = due(), st = D.st, k = t === "s" ? "sabah" : "masa", key = t === "s" ? D.sKey : D.mKey;
+  if(st[k] === key) return false;
+  st[k] = key; lss(KEY, st);
+  const log = lsj("lm-athkar-log", {}) || {}; (log[k] = log[k] || []).push(key); log[k] = log[k].slice(-120); lss("lm-athkar-log", log);
+  if(window.lmChallenge && lmChallenge.add) try{ lmChallenge.add("l", 1); }catch(e){}
+  return true;
+}
+function streak(k){
+  const log = new Set(((lsj("lm-athkar-log", {}) || {})[k]) || []); let n = 0; const d = new Date(); d.setHours(12);
+  if(!log.has(ymd(d))) d.setDate(d.getDate() - 1);
+  while(log.has(ymd(d))){ n++; d.setDate(d.getDate() - 1); }
+  return n;
+}
+
+/* ---------- Zähl-Ansicht ---------- */
+let A = null; // {t, i, c:[counts]}
+let ov = null;
+function open(t){
+  A = {t, i:0, c:list(t).map(() => 0), done:false};
+  if(!ov){ ov = document.createElement("div"); ov.className = "ak-ov"; document.body.appendChild(ov); ov.addEventListener("click", onClick); }
+  ov.hidden = false; document.body.classList.add("ak-lock"); draw();
+}
+function close(){ if(ov){ ov.hidden = true; ov.innerHTML = ""; } document.body.classList.remove("ak-lock"); A = null;
+  if(document.querySelector("#v-home.active") && typeof renderStart === "function") renderStart(); }
+function draw(){
+  const S = SETS[A.t], L_ = list(A.t), x = L_[A.i], tot = L_.length;
+  const doneItems = A.c.filter((c, j) => c >= L_[j].n).length;
+  if(A.done){
+    const st = streak(S.key);
+    ov.innerHTML = `<div class="ak-sh" role="dialog" aria-modal="true"><div class="ak-hd"><b>${S.ic} ${tx(S.de, S.en)}</b><button class="ak-x" data-a="x" aria-label="${L("Schließen", "Close")}">✕</button></div>
+      <div class="ak-end"><div class="big">${S.ic}</div><h3>${L("Māschāʾallāh – geschafft!", "Māshāʾallāh – done!")}</h3>
+      <p>${L(`Du hast die ${S.sub[0]} vollständig gesprochen. Möge Allah sie von dir annehmen.`, `You have completed the ${S.sub[1].toLowerCase()}. May Allah accept them from you.`)}</p>
+      ${st ? `<p class="stk">🔥 ${st} ${L(st === 1 ? "Tag" : "Tage", st === 1 ? "day" : "days")} ${L("in Folge", "in a row")}</p>` : ""}
+      <button class="ak-b" data-a="x">${L("Fertig", "Done")}</button></div></div>`;
+    return;
+  }
+  const c = A.c[A.i], n = x.n, full = c >= n, title = x.title ? x.title[EN() ? 1 : 0] : "";
+  ov.innerHTML = `<div class="ak-sh" role="dialog" aria-modal="true" aria-label="${tx(S.de, S.en)}">
+    <div class="ak-hd"><b>${S.ic} ${tx(S.de, S.en)} <span class="arabic" lang="ar">${S.ar}</span></b><button class="ak-x" data-a="x" aria-label="${L("Schließen", "Close")}">✕</button></div>
+    <div class="ak-prog"><i style="width:${doneItems / tot * 100}%"></i></div>
+    <div class="ak-meta"><span>${A.i + 1} / ${tot}${title ? " · " + esc(title) : ""}</span><span class="n">${n > 1 ? `${n}×` : L("1×", "1×")}</span></div>
+    <div class="ak-bd">
+      <p class="ak-ar arabic" lang="ar" dir="rtl">${esc(field(x, "ar", A.t)).replace(/\n/g, "<br>")}</p>
+      <p class="ak-tl">${esc(EN() ? tlEn(field(x, "tl", A.t)) : field(x, "tl", A.t))}</p>
+      <p class="ak-tr">${esc(field(x, EN() ? "en" : "de", A.t))}</p>
+      ${x.w ? `<p class="ak-w">✨ ${esc(x.w[EN() ? 1 : 0])}</p>` : ""}
+      <p class="ak-src">${L("Quelle", "Source")}: ${srcLinks(x.s)}</p>
+    </div>
+    <div class="ak-ft">
+      <button class="ak-nav" data-a="prev" ${A.i === 0 ? "disabled" : ""} aria-label="${L("Zurück", "Back")}">‹</button>
+      <button class="ak-tap ${full ? "full" : ""}" data-a="tap"><b>${full ? "✓" : c}</b><small>${full ? L("weiter", "next") : `${L("von", "of")} ${n} · ${L("tippen", "tap")}`}</small><svg viewBox="0 0 100 100" aria-hidden="true"><circle cx="50" cy="50" r="46" pathLength="100" stroke-dasharray="${(Math.min(c, n) / n * 100).toFixed(1)} 100"/></svg></button>
+      <button class="ak-nav" data-a="next" aria-label="${L("Weiter", "Next")}">›</button>
+    </div></div>`;
+}
+function go(i){ const L_ = list(A.t); if(i >= L_.length){ finish(); return; } A.i = Math.max(0, i); draw(); }
+function finish(){ markDone(A.t); A.done = true; draw(); if(typeof confetti === "function") try{ confetti(); }catch(e){} }
+function onClick(e){
+  if(!A) return;
+  const b = e.target.closest("[data-a]"); if(!b) return;
+  const a = b.dataset.a, L_ = list(A.t);
+  if(a === "x"){ close(); return; }
+  if(a === "prev"){ go(A.i - 1); return; }
+  if(a === "next"){ go(A.i + 1); return; }
+  if(a === "tap"){
+    const n = L_[A.i].n;
+    if(A.c[A.i] >= n){ go(A.i + 1); return; }
+    A.c[A.i]++; try{ navigator.vibrate && navigator.vibrate(12); }catch(_){}
+    if(A.c[A.i] >= n){ draw(); setTimeout(() => { if(A && !A.done && A.c[A.i] >= L_[A.i].n) go(A.i + 1); }, 650); }
+    else draw();
+  }
+}
+document.addEventListener("keydown", e => { if(A && ov && !ov.hidden && e.key === "Escape") close(); });
+
+/* ---------- Home: Erinnerung ---------- */
+function homeCards(){
+  const D = due(); let h = "";
+  [["s", D.sabah], ["m", D.masa]].forEach(([t, on]) => { if(!on) return; const S = SETS[t], st = streak(S.key);
+    h += `<div class="wd-home ak-home" data-ak="${t}"><button class="ic" data-akgo="${t}" aria-hidden="true" tabindex="-1">${S.ic}</button><button class="tx" data-akgo="${t}"><b>${tx(S.de, S.en)}</b><span>${L("Jetzt die " + S.sub[0] + " sprechen", "Time for your " + S.sub[1].toLowerCase())}${st ? ` · 🔥 ${st}` : ""}</span></button>
+      <button class="wd-ok" data-akgo="${t}" aria-label="${L("Starten", "Start")}">▶</button></div>`; });
+  return h;
+}
+const _rs = renderStart;
+renderStart = function(){
+  _rs.apply(this, arguments);
+  const hv = document.getElementById("homeV"); if(!hv) return;
+  const html = homeCards(); if(!html) return;
+  const after = [...hv.querySelectorAll(".wd-home")].pop() || hv.querySelector(".pt-card") || hv.querySelector(".lm-sky");
+  if(after) after.insertAdjacentHTML("afterend", html); else hv.insertAdjacentHTML("afterbegin", html);
+};
+document.addEventListener("click", e => { const g = e.target.closest("[data-akgo]"); if(g){ e.preventDefault(); open(g.dataset.akgo); } });
+
+/* ---------- Dua-Startseite: zwei große Knöpfe ---------- */
+function duaEntry(){
+  const hb = document.getElementById("homeBody"); if(!hb || hb.querySelector(".ak-entry")) return;
+  const D = due(), st = D.st || {};
+  const card = t => { const S = SETS[t], done = t === "s" ? st.sabah === D.sKey : st.masa === D.mKey;
+    return `<button class="ak-card ${t}" data-akgo="${t}"><span class="i">${S.ic}</span><span class="a arabic" lang="ar">${S.ar}</span><b>${tx(S.de, S.en)}</b><span class="w">${done ? "✓ " + L("heute erledigt", "done today") : S.when[EN() ? 1 : 0]} · ${list(t).length} ${L("Adhkār", "adhkār")}</span></button>`; };
+  hb.insertAdjacentHTML("afterbegin", `<div class="ak-entry">${card("s")}${card("m")}</div>`);
+}
+const mo = new MutationObserver(() => { if(document.querySelector("#v-dua.active") || document.getElementById("homeBody")) duaEntry(); });
+const hb0 = document.getElementById("homeBody"); if(hb0) mo.observe(hb0, {childList:true});
+setTimeout(duaEntry, 0);
+window.lmAthkar = {open, due};
+
+const css = document.createElement("style");
+css.textContent = `
+body.ak-lock{overflow:hidden}
+.ak-ov{position:fixed;inset:0;z-index:320;background:var(--bg);display:flex;justify-content:center;padding-top:env(safe-area-inset-top,0px)}
+.ak-ov[hidden]{display:none}
+.ak-sh{width:100%;max-width:640px;height:100%;display:flex;flex-direction:column;color:var(--ink)}
+.ak-hd{display:flex;align-items:center;gap:10px;padding:14px 16px 8px}
+.ak-hd b{flex:1;font-size:18px;display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}
+.ak-hd b .arabic{font-size:20px;color:var(--gold);font-weight:400}
+.ak-x{border:0;width:40px;height:40px;border-radius:50%;background:var(--fill);color:var(--ink);font-size:18px;cursor:pointer}
+.ak-prog{height:7px;margin:0 16px;border-radius:9px;background:var(--fill);overflow:hidden}
+.ak-prog i{display:block;height:100%;background:var(--grad);border-radius:9px;transition:width .3s}
+.ak-meta{display:flex;justify-content:space-between;align-items:center;padding:10px 18px 0;font-size:13.5px;font-weight:700;color:var(--muted)}
+.ak-meta .n{background:var(--gold);color:#1d1606;border-radius:99px;padding:2px 10px;font-weight:800}
+.ak-bd{flex:1;overflow:auto;padding:8px 18px 12px;-webkit-overflow-scrolling:touch}
+.ak-ar{font-family:"Scheherazade New","Amiri",serif;font-size:29px;line-height:2;margin:6px 0 10px;text-align:right}
+.ak-tl{font-size:14.5px;line-height:1.55;color:var(--muted);font-style:italic;margin:0 0 10px}
+.ak-tr{font-size:16.5px;line-height:1.55;margin:0 0 10px;font-weight:600}
+.ak-w{font-size:14px;line-height:1.5;background:var(--fill);border-radius:14px;padding:10px 12px;margin:0 0 10px}
+.ak-src{font-size:12.5px;color:var(--muted);margin:0}
+.ak-ft{display:flex;align-items:center;justify-content:center;gap:22px;padding:12px 16px calc(18px + env(safe-area-inset-bottom,0px));border-top:1px solid var(--sep)}
+.ak-nav{width:52px;height:52px;border-radius:50%;border:0;background:var(--fill);color:var(--ink);font-size:30px;line-height:1;cursor:pointer}
+.ak-nav:disabled{opacity:.35}
+.ak-tap{position:relative;width:120px;height:120px;border-radius:50%;border:0;background:var(--surface);color:var(--ink);cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;box-shadow:inset 0 0 0 1px var(--sep),0 10px 24px -12px rgba(0,0,0,.45);transition:transform .08s;-webkit-tap-highlight-color:transparent}
+.ak-tap:active{transform:scale(.94)}
+.ak-tap b{font-size:38px;font-weight:800;line-height:1;font-variant-numeric:tabular-nums}
+.ak-tap small{font-size:11.5px;font-weight:700;color:var(--muted);margin-top:4px}
+.ak-tap svg{position:absolute;inset:0;width:100%;height:100%;transform:rotate(-90deg)}
+.ak-tap circle{fill:none;stroke:var(--gold);stroke-width:6;stroke-linecap:round;transition:stroke-dasharray .2s}
+.ak-tap.full{background:var(--gold);color:#1d1606}
+.ak-tap.full small{color:#1d1606}
+.ak-end{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:20px}
+.ak-end .big{font-size:70px}
+.ak-end h3{font-size:24px;margin:10px 0 6px}
+.ak-end p{color:var(--muted);font-weight:600;max-width:420px}
+.ak-end .stk{color:var(--gold);font-weight:800}
+.ak-b{border:0;border-radius:16px;background:var(--gold);color:#1d1606;font:inherit;font-weight:800;font-size:16px;padding:13px 40px;margin-top:14px;cursor:pointer}
+.ak-entry{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:4px 0 16px}
+.ak-card{position:relative;border:0;border-radius:22px;padding:14px 12px 12px;text-align:left;font:inherit;color:#fff;cursor:pointer;display:flex;flex-direction:column;gap:2px;min-width:0;overflow:hidden}
+.ak-card.s{background:linear-gradient(140deg,#F2B04A,#E07A5F)}
+.ak-card.m{background:linear-gradient(140deg,#3B4A8A,#1E2A55)}
+.ak-card .i{font-size:28px;line-height:1}
+.ak-card .a{position:absolute;top:10px;right:12px;font-size:18px;opacity:.9}
+.ak-card b{font-size:16px;margin-top:8px}
+.ak-card .w{font-size:12px;font-weight:700;opacity:.9}
+`;
+document.head.appendChild(css);
+})();
+
 /* ---------- init ---------- */
 localize(); applyTheme(); applyPrefs(); renderHome(); renderGebet(); renderQuran(); renderQuiz(); renderKids(); renderNames();
 document.querySelectorAll("[data-learn]").forEach(b => b.setAttribute("aria-pressed", b.dataset.learn === learnSub));
@@ -10989,6 +11248,6 @@ setTab("home");
 if(lang === "en") translateTree(document.body);
 </script>
 <script>if("serviceWorker" in navigator&&location.protocol==="https:"){addEventListener("load",()=>navigator.serviceWorker.register("sw.js").catch(()=>{}));}</script>
-<script>window.LM_BUILD="20261014180630";(function(){function chk(){fetch("version.json?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.json()}).then(function(v){if(!v||!v.b||v.b===window.LM_BUILD)return;try{if(sessionStorage.getItem("lm-upd")===v.b)return;sessionStorage.setItem("lm-upd",v.b)}catch(e){}location.reload()}).catch(function(){})}if(location.protocol==="https:"){addEventListener("load",function(){setTimeout(chk,1500)});document.addEventListener("visibilitychange",function(){if(document.visibilityState==="visible")chk()})}})();</script>
+<script>window.LM_BUILD="20261015054019";(function(){function chk(){fetch("version.json?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.json()}).then(function(v){if(!v||!v.b||v.b===window.LM_BUILD)return;try{if(sessionStorage.getItem("lm-upd")===v.b)return;sessionStorage.setItem("lm-upd",v.b)}catch(e){}location.reload()}).catch(function(){})}if(location.protocol==="https:"){addEventListener("load",function(){setTimeout(chk,1500)});document.addEventListener("visibilitychange",function(){if(document.visibilityState==="visible")chk()})}})();</script>
 </body>
 </html>
