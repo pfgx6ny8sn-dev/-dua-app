@@ -12219,16 +12219,66 @@ function onReaderClick(e){
   const w = e.target.closest(".mw"); if(w){ verseTap(+w.dataset.v); }
 }
 
-/* ---------- Einstieg aus der Suren-Liste ---------- */
+/* ---------- Qur'an-Startseite: nur „Weiterlesen“ + Fihris ---------- */
+const css3 = document.createElement("style");
+css3.textContent = `
+.qh-title{display:flex;align-items:flex-end;justify-content:space-between;gap:10px;margin:4px 2px 14px}
+.qh-title h1{margin:0;font-size:32px}
+.qh-title .ar{font-family:"Amiri Quran","Amiri","Scheherazade New",serif;font-size:26px;color:var(--gold)}
+.qh-cont{display:flex;align-items:center;gap:14px;width:100%;border:0;border-radius:22px;padding:14px 16px;margin:0 0 14px;cursor:pointer;text-align:left;font:inherit;color:#fff;background:linear-gradient(135deg,#1F7A5A,#33B38A);box-shadow:0 14px 30px -18px rgba(0,0,0,.8)}
+.qh-cont .ic{flex:none;width:50px;height:50px;border-radius:14px;display:grid;place-items:center;font-size:26px;background:rgba(255,255,255,.18)}
+.qh-cont b{display:block;font-size:17px}.qh-cont span{display:block;font-size:13px;opacity:.85}
+.qh-cont .go{margin-left:auto;font-size:26px;opacity:.9}
+.qh-seg{display:grid;grid-template-columns:1fr 1fr;gap:2px;background:var(--fill);border-radius:12px;padding:3px;margin:0 0 6px}
+.qh-seg button{border:0;border-radius:10px;padding:9px;background:none;font:inherit;font-size:15px;font-weight:700;color:var(--muted);cursor:pointer}
+.qh-seg button[aria-pressed="true"]{background:var(--surface);color:var(--ink);box-shadow:0 1px 6px rgba(0,0,0,.2)}
+.qh-list .mp-jh{direction:rtl;color:var(--muted);font-size:16px;margin:18px 4px 2px;font-family:"Amiri","Scheherazade New",serif}
+.qh-list .mp-row{display:flex;align-items:center;gap:14px;width:100%;direction:rtl;text-align:right;border:0;background:none;color:var(--ink);font:inherit;padding:12px 4px;border-bottom:1px solid var(--sep);cursor:pointer}
+.qh-list .mp-row .n{flex:none;width:40px;height:40px;border-radius:50%;display:grid;place-items:center;background:var(--fill);font-weight:700;font-size:14px;direction:ltr}
+.qh-list .mp-row .x{flex:1;min-width:0}
+.qh-list .mp-row .x b{display:block;font-size:21px;font-family:"Amiri","Scheherazade New",serif}
+.qh-list .mp-row .x span{display:block;font-size:13px;color:var(--muted)}
+.qh-list .mp-row .lt{font-size:12.5px;color:var(--muted);direction:ltr;text-align:left}
+.qh-list .mp-row .lt i{display:block;font-style:normal;color:var(--gold);font-weight:700}
+`;
+document.head.appendChild(css3);
+const WIRD = {67: {de: "Jeden Abend", en: "Every evening"}, 18: {de: "Freitags", en: "Fridays"}};
+function homeHTML(tab){
+  const last = lsj("lm-mp-page", null), bm = lsj("lm-mp-bm", []);
+  let h = `<div class="qh-title"><h1>Qur'an</h1><span class="ar">القرآن الكريم</span></div>`;
+  if(last != null){ const m = D.M.M[last]; h += `<button class="qh-cont" data-go="${last}"><span class="ic">📖</span><span><b>${T2("Weiterlesen", "Continue reading")}</b><span>${D.M.S[m[2] - 1][4]} · ${T2("Seite", "Page")} ${last + 1} · Juz ${m[0]}</span></span><span class="go">›</span></button>`; }
+  else h += `<button class="qh-cont" data-go="0"><span class="ic">📖</span><span><b>${T2("Mit dem Lesen beginnen", "Start reading")}</b><span>al-Fātiḥa · ${T2("Seite", "Page")} 1</span></span><span class="go">›</span></button>`;
+  h += `<div class="qh-seg" role="group"><button data-qh="s" aria-pressed="${tab === "s"}">السور</button><button data-qh="j" aria-pressed="${tab === "j"}">الأجزاء</button></div><div class="qh-list">`;
+  if(bm.length) h += `<p class="mp-jh">🔖 الفواصل</p>` + bm.slice().reverse().map(p => `<button class="mp-row" data-go="${p}"><span class="n">${p + 1}</span><span class="x"><b>${D.M.S[D.M.M[p][2] - 1][0]}</b><span>الصفحة ${p + 1} - الجزء ${D.M.M[p][0]}</span></span></button>`).join("");
+  if(tab === "s"){
+    let lastJ = 0;
+    D.M.S.forEach((x, i) => {
+      const j = D.M.M[x[3] - 1][0], w = WIRD[i + 1];
+      if(j !== lastJ){ h += `<p class="mp-jh">الجزء ${JUZ[j - 1]}</p>`; lastJ = j; }
+      h += `<button class="mp-row" data-go="${x[3] - 1}"><span class="n">${i + 1}</span><span class="x"><b>${x[0]}</b><span>الصفحة ${x[3]} - ${x[1]} ${x[1] <= 10 && x[1] >= 3 ? "آيات" : "آية"} - ${x[2] === "m" ? "مكية" : "مدنية"}</span></span><span class="lt">${x[4]}${w ? `<i>${w[lang === "en" ? "en" : "de"]}</i>` : ""}</span></button>`;
+    });
+  } else {
+    for(let j = 1; j <= 30; j++){ const p = D.M.M.findIndex(m => m[0] === j), s = D.M.M[p][2];
+      h += `<button class="mp-row" data-go="${p}"><span class="n">${j}</span><span class="x"><b>الجزء ${JUZ[j - 1]}</b><span>الصفحة ${p + 1} - ${D.M.S[s - 1][0]}</span></span></button>`; }
+  }
+  return h + `</div><p class="hint" style="margin:14px 4px 0">Text: Tanzil.net (Uthmani, Ḥafṣ ʿan ʿĀṣim) · Madīna-Mushaf · Tajwīd: quran-tajweed</p>`;
+}
 const _rq = renderQuran;
 renderQuran = function(){
   _rq.apply(this, arguments);
-  const body = document.getElementById("qrBody"); if(!body) return;
-  if(!qr.sura && !body.querySelector(".mp-entry")){
-    const last = lsj("lm-mp-page", null);
-    body.insertAdjacentHTML("afterbegin", `<button class="mp-entry" data-mpopen><span class="ic">📖</span><span><b>${T2("Mushaf – der ganze Qur'an", "Mushaf – the whole Qur'an")}</b><span>${last != null ? T2(`Weiterlesen auf Seite ${last + 1}`, `Continue on page ${last + 1}`) : T2("604 Seiten wie im Madīna-Mushaf · mit Tajwīd", "604 pages like the Madīna Mushaf · with tajwīd")}</span></span></button>`);
-  }
+  if(qr.sura) return;
+  const top = document.getElementById("qrTop"), body = document.getElementById("qrBody"); if(!body) return;
+  document.getElementById("qrNavT").textContent = "Qur'an";
+  top.innerHTML = "";
+  if(!D){ body.innerHTML = `<p class="hint" style="text-align:center;margin-top:40px">${T2("Qur'an wird geladen …", "Loading the Qur'an …")}</p>`;
+    load().then(() => { if(!qr.sura) renderQuran(); }).catch(() => { body.innerHTML = `<p class="hint" style="text-align:center;margin-top:40px">${T2("Beim ersten Öffnen wird Internet gebraucht.", "An internet connection is needed the first time.")}</p>`; }); return; }
+  body.innerHTML = homeHTML(lsj("lm-mp-ix", "s"));
 };
+document.getElementById("qrBody").addEventListener("click", e => {
+  if(qr.sura || !D) return;
+  const t = e.target.closest("[data-qh]"); if(t){ lss("lm-mp-ix", t.dataset.qh); document.getElementById("qrBody").innerHTML = homeHTML(t.dataset.qh); return; }
+  const g = e.target.closest("[data-go]"); if(g){ e.stopPropagation(); openReader(+g.dataset.go); }
+}, true);
 function openAt(page){ loadFont(); return load().then(() => openReader(page)).catch(() => { if(typeof toast === "function") toast(T2("Der Mushaf braucht beim ersten Mal Internet.", "The Mushaf needs a connection the first time.")); }); }
 document.addEventListener("click", e => {
   if(PG.el && PG.el.contains(e.target)) return;
@@ -12259,6 +12309,6 @@ setTab("home");
 if(lang === "en") translateTree(document.body);
 </script>
 <script>if("serviceWorker" in navigator&&location.protocol==="https:"){addEventListener("load",()=>navigator.serviceWorker.register("sw.js").catch(()=>{}));}</script>
-<script>window.LM_BUILD="20261015193214";(function(){function chk(){fetch("version.json?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.json()}).then(function(v){if(!v||!v.b||v.b===window.LM_BUILD)return;try{if(sessionStorage.getItem("lm-upd")===v.b)return;sessionStorage.setItem("lm-upd",v.b)}catch(e){}location.reload()}).catch(function(){})}if(location.protocol==="https:"){addEventListener("load",function(){setTimeout(chk,1500)});document.addEventListener("visibilitychange",function(){if(document.visibilityState==="visible")chk()})}})();</script>
+<script>window.LM_BUILD="20261015194140";(function(){function chk(){fetch("version.json?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.json()}).then(function(v){if(!v||!v.b||v.b===window.LM_BUILD)return;try{if(sessionStorage.getItem("lm-upd")===v.b)return;sessionStorage.setItem("lm-upd",v.b)}catch(e){}location.reload()}).catch(function(){})}if(location.protocol==="https:"){addEventListener("load",function(){setTimeout(chk,1500)});document.addEventListener("visibilitychange",function(){if(document.visibilityState==="visible")chk()})}})();</script>
 </body>
 </html>
