@@ -11865,7 +11865,7 @@ body.mr-on .tabbar,body.mr-on .mx-bar,body.mr-on .mini{display:none!important}
 .mr-pill{flex:1;min-width:0;display:flex;align-items:center;gap:8px;border:0;border-radius:12px;padding:7px 12px;background:var(--fill);color:var(--ink);font:inherit;text-align:left;cursor:pointer}
 .mr-pill .x{flex:1;min-width:0}
 .mr-pill b{display:block;font-size:16px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.mr-pill small{display:block;font-size:12.5px;color:var(--muted);font-variant-numeric:tabular-nums}
+.mr-pill small{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
 .mr-pill .bm{font-size:20px;opacity:.85}
 .mr-main{flex:1;min-height:0;position:relative}
 .mr .mp-sc{height:100%}
@@ -11892,6 +11892,31 @@ body.mr-on .tabbar,body.mr-on .mx-bar,body.mr-on .mini{display:none!important}
 .mr-ar .mw{display:inline}
 .mr-tr{margin:0;font-size:calc(16.5px * var(--mr-ft,1));line-height:1.5;color:var(--ink)}
 .mr-next{display:block;width:100%;margin:18px 0 0;border:0;border-radius:16px;padding:14px;font:inherit;font-weight:700;background:var(--fill);color:var(--ink);cursor:pointer}
+.bm-rb{width:16px;height:22px;flex:none}
+.bm-box{background:var(--surface);border-radius:18px;overflow:hidden;box-shadow:inset 0 0 0 1px var(--sep)}
+.bm-row{display:flex;align-items:center;gap:14px;width:100%;direction:rtl;text-align:right;border:0;background:none;color:var(--ink);font:inherit;padding:12px 16px;border-bottom:1px solid var(--sep);cursor:pointer}
+.bm-row:last-child{border-bottom:0}
+.bm-row .rb{flex:none;display:grid;place-items:center;width:24px}
+.bm-row .x{flex:1;min-width:0}
+.bm-row .x b{display:block;font-size:19px;font-family:"Amiri","Scheherazade New",-apple-system,serif}
+.bm-row .x span{display:block;font-size:14px;color:var(--muted);direction:rtl}
+.bm-row.empty .x b{opacity:.65}
+.bm-row .chev{color:var(--muted);font-size:24px}
+.bm-name{width:100%;box-sizing:border-box;border:1.5px solid var(--sep);border-radius:10px;background:var(--bg);color:var(--ink);font:inherit;font-size:16px;padding:6px 10px;margin-bottom:3px}
+.bm-del{border:0;background:var(--fill);border-radius:10px;padding:8px 10px;cursor:pointer;font-size:16px}
+.bm-head{display:flex;align-items:center;justify-content:space-between;margin:18px 2px 8px;direction:rtl}
+.bm-head h2{margin:0;font-size:24px;font-family:"Amiri","Scheherazade New",serif}
+.bm-edit{border:0;background:none;color:var(--gold);font:inherit;font-size:16px;font-weight:700;cursor:pointer}
+.bm-add{display:block;width:100%;margin-top:10px;border:0;border-radius:14px;padding:12px;font:inherit;font-weight:700;background:var(--fill);color:var(--ink);cursor:pointer}
+.bm-new{margin-top:14px}
+.bm-new input{width:100%;box-sizing:border-box;border:1.5px solid var(--sep);border-radius:12px;background:var(--surface);color:var(--ink);font:inherit;font-size:16px;padding:10px 12px}
+.bm-cols{display:flex;gap:10px;margin:10px 2px 0}
+.bm-col{width:30px;height:30px;border-radius:50%;border:0;cursor:pointer;box-shadow:0 0 0 2px var(--bg)}
+.bm-col.on{box-shadow:0 0 0 2px var(--bg),0 0 0 4px var(--ink)}
+.mn[data-bm]{position:relative}
+.mn[data-bm]::after{content:"";position:absolute;top:-.62em;left:50%;margin-left:-.2em;width:.4em;height:.62em;background:var(--bmc);clip-path:polygon(0 0,100% 0,100% 100%,50% 72%,0 100%)}
+.mr-back{flex:none;display:flex;align-items:center;gap:2px;height:42px;padding:0 12px 0 8px;border:0;border-radius:14px;background:var(--gold-soft);color:var(--gold);font:inherit;font-size:15px;font-weight:800;cursor:pointer}
+.mr-back svg{width:20px;height:20px}
 /* Ausblenden (wie Tarteel) und Vorlesen */
 .mr.hid .mw:not(.mrv),.mr.hid .mw:not(.mrv) b,.mr.hid .mw:not(.mrv) i{color:transparent!important}
 .mr.hid .mw:not(.mrv){background:none}
@@ -11951,7 +11976,7 @@ function openReader(page, mode){
   if(PG.el) PG.el.remove();
   ST.mode = mode || lsj("lm-mr-mode", "page"); ST.hide = false; ST.rv.clear(); ST.ws = {};
   const el = document.createElement("div"); el.className = "mp mr" + (lsj("lm-qx-tj", true) ? "" : " notj") + (lsj("lm-mr-fw", false) ? " fw" : "");
-  el.innerHTML = `<header class="mr-top"><button class="mr-ib" data-r="back" aria-label="${T2("Zurück", "Back")}">‹</button>
+  el.innerHTML = `<header class="mr-top"><button class="mr-back" data-r="back" aria-label="${T2("Zurück zur Übersicht", "Back to overview")}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg>${T2("Suren", "Suras")}</button>
       <button class="mr-pill" data-r="ix"><span class="x"><b></b><small></small></span><span class="bm" data-r="bm" role="button" aria-label="${T2("Lesezeichen", "Bookmark")}">🔖</span></button>
       <button class="mr-ib" data-r="ix" aria-label="Fihris">☰</button><button class="mr-ib" data-r="set" aria-label="${T2("Einstellungen", "Settings")}">⚙︎</button></header>
     <div class="mr-main"></div>
@@ -11986,7 +12011,7 @@ function decorate(root){
 }
 function fill(i){
   const s = PG.sc.children[i]; if(!s || s.dataset.done) return;
-  s.innerHTML = pageHTML(i); s.dataset.done = "1"; fit(s); decorate(s);
+  s.innerHTML = pageHTML(i); s.dataset.done = "1"; fit(s); decorate(s); bmMark(s);
 }
 function setCur(i){
   if(i === PG.cur) return; PG.cur = i; qr.mp = i; lss("lm-mp-page", i);
@@ -12001,8 +12026,9 @@ function head(){
   const m = D.M.M[PG.cur], s = ST.mode === "list" ? ST.listS : m[2], bm = lsj("lm-mp-bm", []);
   const app = appSuras().find(x => x.n === s && !x.start);
   PG.el.querySelector(".mr-pill b").textContent = `${app ? app.t : D.M.S[s - 1][4]} · ${D.M.S[s - 1][0]}`;
-  PG.el.querySelector(".mr-pill small").textContent = `${T2("Seite", "Page")} ${PG.cur + 1} | Juz ${m[0]} | Ḥizb ${Math.ceil(m[1] / 4)}`;
-  PG.el.querySelector(".mr-pill .bm").textContent = bm.includes(PG.cur) ? "📑" : "🔖";
+  PG.el.querySelector(".mr-pill small").textContent = `${T2("S.", "p.")} ${PG.cur + 1} | Juz ${m[0]} | Ḥizb ${Math.ceil(m[1] / 4)}`;
+  const [a0] = D.PS[PG.cur], a1 = PG.cur + 1 < D.PS.length ? D.PS[PG.cur + 1][0] : D.VW.length; const on = bms().find(x => x.v != null && x.v >= a0 && x.v <= a1);
+  PG.el.querySelector(".mr-pill .bm").innerHTML = on ? ribbon(on.color) : "🔖";
 }
 function go(i){
   i = Math.max(0, Math.min(D.M.P.length - 1, i));
@@ -12074,7 +12100,7 @@ function sheet(html, full){
     const b = e.target.closest("[data-mp]"); if(!b) return; const v = +b.dataset.v;
     if(b.dataset.mp === "pv") playFrom(v, true);
     if(b.dataset.mp === "pf"){ sh.remove(); playFrom(v, false); }
-    if(b.dataset.mp === "bmv") toggleBm(D.vpage[v]);
+    if(b.dataset.mp === "bmv"){ sh.remove(); bmSheet(v); }
   });
   document.body.appendChild(sh); return sh;
 }
@@ -12091,7 +12117,7 @@ async function verseSheet(v){
 function indexSheet(tab){
   tab = tab || lsj("lm-mp-ix", "s");
   const curS = ST.sura, bm = lsj("lm-mp-bm", []);
-  let body = bm.length ? `<p class="mp-jh">🔖 الفواصل</p>` + bm.slice().reverse().map(p => `<button class="mp-row" data-go="${p}"><span class="n">${p + 1}</span><span class="x"><b>${D.M.S[D.M.M[p][2] - 1][0]}</b><span>الصفحة ${p + 1} - الجزء ${D.M.M[p][0]}</span></span></button>`).join("") : "";
+  let body = `<div class="bm-sec">${bmSection()}</div>`;
   if(tab === "s"){
     let lastJ = 0;
     D.M.S.forEach((x, i) => {
@@ -12128,6 +12154,69 @@ function settingsSheet(){
   }
 }
 function toggleBm(p){ let bm = lsj("lm-mp-bm", []); const had = bm.includes(p); bm = had ? bm.filter(x => x !== p) : bm.concat(p); lss("lm-mp-bm", bm); head(); if(typeof toast === "function") toast(had ? T2("Lesezeichen entfernt", "Bookmark removed") : T2("Lesezeichen gesetzt", "Bookmark saved")); }
+
+/* ---------- Lesezeichen (الفواصل): benannte, farbige Bänder ---------- */
+const BMC = {red: "#C0392B", yellow: "#D4A514", green: "#3D8B37", blue: "#2E6FD0", purple: "#8E44AD", orange: "#E67E22"};
+const BMN = {red: "الأحمر", yellow: "الأصفر", green: "الأخضر", blue: "الأزرق", purple: "البنفسجي", orange: "البرتقالي"};
+const ribbon = c => `<svg class="bm-rb" viewBox="0 0 16 22" aria-hidden="true"><path d="M1 1h14v20l-7-5-7 5z" fill="${BMC[c] || c}"/></svg>`;
+function bms(){
+  let b = lsj("lm-bm2", null);
+  if(!b){ b = ["red", "yellow", "green", "blue"].map((c, i) => ({id: "b" + i, name: BMN[c], color: c, v: null, t: 0}));
+    (lsj("lm-mp-bm", []) || []).forEach((pg, i) => { if(D && D.PS[pg]) b.push({id: "o" + i, name: `${T2("Seite", "Page")} ${pg + 1}`, color: "purple", v: D.PS[pg][0], t: Date.now()}); });
+    lss("lm-bm2", b); }
+  return b;
+}
+const bmSave = b => { lss("lm-bm2", b); };
+const fmtD = t => { const d = new Date(t); return `${String(d.getDate()).padStart(2, "0")}.${String(d.getMonth() + 1).padStart(2, "0")}.${String(d.getFullYear()).slice(2)}`; };
+const bmPos = v => `${D.M.S[D.VSU[v] - 1][0]}: ${D.VAY[v]}`;
+function bmListHTML(edit){
+  const b = edit ? bms() : bms().filter(x => x.v != null);
+  if(!b.length) return `<p class="hint" style="margin:0 4px">${T2("Noch keine Lesezeichen gesetzt. Tippe beim Lesen oben auf 🔖.", "No bookmarks set yet. Tap 🔖 at the top while reading.")}</p>`;
+  return `<div class="bm-box">${b.map(x => `<div class="bm-row${x.v == null ? " empty" : ""}" ${!edit && x.v != null ? `data-bmgo="${x.v}" role="button"` : ""}>
+    <span class="rb">${ribbon(x.color)}</span>
+    <span class="x">${edit ? `<input class="bm-name" data-bmname="${x.id}" value="${x.name.replace(/"/g, "&quot;")}" dir="auto" maxlength="40">` : `<b>${x.name}</b>`}<span>${x.v == null ? T2("noch nicht gesetzt", "not set yet") : `${bmPos(x.v)}&nbsp;&nbsp;${fmtD(x.t)}`}</span></span>
+    ${edit ? `<button class="bm-del" data-bmdel="${x.id}" aria-label="${T2("Löschen", "Delete")}">🗑</button>` : x.v != null ? `<span class="chev">‹</span>` : ""}</div>`).join("")}</div>`;
+}
+function bmSection(){
+  const ed = !!bmSection.edit;
+  return `<div class="bm-head"><button class="bm-edit" data-bmedit>${ed ? T2("Fertig", "Done") : "تعديل"}</button><h2>الفواصل</h2></div>${bmListHTML(ed)}${ed ? `<button class="bm-add" data-bmadd>＋ ${T2("Neues Lesezeichen", "New bookmark")}</button>` : ""}`;
+}
+function bmSheet(v){
+  const b = bms();
+  const sh = sheet(`<div class="hd"><b>🔖 ${T2("Lesezeichen setzen", "Set bookmark")} · ${bmPos(v)}</b><button class="mp-ic" data-mp="x">✕</button></div>
+    <div class="bd"><p class="mp-vs" style="margin:0 0 8px">${T2("Wähle ein Lesezeichen – es wird an diese Stelle gelegt.", "Choose a bookmark – it will be moved to this place.")}</p>
+    <div class="bm-box">${b.map(x => `<button class="bm-row" data-bmset="${x.id}" data-v="${v}"><span class="rb">${ribbon(x.color)}</span><span class="x"><b>${x.name}</b><span>${x.v == null ? T2("noch nicht gesetzt", "not set yet") : `${T2("jetzt", "now")}: ${bmPos(x.v)}`}</span></span></button>`).join("")}</div>
+    <div class="bm-new"><input id="bmNewName" placeholder="${T2("Neues Lesezeichen, z. B. Ḫatma Ramaḍān", "New bookmark, e.g. Ramadan khatma")}" maxlength="40" dir="auto">
+      <div class="bm-cols">${Object.keys(BMC).map((c, i) => `<button class="bm-col${i === 4 ? " on" : ""}" data-bmcol="${c}" style="background:${BMC[c]}" aria-label="${c}"></button>`).join("")}</div>
+      <button class="bm-add" data-bmnew data-v="${v}">＋ ${T2("Anlegen und hierher legen", "Create here")}</button></div></div>`);
+  return sh;
+}
+function bmMark(root){
+  (root || PG.el) && (root || PG.el).querySelectorAll(".mn[data-bm]").forEach(m => { m.removeAttribute("data-bm"); m.style.removeProperty("--bmc"); });
+  bms().forEach(x => { if(x.v == null || !PG.el) return; (root || PG.el).querySelectorAll(`.mw[data-v="${x.v}"] .mn`).forEach(m => { m.setAttribute("data-bm", x.id); m.style.setProperty("--bmc", BMC[x.color] || x.color); }); });
+}
+document.addEventListener("click", e => {
+  const t = e.target;
+  const s = t.closest("[data-bmset]");
+  if(s){ const b = bms(), x = b.find(y => y.id === s.dataset.bmset); x.v = +s.dataset.v; x.t = Date.now(); bmSave(b); s.closest(".mp-sheet").remove(); bmMark(); head();
+    if(typeof toast === "function") toast(`🔖 ${x.name} → ${bmPos(x.v)}`); return; }
+  const c = t.closest("[data-bmcol]"); if(c){ c.parentElement.querySelectorAll(".bm-col").forEach(z => z.classList.toggle("on", z === c)); return; }
+  const n = t.closest("[data-bmnew]");
+  if(n){ const sh = n.closest(".mp-sheet"), nm = (sh.querySelector("#bmNewName").value || "").trim(), col = (sh.querySelector(".bm-col.on") || {}).dataset?.bmcol || "purple";
+    const b = bms(); const x = {id: "u" + Date.now(), name: nm || BMN[col] || T2("Lesezeichen", "Bookmark"), color: col, v: +n.dataset.v, t: Date.now()}; b.push(x); bmSave(b);
+    sh.remove(); bmMark(); head(); if(typeof toast === "function") toast(`🔖 ${x.name} → ${bmPos(x.v)}`); return; }
+  const g = t.closest("[data-bmgo]");
+  if(g){ const v = +g.dataset.bmgo; const sh = g.closest(".mp-sheet"); if(sh) sh.remove();
+    const flash = () => { PG.sel = v; mark("sel", v); setTimeout(() => { PG.sel = null; mark("sel", null); }, 2200); };
+    if(PG.el){ if(ST.mode === "list") buildList(D.VSU[v], v).then(flash); else { go(D.vpage[v]); setTimeout(flash, 300); } }
+    else { openReader(D.vpage[v]); setTimeout(flash, 500); }
+    e.stopPropagation(); return; }
+  if(t.closest("[data-bmedit]")){ bmSection.edit = !bmSection.edit; const h = document.querySelector(".bm-sec"); if(h) h.innerHTML = bmSection(); e.stopPropagation(); return; }
+  if(t.closest("[data-bmadd]") && !t.closest("[data-bmnew]")){ const b = bms(), used = b.map(x => x.color), col = Object.keys(BMC).find(c => !used.includes(c)) || "purple";
+    b.push({id: "u" + Date.now(), name: BMN[col], color: col, v: null, t: 0}); bmSave(b); const h = document.querySelector(".bm-sec"); if(h) h.innerHTML = bmSection(); e.stopPropagation(); return; }
+  const d = t.closest("[data-bmdel]"); if(d){ bmSave(bms().filter(x => x.id !== d.dataset.bmdel)); const h = document.querySelector(".bm-sec"); if(h) h.innerHTML = bmSection(); e.stopPropagation(); return; }
+}, true);
+document.addEventListener("change", e => { const i = e.target.closest && e.target.closest("[data-bmname]"); if(!i) return; const b = bms(), x = b.find(y => y.id === i.dataset.bmname); if(x){ x.name = i.value.trim() || x.name; bmSave(b); } });
 
 /* ---------- Anhören: Vers für Vers, blättert mit ---------- */
 let AU = null, auSingle = false, auOn = false;
@@ -12264,7 +12353,7 @@ function onReaderClick(e){
   if(b){
     const k = b.dataset.r;
     if(k === "back") closeReader();
-    else if(k === "bm"){ e.stopPropagation(); toggleBm(PG.cur); }
+    else if(k === "bm"){ e.stopPropagation(); bmSheet(PG.sel != null ? PG.sel : firstVerse()); }
     else if(k === "ix") indexSheet();
     else if(k === "set") settingsSheet();
     else if(k === "tr"){ const v = firstVerse(); ST.mode = ST.mode === "page" ? "list" : "page"; lss("lm-mr-mode", ST.mode); recStop(); if(ST.mode === "list"){ PG.sc = null; build(D.vpage[v]); buildList(D.VSU[v], v); } else build(D.vpage[v]); }
@@ -12312,8 +12401,8 @@ function homeHTML(tab){
   let h = `<div class="qh-title"><h1>Qur'an</h1><span class="ar">القرآن الكريم</span></div>`;
   if(last != null){ const m = D.M.M[last]; h += `<button class="qh-cont" data-go="${last}"><span class="ic">📖</span><span><b>${T2("Weiterlesen", "Continue reading")}</b><span>${D.M.S[m[2] - 1][4]} · ${T2("Seite", "Page")} ${last + 1} · Juz ${m[0]}</span></span><span class="go">›</span></button>`; }
   else h += `<button class="qh-cont" data-go="0"><span class="ic">📖</span><span><b>${T2("Mit dem Lesen beginnen", "Start reading")}</b><span>al-Fātiḥa · ${T2("Seite", "Page")} 1</span></span><span class="go">›</span></button>`;
+  h += `<div class="bm-sec">${bmSection()}</div>`;
   h += `<div class="qh-seg" role="group"><button data-qh="s" aria-pressed="${tab === "s"}">السور</button><button data-qh="j" aria-pressed="${tab === "j"}">الأجزاء</button></div><div class="qh-list">`;
-  if(bm.length) h += `<p class="mp-jh">🔖 الفواصل</p>` + bm.slice().reverse().map(p => `<button class="mp-row" data-go="${p}"><span class="n">${p + 1}</span><span class="x"><b>${D.M.S[D.M.M[p][2] - 1][0]}</b><span>الصفحة ${p + 1} - الجزء ${D.M.M[p][0]}</span></span></button>`).join("");
   if(tab === "s"){
     let lastJ = 0;
     D.M.S.forEach((x, i) => {
@@ -12523,6 +12612,6 @@ setTab("home");
 if(lang === "en") translateTree(document.body);
 </script>
 <script>if("serviceWorker" in navigator&&location.protocol==="https:"){addEventListener("load",()=>navigator.serviceWorker.register("sw.js").catch(()=>{}));}</script>
-<script>window.LM_BUILD="20261015212149";(function(){function chk(){fetch("version.json?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.json()}).then(function(v){if(!v||!v.b||v.b===window.LM_BUILD)return;try{if(sessionStorage.getItem("lm-upd")===v.b)return;sessionStorage.setItem("lm-upd",v.b)}catch(e){}location.reload()}).catch(function(){})}if(location.protocol==="https:"){addEventListener("load",function(){setTimeout(chk,1500)});document.addEventListener("visibilitychange",function(){if(document.visibilityState==="visible")chk()})}})();</script>
+<script>window.LM_BUILD="20261015220059";(function(){function chk(){fetch("version.json?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.json()}).then(function(v){if(!v||!v.b||v.b===window.LM_BUILD)return;try{if(sessionStorage.getItem("lm-upd")===v.b)return;sessionStorage.setItem("lm-upd",v.b)}catch(e){}location.reload()}).catch(function(){})}if(location.protocol==="https:"){addEventListener("load",function(){setTimeout(chk,1500)});document.addEventListener("visibilitychange",function(){if(document.visibilityState==="visible")chk()})}})();</script>
 </body>
 </html>
