@@ -12428,10 +12428,11 @@ function cardHTML(){
   const c = cfg(), pl = ptTimes(0).place;
   const seg = (key, opts) => `<div class="pr-seg" style="grid-template-columns:repeat(${opts.length},1fr)">${opts.map(([v, t]) => `<button data-pr="${key}:${v}" aria-pressed="${String(c[key]) === String(v)}">${t}</button>`).join("")}</div>`;
   return `<section class="pr-card" id="prCard"><h3>🔔 ${T2("Erinnerung aufs Handy", "Reminders on your phone")}</h3>
-    <p>${T2(`Die Gebetszeiten für <b>${pl.n}</b> kommen als Kalender auf dein Handy – mit Hinweis zu jedem Gebet. Klappt auch ohne Internet.`, `The prayer times for <b>${pl.n}</b> go into your phone’s calendar – with an alert for each prayer. Works offline too.`)}</p>
+    <p>${T2(`Lass dich zu jedem Gebet in <b>${pl.n}</b> erinnern – als Push-Nachricht oder über den Kalender.`, `Get reminded of each prayer in <b>${pl.n}</b> – by push notification or via your calendar.`)}</p>
     <span class="pr-lbl">${T2("Erinnern", "Remind me")}</span>${seg("alarm", [["0", T2("Pünktlich", "On time")], ["10", T2("10 Min. vorher", "10 min before")], ["both", T2("Beides", "Both")]])}
     <span class="pr-lbl">${T2("Gebete", "Prayers")}</span><div class="pr-chips">${["fajr", "sunrise", "dhuhr", "asr", "maghrib", "isha"].map(k => `<button data-prk="${k}" aria-pressed="${c.pr.includes(k)}">${NAMES[k][lang === "en" ? 1 : 0].replace(" (Sonnenaufgang)", "")}</button>`).join("")}</div>
-    <span class="pr-lbl">${T2("Zeitraum", "Period")}</span>${seg("days", [[30, T2("30 Tage", "30 days")], [60, T2("60 Tage", "60 days")], [90, T2("90 Tage", "90 days")]])}
+    ${pushHTML()}
+    <span class="pr-lbl">${T2("Oder als Kalender", "Or as a calendar")}</span>${seg("days", [[30, T2("30 Tage", "30 days")], [60, T2("60 Tage", "60 days")], [90, T2("90 Tage", "90 days")]])}
     <button class="pr-go" data-pr="make">📅 ${T2("Zum Kalender hinzufügen", "Add to calendar")}</button>
     ${navigator.canShare ? `<button class="pr-share" data-pr="share">📤 ${T2("Kalender-Datei teilen …", "Share calendar file …")}</button>` : ""}
     ${untilText()}
@@ -12453,19 +12454,61 @@ async function make(share){
 document.addEventListener("click", e => {
   const b = e.target.closest("#prCard [data-pr], #prCard [data-prk]"); if(!b) return;
   const c = cfg();
-  if(b.dataset.prk){ const k = b.dataset.prk; c.pr = c.pr.includes(k) ? c.pr.filter(x => x !== k) : c.pr.concat(k); if(!c.pr.length) c.pr = [k]; lss("lm-pr-cfg", c); document.getElementById("prCard").outerHTML = cardHTML(); return; }
+  if(b.dataset.prk){ const k = b.dataset.prk; c.pr = c.pr.includes(k) ? c.pr.filter(x => x !== k) : c.pr.concat(k); if(!c.pr.length) c.pr = [k]; lss("lm-pr-cfg", c); document.getElementById("prCard").outerHTML = cardHTML(); pushRefresh(); return; }
   const [k, v] = b.dataset.pr.split(":");
+  if(k === "pushon") return pushOn();
+  if(k === "pushoff") return pushOff();
   if(k === "make") return make(false);
   if(k === "share") return make(true);
-  c[k] = k === "days" ? +v : v; lss("lm-pr-cfg", c); document.getElementById("prCard").outerHTML = cardHTML();
+  c[k] = k === "days" ? +v : v; lss("lm-pr-cfg", c); document.getElementById("prCard").outerHTML = cardHTML(); if(k === "alarm") pushRefresh();
 });
+/* ---------- Echte Push-Nachrichten (Home-App, Supabase) ---------- */
+const VAPID = "BIP4KzORUPQ5Q3iKuw87ZWl1Wx359uwX_FWBTCKDSqsDeLpGIZ5wCg5M3-NnNwwoO9A_p2r_4QGuEDMLcFXwzoc";
+const RPC = "https://imdyfrmtrotcyhyajwkr.supabase.co/rest/v1/rpc/", KEY = "sb_publishable_6fbssHB71hNV7EgWGWNGBA_FJMlnYar";
+const isIOS = /iP(hone|ad|od)/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+const standalone = () => (window.matchMedia && matchMedia("(display-mode: standalone)").matches) || navigator.standalone === true;
+const pushOK = () => location.protocol === "https:" && "serviceWorker" in navigator && "PushManager" in window && "Notification" in window;
+const u8 = b => { const s = atob(b.replace(/-/g, "+").replace(/_/g, "/") + "===".slice((b.length + 3) % 4)); return Uint8Array.from(s, c => c.charCodeAt(0)); };
+async function rpc(fn, body){ const r = await fetch(RPC + fn, {method: "POST", headers: {"apikey": KEY, "Content-Type": "application/json"}, body: JSON.stringify(body)}); if(!r.ok) throw new Error("http " + r.status); }
+async function pushSync(sub){
+  const j = sub.toJSON(), pl = ptTimes(0).place, c = cfg();
+  await rpc("push_subscribe", {p_endpoint: j.endpoint, p_p256dh: j.keys.p256dh, p_auth: j.keys.auth, p_lat: pl.lat, p_lng: pl.lng, p_tz: pl.tz,
+    p_method: ptCfg.method, p_asr: +ptCfg.asr || 1, p_prayers: c.pr, p_before: c.alarm, p_lang: lang === "en" ? "en" : "de", p_place: pl.n});
+}
+async function pushOn(){
+  const st = document.getElementById("prPushSt");
+  try{
+    const perm = await Notification.requestPermission();
+    if(perm !== "granted"){ if(st) st.innerHTML = `<p class="pr-warn">${T2("Mitteilungen wurden nicht erlaubt. Du kannst sie in den iPhone-Einstellungen → Mitteilungen → Little Muslim einschalten.", "Notifications were not allowed. You can enable them in Settings → Notifications → Little Muslim.")}</p>`; return; }
+    const reg = await navigator.serviceWorker.ready;
+    const sub = await reg.pushManager.getSubscription() || await reg.pushManager.subscribe({userVisibleOnly: true, applicationServerKey: u8(VAPID)});
+    await pushSync(sub); lss("lm-push-on", true);
+    if(typeof toast === "function") toast(T2("🔔 Push-Nachrichten sind an", "🔔 Push notifications are on"));
+  }catch(e){ if(st) st.innerHTML = `<p class="pr-warn">${T2("Das hat nicht geklappt – bitte Internet prüfen und nochmal versuchen.", "That didn’t work – please check your connection and try again.")}</p>`; return; }
+  const c = document.getElementById("prCard"); if(c) c.outerHTML = cardHTML();
+}
+async function pushOff(){
+  try{ const reg = await navigator.serviceWorker.ready, sub = await reg.pushManager.getSubscription();
+    if(sub){ const ep = sub.endpoint; await sub.unsubscribe(); await rpc("push_unsubscribe", {p_endpoint: ep}).catch(() => {}); } }catch(e){}
+  lss("lm-push-on", false); const c = document.getElementById("prCard"); if(c) c.outerHTML = cardHTML();
+}
+/* Einstellungen (Ort, Methode, Gebete) beim Öffnen der Seite mit dem Server abgleichen */
+async function pushRefresh(){ if(!lsj("lm-push-on", false) || !pushOK()) return; try{ const reg = await navigator.serviceWorker.ready, sub = await reg.pushManager.getSubscription(); if(sub) await pushSync(sub); else lss("lm-push-on", false); }catch(e){} }
+function pushHTML(){
+  const on = lsj("lm-push-on", false);
+  let inner;
+  if(!pushOK() || (isIOS && !standalone())) inner = `<p>${isIOS ? T2("Push-Nachrichten gehen nur in der Home-App: In Safari auf <b>Teilen</b> → <b>Zum Home-Bildschirm</b> tippen und die App von dort öffnen (ab iOS 16.4).", "Push notifications only work in the home-screen app: in Safari tap <b>Share</b> → <b>Add to Home Screen</b> and open the app from there (iOS 16.4+).") : T2("Dieser Browser unterstützt hier keine Push-Nachrichten. Nutze die Home-App oder den Kalender unten.", "This browser does not support push notifications here. Use the home-screen app or the calendar below.")}</p>`;
+  else inner = on ? `<p class="pr-ok">✓ ${T2("Push-Nachrichten sind an – du bekommst eine Mitteilung zu jedem gewählten Gebet.", "Push notifications are on – you’ll get an alert for each selected prayer.")}</p><button class="pr-share" data-pr="pushoff">🔕 ${T2("Push-Nachrichten ausschalten", "Turn off push notifications")}</button>`
+    : `<button class="pr-go" data-pr="pushon" style="background:linear-gradient(135deg,#F29A3B,#F2B84B);color:#1b1a17">🔔 ${T2("Push-Nachrichten einschalten", "Turn on push notifications")}</button>`;
+  return `<span class="pr-lbl">${T2("Push-Nachrichten direkt aus der App", "Push notifications from the app")}</span>${inner}<div id="prPushSt"></div>`;
+}
 /* Karte auf der Gebetszeiten-Seite */
 if(typeof renderTimes === "function"){
   const _rt = renderTimes;
   renderTimes = function(){
     _rt.apply(this, arguments);
     const host = document.getElementById("ptV"); if(!host || host.querySelector("#prCard")) return;
-    host.insertAdjacentHTML("beforeend", cardHTML());
+    host.insertAdjacentHTML("beforeend", cardHTML()); pushRefresh();
   };
 }
 window.lmPrayerCal = {ics: () => buildICS().text};
@@ -12480,6 +12523,6 @@ setTab("home");
 if(lang === "en") translateTree(document.body);
 </script>
 <script>if("serviceWorker" in navigator&&location.protocol==="https:"){addEventListener("load",()=>navigator.serviceWorker.register("sw.js").catch(()=>{}));}</script>
-<script>window.LM_BUILD="20261015202620";(function(){function chk(){fetch("version.json?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.json()}).then(function(v){if(!v||!v.b||v.b===window.LM_BUILD)return;try{if(sessionStorage.getItem("lm-upd")===v.b)return;sessionStorage.setItem("lm-upd",v.b)}catch(e){}location.reload()}).catch(function(){})}if(location.protocol==="https:"){addEventListener("load",function(){setTimeout(chk,1500)});document.addEventListener("visibilitychange",function(){if(document.visibilityState==="visible")chk()})}})();</script>
+<script>window.LM_BUILD="20261015212149";(function(){function chk(){fetch("version.json?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.json()}).then(function(v){if(!v||!v.b||v.b===window.LM_BUILD)return;try{if(sessionStorage.getItem("lm-upd")===v.b)return;sessionStorage.setItem("lm-upd",v.b)}catch(e){}location.reload()}).catch(function(){})}if(location.protocol==="https:"){addEventListener("load",function(){setTimeout(chk,1500)});document.addEventListener("visibilitychange",function(){if(document.visibilityState==="visible")chk()})}})();</script>
 </body>
 </html>
