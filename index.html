@@ -11535,6 +11535,137 @@ new MutationObserver(() => {
 }).observe(document.body, {childList:true, subtree:true});
 })();
 
+/* =================== p45: Qur'an-Ansicht neu – ganze Sure als Mushaf-Seite, schlichte Werkzeugleiste (wie Tarteel) =================== */
+(function(){
+const lsj = (k, d) => { try{ const v = localStorage.getItem(k); return v == null ? d : JSON.parse(v); }catch(e){ return d; } };
+const T2 = (de, en) => lang === "en" ? en : de;
+const AN = n => n.toLocaleString("ar-EG");
+const css = document.createElement("style");
+css.textContent = `
+body.mx-on main{padding-bottom:calc(178px + env(safe-area-inset-bottom,0px))}
+#v-quran.mx .s-head{padding:6px 0 2px}
+#v-quran.mx .s-head p{font-size:13px;color:var(--muted)}
+#v-quran.mx .s-head .s-ar{font-size:44px;line-height:1.5}
+.mx-seg{display:grid;grid-template-columns:repeat(3,1fr);gap:2px;background:var(--fill);border-radius:12px;padding:3px;margin:10px auto 4px;max-width:360px}
+.mx-seg button{border:0;border-radius:10px;padding:7px 4px;background:none;color:var(--muted);font:inherit;font-size:13.5px;font-weight:700;cursor:pointer}
+.mx-seg button[aria-pressed="true"]{background:var(--surface);color:var(--ink);box-shadow:0 1px 6px rgba(0,0,0,.18)}
+.mx-page{position:relative;background:var(--surface);border-radius:26px;padding:16px 18px 18px;margin:12px 0 6px;box-shadow:inset 0 0 0 1px var(--sep),0 18px 40px -28px rgba(0,0,0,.6)}
+.mx-page::before{content:"";position:absolute;inset:7px;border-radius:20px;border:1px solid color-mix(in srgb,var(--gold) 28%,transparent);pointer-events:none}
+.mx-page .basmala{margin:2px 0 6px!important;text-align:center}
+.mx-flow{font-family:"Scheherazade New","Amiri","Geeza Pro",serif;direction:rtl;text-align:justify;text-align-last:center;font-size:var(--ar-size);line-height:2.35;margin:0;word-spacing:.04em}
+.mx-flow .ayah{display:inline;background:none;padding:0;margin:0;border-radius:8px;box-shadow:none;cursor:pointer;transition:background .2s;-webkit-box-decoration-break:clone;box-decoration-break:clone}
+.mx-flow .ayah .ar{display:inline;font-size:inherit;line-height:inherit;margin:0;text-align:inherit}
+.mx-flow .ayah:active,.mx-flow .ayah.mx-sel{background:color-mix(in srgb,var(--gold) 16%,transparent)}
+.mx-flow .ayah.now{background:color-mix(in srgb,var(--gold) 26%,transparent);box-shadow:none}
+.mx-n{display:inline-grid;place-items:center;min-width:1.25em;height:1.25em;padding:0 .12em;margin:0 .14em;border-radius:50%;border:1.5px solid color-mix(in srgb,var(--gold) 70%,transparent);color:var(--gold);font-size:.52em;line-height:1;vertical-align:.32em;font-weight:700}
+.mx-cap{margin:8px 4px 0;text-align:center;font-size:12.5px;color:var(--muted)}
+.mx-list{margin-top:12px}
+.mx-list .ayah{background:none;border-radius:0;padding:14px 2px 12px;margin:0;border-top:1px solid var(--sep);box-shadow:none}
+.mx-list .ayah:first-child{border-top:0}
+.mx-list .ayah .ar{line-height:2.2}
+.mx-list .ayah.now{background:color-mix(in srgb,var(--gold) 12%,transparent);border-radius:16px}
+.mx-list .ayah-bar .num{font-variant-numeric:tabular-nums}
+#v-quran.mx .qx-actions,#v-quran.mx .qx-tip,#v-quran.mx .qx-mode-card{display:none!important}
+#v-quran.mx .learned-btn{background:var(--fill)!important;color:var(--ink)!important;box-shadow:none!important;border-radius:16px!important}
+#v-quran.mx .learned-btn.done{color:var(--gold)!important}
+#v-quran.mx .tj-key{margin:12px 0 0}
+.mx-bar{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(86px + env(safe-area-inset-bottom,0px));z-index:24;display:flex;align-items:center;gap:6px;padding:6px;border-radius:24px;background:color-mix(in srgb,var(--surface) 86%,transparent);backdrop-filter:saturate(170%) blur(22px);-webkit-backdrop-filter:saturate(170%) blur(22px);box-shadow:var(--shadow),inset 0 0 0 .5px var(--line);max-width:calc(100vw - 28px)}
+body.playing .mx-bar,body.more-open .mx-bar{display:none}
+.mx-bar button{border:0;background:none;color:var(--ink);font:inherit;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;min-width:62px;height:52px;border-radius:18px;font-size:10.5px;font-weight:700}
+.mx-bar button .i{font-size:20px;line-height:1}
+.mx-bar button:active{background:var(--fill)}
+.mx-bar .mic{min-width:58px;width:58px;height:58px;border-radius:50%;background:var(--grad);color:var(--on-acc);margin:-10px 4px 0;box-shadow:0 10px 24px -8px rgba(242,154,59,.75)}
+.mx-bar .mic .i{font-size:24px}
+@media (prefers-reduced-motion:reduce){.mx-flow .ayah{transition:none}}
+`;
+document.head.appendChild(css);
+
+function build(){
+  const view = document.getElementById("v-quran"), body = document.getElementById("qrBody");
+  const on = !!qr.sura && !!body;
+  view.classList.toggle("mx", on); document.body.classList.toggle("mx-on", on && view.classList.contains("active"));
+  let bar = document.querySelector(".mx-bar");
+  if(!on){ if(bar) bar.remove(); return; }
+  const s = SURAS.find(x => x.slug === qr.sura); if(!s) return;
+  const showTr = !!lsj("lm-qx-tr", false);
+  const box = [...body.children].find(x => x.tagName === "DIV" && x.querySelector(".ayah"));
+  if(!box) return;
+  const arts = [...box.querySelectorAll(".ayah")], key = body.querySelector(".tj-key");
+  const basm = body.querySelector(":scope > p.basmala");
+  const wrap = document.createElement("div"); wrap.className = qr.mode !== "read" ? "mask" : "";
+  if(!showTr){
+    const page = document.createElement("div"); page.className = "mx-page";
+    if(basm) page.appendChild(basm);
+    const flow = document.createElement("p"); flow.className = "mx-flow"; flow.lang = "ar"; flow.dir = "rtl";
+    flow.innerHTML = arts.map(a => {
+      const i = +a.dataset.ayah, ar = a.querySelector(".ar"); if(!ar) return "";
+      const c = ar.cloneNode(true); const an = c.querySelector(".an"); if(an) an.remove();
+      return `<span class="ayah ${a.classList.contains("rev") ? "rev" : ""}" id="ay${i}" data-ayah="${i}"><span class="ar" data-reveal="${i}">${c.innerHTML.trim()}</span>&nbsp;<span class="mx-n">${AN(ayahNo(s, i))}</span></span>`;
+    }).join(" ");
+    if(arts.some(a => a.querySelector(".ar.tj"))) flow.classList.add("tj");
+    page.appendChild(flow);
+    wrap.appendChild(page);
+  } else {
+    if(basm) wrap.appendChild(basm);
+    const list = document.createElement("div"); list.className = "mx-list";
+    arts.forEach(a => list.appendChild(a));
+    wrap.appendChild(list);
+  }
+  const cap = document.createElement("p"); cap.className = "mx-cap";
+  cap.textContent = qr.mode === "read" ? T2("Tippe auf einen Vers: Bedeutung, Tafsīr und Anhören", "Tap a verse: meaning, tafsīr and listening") : T2("Tippe auf einen Vers, um ihn aufzudecken", "Tap a verse to reveal it");
+  wrap.appendChild(cap);
+  box.replaceWith(wrap);
+  /* Lernmodus als schlichter Umschalter oben */
+  const modeCard = [...body.querySelectorAll(".qx-card")].find(c => c.querySelector(".qx-mode"));
+  if(modeCard) modeCard.classList.add("qx-mode-card");
+  if(!body.querySelector(".mx-seg")){
+    const seg = document.createElement("div"); seg.className = "mx-seg"; seg.setAttribute("role", "group");
+    seg.innerHTML = [["read", "Lesen", "Read"], ["mask", "Verdecken", "Hide"], ["first", "Erstes Wort", "First word"]].map(([k, d, e]) => `<button type="button" data-qm="${k}" aria-pressed="${qr.mode === k}">${T2(d, e)}</button>`).join("");
+    wrap.insertAdjacentElement("beforebegin", seg);
+  }
+  /* Tajwīd-Legende unter den Text */
+  if(key) cap.insertAdjacentElement("afterend", key);
+  /* doppelten Hinweis ausblenden, wenn die Wird-Karte ihn schon zeigt */
+  if(body.querySelector(".wd-card")){ const info = body.querySelector(".qx-info"); if(info) info.closest(".qx-card").hidden = true; }
+  /* „Gelernt“-Knopf ruhiger */
+  const lb = body.querySelector(".learned-btn"); if(lb) lb.classList.toggle("done", learned.has(s.slug));
+  /* Werkzeugleiste unten */
+  const act = body.querySelector(".qx-actions");
+  const pick = sel => act && act.querySelector(sel);
+  const play = pick("[data-playall]"), rec = pick(".rc-btn"), wr = pick(".wr-btn");
+  if(!bar){ bar = document.createElement("nav"); bar.className = "mx-bar"; bar.setAttribute("aria-label", T2("Qur'an-Werkzeuge", "Qur'an tools")); document.body.appendChild(bar); }
+  bar.innerHTML = `${play ? `<button type="button" data-mx="play"><span class="i">▶︎</span>${T2("Anhören", "Listen")}</button>` : ""}
+    ${wr ? `<button type="button" data-mx="write"><span class="i">✍️</span>${T2("Schreiben", "Write")}</button>` : ""}
+    ${rec ? `<button type="button" class="mic" data-mx="rec" aria-label="${T2("Vorlesen & prüfen", "Recite & check")}"><span class="i">🎙️</span></button>` : ""}
+    <button type="button" data-mx="tr"><span class="i">${showTr ? "📖" : "🌐"}</span>${showTr ? T2("Mushaf", "Mushaf") : T2("Übersetzung", "Translation")}</button>
+    <button type="button" data-mx="set"><span class="i">⚙️</span>${T2("Mehr", "More")}</button>`;
+  bar._t = {play, rec, wr};
+}
+document.addEventListener("click", e => {
+  const b = e.target.closest(".mx-bar [data-mx]"); if(!b) return;
+  const bar = b.closest(".mx-bar"), t = bar._t || {}, k = b.dataset.mx;
+  if(k === "play" && t.play) t.play.click();
+  else if(k === "rec" && t.rec) t.rec.click();
+  else if(k === "write" && t.wr) t.wr.click();
+  else if(k === "tr"){ try{ localStorage.setItem("lm-qx-tr", JSON.stringify(!lsj("lm-qx-tr", false))); }catch(_){} const y = scrollY; renderQuran(); scrollTo(0, y); }
+  else if(k === "set"){ const d = document.querySelector("#qrBody .qx-set"); if(d){ d.open = true; d.scrollIntoView({behavior:"smooth", block:"center"}); } }
+});
+const _rq = renderQuran;
+renderQuran = function(){ _rq.apply(this, arguments); try{ build(); }catch(e){ console.error(e); } };
+/* Leiste nur in der Qur'an-Ansicht */
+const _st = typeof setTab === "function" ? setTab : null;
+if(_st) setTab = function(){ const r = _st.apply(this, arguments); const v = document.getElementById("v-quran"); document.body.classList.toggle("mx-on", !!(v && v.classList.contains("active") && qr.sura)); const bar = document.querySelector(".mx-bar"); if(bar) bar.hidden = !document.body.classList.contains("mx-on"); return r; };
+/* Beim Anhören zum aktuellen Vers scrollen */
+if(typeof startItem === "function"){
+  const _si = startItem;
+  startItem = function(){
+    _si.apply(this, arguments);
+    try{ const it = P.queue[P.qi]; const el = it && it.ayah != null && document.querySelector(`.mx-flow #ay${it.ayah}, .mx-list #ay${it.ayah}`);
+      if(el){ const r = el.getBoundingClientRect(); if(r.top < 90 || r.bottom > innerHeight - 190) window.scrollTo({top: scrollY + r.top - innerHeight * .35, behavior: "smooth"}); } }catch(e){}
+  };
+}
+})();
+
 /* ---------- init ---------- */
 localize(); applyTheme(); applyPrefs(); renderHome(); renderGebet(); renderQuran(); renderQuiz(); renderKids(); renderNames();
 document.querySelectorAll("[data-learn]").forEach(b => b.setAttribute("aria-pressed", b.dataset.learn === learnSub));
@@ -11544,6 +11675,6 @@ setTab("home");
 if(lang === "en") translateTree(document.body);
 </script>
 <script>if("serviceWorker" in navigator&&location.protocol==="https:"){addEventListener("load",()=>navigator.serviceWorker.register("sw.js").catch(()=>{}));}</script>
-<script>window.LM_BUILD="20261015183125";(function(){function chk(){fetch("version.json?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.json()}).then(function(v){if(!v||!v.b||v.b===window.LM_BUILD)return;try{if(sessionStorage.getItem("lm-upd")===v.b)return;sessionStorage.setItem("lm-upd",v.b)}catch(e){}location.reload()}).catch(function(){})}if(location.protocol==="https:"){addEventListener("load",function(){setTimeout(chk,1500)});document.addEventListener("visibilitychange",function(){if(document.visibilityState==="visible")chk()})}})();</script>
+<script>window.LM_BUILD="20261015184200";(function(){function chk(){fetch("version.json?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.json()}).then(function(v){if(!v||!v.b||v.b===window.LM_BUILD)return;try{if(sessionStorage.getItem("lm-upd")===v.b)return;sessionStorage.setItem("lm-upd",v.b)}catch(e){}location.reload()}).catch(function(){})}if(location.protocol==="https:"){addEventListener("load",function(){setTimeout(chk,1500)});document.addEventListener("visibilitychange",function(){if(document.visibilityState==="visible")chk()})}})();</script>
 </body>
 </html>
