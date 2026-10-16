@@ -6003,6 +6003,21 @@ renderWissen = function(){
   });
   lmPreload();
 };
+/* Beim Wischen zur nächsten Frage: umgedrehte Karten wieder schließen */
+(function(){
+  let t = 0;
+  const closeOthers = () => {
+    const wv = document.getElementById("wiV"); if(!wv) return;
+    wv.querySelectorAll('.track > [aria-hidden="true"] .flip.on, .track > .flip.on[aria-hidden="true"]').forEach(c => {
+      c.classList.remove("on"); if(typeof wiOpen !== "undefined") wiOpen.delete(+c.dataset.flip);
+      if(lmBtn && c.contains(lmBtn)) lmStop();
+    });
+  };
+  document.addEventListener("scroll", e => {
+    const tr = e.target; if(!(tr instanceof Element) || !tr.matches("#wiV .track")) return;
+    clearTimeout(t); t = setTimeout(closeOthers, 140);
+  }, true);
+})();
 
 /* =================== p27: Gebet – animierter Schritt-Player =================== */
 (function(){
@@ -13800,6 +13815,6 @@ setTab("home");
 if(lang === "en") translateTree(document.body);
 </script>
 <script>if("serviceWorker" in navigator&&location.protocol==="https:"){addEventListener("load",()=>navigator.serviceWorker.register("sw.js").catch(()=>{}));}</script>
-<script>window.LM_BUILD="20261016172107";(function(){function chk(){fetch("version.json?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.json()}).then(function(v){if(!v||!v.b||v.b===window.LM_BUILD)return;try{if(sessionStorage.getItem("lm-upd")===v.b)return;sessionStorage.setItem("lm-upd",v.b)}catch(e){}location.reload()}).catch(function(){})}if(location.protocol==="https:"){addEventListener("load",function(){setTimeout(chk,1500)});document.addEventListener("visibilitychange",function(){if(document.visibilityState==="visible")chk()})}})();</script>
+<script>window.LM_BUILD="20261016173626";(function(){function chk(){fetch("version.json?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.json()}).then(function(v){if(!v||!v.b||v.b===window.LM_BUILD)return;try{if(sessionStorage.getItem("lm-upd")===v.b)return;sessionStorage.setItem("lm-upd",v.b)}catch(e){}location.reload()}).catch(function(){})}if(location.protocol==="https:"){addEventListener("load",function(){setTimeout(chk,1500)});document.addEventListener("visibilitychange",function(){if(document.visibilityState==="visible")chk()})}})();</script>
 </body>
 </html>
