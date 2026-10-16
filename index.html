@@ -11867,9 +11867,9 @@ css2.textContent = `
 body.mr-on{overflow:hidden}
 body.mr-on .tabbar,body.mr-on .mx-bar,body.mr-on .mini{display:none!important}
 .mr-top{flex:none;display:flex;align-items:center;gap:8px;padding:calc(8px + env(safe-area-inset-top,0px)) 10px 8px;border-bottom:1px solid var(--sep);background:var(--bg)}
-.mr-ib{flex:none;width:42px;height:42px;border:0;border-radius:12px;background:none;color:var(--ink);font-size:22px;cursor:pointer;display:grid;place-items:center}
+.mr-ib{flex:none;width:52px;height:52px;border:0;border-radius:14px;background:var(--fill);color:var(--ink);font-size:22px;cursor:pointer;display:grid;place-items:center}
 .mr-ib:active{background:var(--fill)}
-.mr-pill{flex:1;min-width:0;display:flex;align-items:center;gap:8px;border:0;border-radius:12px;padding:7px 12px;background:var(--fill);color:var(--ink);font:inherit;text-align:left;cursor:pointer}
+.mr-pill{flex:1;min-width:0;min-height:52px;box-sizing:border-box;display:flex;align-items:center;gap:8px;border:0;border-radius:14px;padding:6px 12px;background:var(--fill);color:var(--ink);font:inherit;text-align:left;cursor:pointer}
 .mr-pill .x{flex:1;min-width:0}
 .mr-pill b{display:block;font-size:16px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .mr-pill small{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
@@ -11899,6 +11899,14 @@ body.mr-on .tabbar,body.mr-on .mx-bar,body.mr-on .mini{display:none!important}
 .mr-ar .mw{display:inline}
 .mr-tr{margin:0;font-size:calc(16.5px * var(--mr-ft,1));line-height:1.5;color:var(--ink)}
 .mr-next{display:block;width:100%;margin:18px 0 0;border:0;border-radius:16px;padding:14px;font:inherit;font-weight:700;background:var(--fill);color:var(--ink);cursor:pointer}
+.mp-seg3,.qh-seg3{grid-template-columns:repeat(3,1fr)!important;width:100%!important;direction:rtl}
+.mp-seg3 button,.qh-seg3 button{display:flex;flex-direction:column;align-items:center;gap:0;padding:6px 2px!important;line-height:1.2}
+.mp-seg3 button b,.qh-seg3 button b{font-family:"Amiri","Scheherazade New",serif;font-size:16px;font-weight:700}
+.mp-seg3 button small,.qh-seg3 button small{font-size:11px;font-weight:700;opacity:.75}
+.bm-head{direction:ltr!important}
+.bm-head h2{font-family:inherit!important;font-size:20px!important}
+.bm-del.sure{background:#e5675a;color:#fff;font-size:13px;font-weight:800}
+.bm-row .rb[role="button"]{cursor:pointer;padding:6px;border-radius:10px;background:var(--fill)}
 .bm-rb{width:16px;height:22px;flex:none}
 .bm-box{background:var(--surface);border-radius:18px;overflow:hidden;box-shadow:inset 0 0 0 1px var(--sep)}
 .bm-row{display:flex;align-items:center;gap:14px;width:100%;direction:rtl;text-align:right;border:0;background:none;color:var(--ink);font:inherit;padding:12px 16px;border-bottom:1px solid var(--sep);cursor:pointer}
@@ -11922,7 +11930,7 @@ body.mr-on .tabbar,body.mr-on .mx-bar,body.mr-on .mini{display:none!important}
 .bm-col.on{box-shadow:0 0 0 2px var(--bg),0 0 0 4px var(--ink)}
 .mn[data-bm]{position:relative}
 .mn[data-bm]::after{content:"";position:absolute;top:-.62em;left:50%;margin-left:-.2em;width:.4em;height:.62em;background:var(--bmc);clip-path:polygon(0 0,100% 0,100% 100%,50% 72%,0 100%)}
-.mr-back{flex:none;display:flex;align-items:center;gap:2px;height:42px;padding:0 12px 0 8px;border:0;border-radius:14px;background:var(--gold-soft);color:var(--gold);font:inherit;font-size:15px;font-weight:800;cursor:pointer}
+.mr-back{flex:none;display:flex;align-items:center;gap:2px;height:52px;padding:0 12px 0 8px;border:0;border-radius:14px;background:var(--gold-soft);color:var(--gold);font:inherit;font-size:15px;font-weight:800;cursor:pointer}
 .mr-back svg{width:20px;height:20px}
 /* Ausblenden (wie Tarteel) und Vorlesen */
 .mr.hid .mw:not(.mrv),.mr.hid .mw:not(.mrv) b,.mr.hid .mw:not(.mrv) i{color:transparent!important}
@@ -12033,7 +12041,7 @@ function head(){
   const m = D.M.M[PG.cur], s = ST.mode === "list" ? ST.listS : m[2], bm = lsj("lm-mp-bm", []);
   const app = appSuras().find(x => x.n === s && !x.start);
   PG.el.querySelector(".mr-pill b").textContent = `${app ? app.t : D.M.S[s - 1][4]} · ${D.M.S[s - 1][0]}`;
-  PG.el.querySelector(".mr-pill small").textContent = `${T2("S.", "p.")} ${PG.cur + 1} | Juz ${m[0]} | Ḥizb ${Math.ceil(m[1] / 4)}`;
+  PG.el.querySelector(".mr-pill small").textContent = `${T2("Seite", "Page")} ${PG.cur + 1} · Juz ${m[0]}`;
   const [a0] = D.PS[PG.cur], a1 = PG.cur + 1 < D.PS.length ? D.PS[PG.cur + 1][0] : D.VW.length; const on = bms().find(x => x.v != null && x.v >= a0 && x.v <= a1);
   PG.el.querySelector(".mr-pill .bm").innerHTML = on ? ribbon(on.color) : "🔖";
 }
@@ -12142,11 +12150,14 @@ async function tafsirFill(box, v){
     <p class="mp-vs" style="margin-top:8px">Tafsīr: al-Mukhtaṣar fī Tafsīr al-Qur'ān al-Karīm (Markaz Tafsīr) – ${T2("Arabisch und Englisch im Wortlaut", "Arabic and English verbatim")}.</p>`;
   box.querySelectorAll("[data-tfl2]").forEach(b => b.addEventListener("click", ev => { ev.stopPropagation(); lss("lm-tf-lang", b.dataset.tfl2); tafsirFill(box, v); }));
 }
+const IXT = [["s", "السور", "Suren", "Suras"], ["j", "الأجزاء", "Juz", "Juz"], ["b", "الفواصل", "Lesezeichen", "Bookmarks"]];
+const ixTabs = (attr, tab) => IXT.map(([k, a, de, en]) => `<button ${attr}="${k}" aria-pressed="${tab === k}"><b>${a}</b><small>${T2(de, en)}</small></button>`).join("");
 function indexSheet(tab){
   tab = tab || lsj("lm-mp-ix", "s");
   const curS = ST.sura, bm = lsj("lm-mp-bm", []);
-  let body = `<div class="bm-sec">${bmSection()}</div>`;
-  if(tab === "s"){
+  let body = "";
+  if(tab === "b") body = `<div class="bm-sec">${bmSection()}</div>`;
+  else if(tab === "s"){
     let lastJ = 0;
     D.M.S.forEach((x, i) => {
       const j = D.M.M[x[3] - 1][0];
@@ -12157,7 +12168,7 @@ function indexSheet(tab){
     for(let j = 1; j <= 30; j++){ const p = D.M.M.findIndex(m => m[0] === j), s = D.M.M[p][2];
       body += `<button class="mp-row" data-go="${p}"><span class="n">${j}</span><span class="x"><b>الجزء ${JUZ[j - 1]}</b><span>الصفحة ${p + 1} - ${D.M.S[s - 1][0]}</span></span></button>`; }
   }
-  const sh = sheet(`<div class="hd"><button class="mp-ic" data-mp="x">✕</button><div class="mp-seg" role="group"><button data-ix="s" aria-pressed="${tab === "s"}">السور</button><button data-ix="j" aria-pressed="${tab === "j"}">الأجزاء</button></div><span style="width:38px"></span></div>
+  const sh = sheet(`<div class="hd"><button class="mp-ic" data-mp="x">✕</button><div class="mp-seg mp-seg3" role="group">${ixTabs("data-ix", tab)}</div><span style="width:38px"></span></div>
     <div class="bd"><p class="mp-ixh">الفهرس</p>${body}<p class="mp-note">Text: Tanzil.net (Uthmani, Ḥafṣ ʿan ʿĀṣim) · ${T2("Seitenaufbau", "Page layout")}: Madīna-Mushaf (QPC, ${T2("über", "via")} Quran.com) · Tajwīd: quran-tajweed (cpfair)</p></div>`, true);
   const c = sh.querySelector(".mp-row.cur"); if(c) setTimeout(() => c.scrollIntoView({block: "center"}), 30);
 }
@@ -12201,13 +12212,15 @@ function bmListHTML(edit){
   const b = edit ? bms() : bms().filter(x => x.v != null);
   if(!b.length) return `<p class="hint" style="margin:0 4px">${T2("Noch keine Lesezeichen gesetzt. Tippe beim Lesen oben auf 🔖.", "No bookmarks set yet. Tap 🔖 at the top while reading.")}</p>`;
   return `<div class="bm-box">${b.map(x => `<div class="bm-row${x.v == null ? " empty" : ""}" ${!edit && x.v != null ? `data-bmgo="${x.v}" role="button"` : ""}>
-    <span class="rb">${ribbon(x.color)}</span>
+    <span class="rb" ${edit ? `data-bmcolor="${x.id}" role="button" aria-label="${T2("Farbe ändern", "Change colour")}"` : ""}>${ribbon(x.color)}</span>
     <span class="x">${edit ? `<input class="bm-name" data-bmname="${x.id}" value="${x.name.replace(/"/g, "&quot;")}" dir="auto" maxlength="40">` : `<b>${x.name}</b>`}<span>${x.v == null ? T2("noch nicht gesetzt", "not set yet") : `${bmPos(x.v)}&nbsp;&nbsp;${fmtD(x.t)}`}</span></span>
     ${edit ? `<button class="bm-del" data-bmdel="${x.id}" aria-label="${T2("Löschen", "Delete")}">🗑</button>` : x.v != null ? `<span class="chev">‹</span>` : ""}</div>`).join("")}</div>`;
 }
 function bmSection(){
   const ed = !!bmSection.edit;
-  return `<div class="bm-head"><button class="bm-edit" data-bmedit>${ed ? T2("Fertig", "Done") : "تعديل"}</button><h2>الفواصل</h2></div>${bmListHTML(ed)}${ed ? `<button class="bm-add" data-bmadd>＋ ${T2("Neues Lesezeichen", "New bookmark")}</button>` : ""}`;
+  return `<div class="bm-head"><h2>🔖 ${T2("Lesezeichen", "Bookmarks")}</h2><button class="bm-edit" data-bmedit>${ed ? T2("Fertig", "Done") : T2("Bearbeiten", "Edit")}</button></div>
+    ${ed ? `<p class="hint" style="margin:0 4px 8px">${T2("Namen antippen zum Umbenennen · Band antippen für eine andere Farbe · 🗑 zum Löschen", "Tap a name to rename · tap the ribbon for another colour · 🗑 to delete")}</p>` : ""}
+    ${bmListHTML(ed)}${ed ? `<button class="bm-add" data-bmadd>＋ ${T2("Neues Lesezeichen", "New bookmark")}</button>` : `<p class="hint" style="margin:10px 4px 0">${T2("Setzen: beim Lesen oben auf das Band 🔖 tippen.", "To set: tap the ribbon 🔖 at the top while reading.")}</p>`}`;
 }
 function bmSheet(v){
   const b = bms();
@@ -12242,7 +12255,8 @@ document.addEventListener("click", e => {
   if(t.closest("[data-bmedit]")){ bmSection.edit = !bmSection.edit; const h = document.querySelector(".bm-sec"); if(h) h.innerHTML = bmSection(); e.stopPropagation(); return; }
   if(t.closest("[data-bmadd]") && !t.closest("[data-bmnew]")){ const b = bms(), used = b.map(x => x.color), col = Object.keys(BMC).find(c => !used.includes(c)) || "purple";
     b.push({id: "u" + Date.now(), name: BMN[col], color: col, v: null, t: 0}); bmSave(b); const h = document.querySelector(".bm-sec"); if(h) h.innerHTML = bmSection(); e.stopPropagation(); return; }
-  const d = t.closest("[data-bmdel]"); if(d){ bmSave(bms().filter(x => x.id !== d.dataset.bmdel)); const h = document.querySelector(".bm-sec"); if(h) h.innerHTML = bmSection(); e.stopPropagation(); return; }
+  const cc = t.closest("[data-bmcolor]"); if(cc){ const b = bms(), x = b.find(y => y.id === cc.dataset.bmcolor), ks = Object.keys(BMC); x.color = ks[(ks.indexOf(x.color) + 1) % ks.length]; bmSave(b); cc.innerHTML = ribbon(x.color); e.stopPropagation(); return; }
+  const d = t.closest("[data-bmdel]"); if(d){ if(!d.classList.contains("sure")){ d.classList.add("sure"); d.textContent = T2("Löschen?", "Delete?"); setTimeout(() => { if(d.isConnected){ d.classList.remove("sure"); d.textContent = "🗑"; } }, 2500); e.stopPropagation(); return; } bmSave(bms().filter(x => x.id !== d.dataset.bmdel)); const h = document.querySelector(".bm-sec"); if(h) h.innerHTML = bmSection(); e.stopPropagation(); return; }
 }, true);
 document.addEventListener("change", e => { const i = e.target.closest && e.target.closest("[data-bmname]"); if(!i) return; const b = bms(), x = b.find(y => y.id === i.dataset.bmname); if(x){ x.name = i.value.trim() || x.name; bmSave(b); } });
 
@@ -12429,9 +12443,9 @@ function homeHTML(tab){
   let h = `<div class="qh-title"><h1>Qur'an</h1><span class="ar">القرآن الكريم</span></div>`;
   if(last != null){ const m = D.M.M[last]; h += `<button class="qh-cont" data-go="${last}"><span class="ic">📖</span><span><b>${T2("Weiterlesen", "Continue reading")}</b><span>${D.M.S[m[2] - 1][4]} · ${T2("Seite", "Page")} ${last + 1} · Juz ${m[0]}</span></span><span class="go">›</span></button>`; }
   else h += `<button class="qh-cont" data-go="0"><span class="ic">📖</span><span><b>${T2("Mit dem Lesen beginnen", "Start reading")}</b><span>al-Fātiḥa · ${T2("Seite", "Page")} 1</span></span><span class="go">›</span></button>`;
-  h += `<div class="bm-sec">${bmSection()}</div>`;
-  h += `<div class="qh-seg" role="group"><button data-qh="s" aria-pressed="${tab === "s"}">السور</button><button data-qh="j" aria-pressed="${tab === "j"}">الأجزاء</button></div><div class="qh-list">`;
-  if(tab === "s"){
+  h += `<div class="qh-seg qh-seg3" role="group">${ixTabs("data-qh", tab)}</div><div class="qh-list">`;
+  if(tab === "b") h += `<div class="bm-sec">${bmSection()}</div>`;
+  else if(tab === "s"){
     let lastJ = 0;
     D.M.S.forEach((x, i) => {
       const j = D.M.M[x[3] - 1][0], w = WIRD[i + 1];
@@ -12631,6 +12645,994 @@ if(typeof renderTimes === "function"){
 window.lmPrayerCal = {ics: () => buildICS().text};
 })();
 
+/* =================== p48: Lernen im iOS-Stil – klare Reiterleiste, ruhige Großüberschriften, „Lernspiele“ =================== */
+(function(){
+const T2 = (de, en) => lang === "en" ? en : de;
+const LV = ["v-quiz", "v-kids", "v-stories", "v-wissen"];
+const TABS = [
+  {k: "quiz", ic: "🏆", de: "Quiz", en: "Quiz", c: "#E8A33D"},
+  {k: "kids", ic: "🧩", de: "Lernspiele", en: "Games", c: "#E2557A"},
+  {k: "stories", ic: "📚", de: "Geschichten", en: "Stories", c: "#4C8BE0"},
+  {k: "wissen", ic: "💡", de: "Wissen", en: "Knowledge", c: "#8F7BE8"}
+];
+const css = document.createElement("style");
+css.textContent = `
+/* Reiterleiste: groß, mit Symbol, aktiver Reiter farbig */
+.seg-learn.lx{display:grid!important;grid-template-columns:repeat(4,1fr);gap:8px;background:none!important;padding:4px 0 6px!important;box-shadow:none!important;border-radius:0!important}
+.seg-learn.lx button{display:flex!important;flex-direction:column;align-items:center;justify-content:center;gap:3px;min-height:62px;padding:8px 2px!important;border:0;border-radius:18px!important;
+  background:var(--surface)!important;color:var(--muted)!important;font:inherit;font-size:12.5px!important;font-weight:700!important;letter-spacing:0;box-shadow:inset 0 0 0 1px var(--sep)!important;cursor:pointer;transition:transform .15s,background .2s,color .2s}
+.seg-learn.lx button .i{font-size:23px;line-height:1;filter:saturate(.9)}
+.seg-learn.lx button:active{transform:scale(.96)}
+.seg-learn.lx button[aria-pressed="true"]{background:linear-gradient(160deg,var(--tc),color-mix(in srgb,var(--tc) 70%,#000))!important;color:#fff!important;box-shadow:0 10px 22px -12px var(--tc),inset 0 0 0 1px rgba(255,255,255,.18)!important}
+.seg-learn.lx button[aria-pressed="true"] .i{filter:none}
+${LV.map(v => `#${v} .subbar`).join(",")}{padding-top:4px;padding-bottom:2px}
+/* Großüberschrift statt bunter Banner */
+${LV.map(v => `#${v} .lm-hd`).join(",")}{background:none!important;min-height:0!important;padding:6px 2px 2px!important;margin:4px 0 14px!important;border-radius:0!important;box-shadow:none!important;overflow:visible!important;flex-direction:row-reverse;justify-content:flex-end;gap:14px!important}
+${LV.map(v => `#${v} .lm-hd::after,#${v} .lm-hd .orn`).join(",")}{display:none!important}
+${LV.map(v => `#${v} .lm-hd .ltitle`).join(",")}{color:var(--ink)!important;font-size:34px!important;font-weight:800!important;letter-spacing:-.02em}
+${LV.map(v => `#${v} .lm-hd-ar`).join(",")}{color:var(--gold)!important;font-size:18px!important;margin:0!important}
+${LV.map(v => `#${v} .lm-hd-ic`).join(",")}{width:56px!important;height:56px!important;font-size:30px!important;border-radius:16px!important;background:var(--surface)!important;box-shadow:inset 0 0 0 1px var(--sep)!important;animation:none!important}
+/* Abschnittsüberschriften wie in iOS */
+${LV.map(v => `#${v} .ghead`).join(",")}{font-family:inherit!important;font-size:13px!important;font-weight:700!important;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)!important;margin:24px 6px 8px!important}
+${LV.map(v => `#${v} .ghead::before`).join(",")}{display:none!important}
+/* gruppierte Listen und Karten: gleichmäßige Rundung, feine Trennlinien */
+${LV.map(v => `#${v} .group`).join(",")}{border-radius:18px!important;overflow:hidden;box-shadow:inset 0 0 0 1px var(--sep)!important}
+`;
+document.head.appendChild(css);
+
+function bar(){
+  document.querySelectorAll(".seg-learn").forEach(seg => {
+    if(!seg.classList.contains("lx")){
+      seg.classList.add("lx");
+      seg.innerHTML = TABS.map(t => `<button type="button" data-learn="${t.k}" style="--tc:${t.c}"><span class="i" aria-hidden="true">${t.ic}</span>${T2(t.de, t.en)}</button>`).join("");
+    }
+    seg.querySelectorAll("[data-learn]").forEach(b => b.setAttribute("aria-pressed", b.dataset.learn === (typeof learnSub !== "undefined" ? learnSub : "")));
+  });
+}
+/* „Kinder“ heißt jetzt „Lernspiele“ */
+function rename(){
+  const kt = document.getElementById("kTitle"); if(kt && /Lernwelt|Learning world/.test(kt.textContent)) kt.textContent = T2("Lernspiele", "Learning games");
+  const kn = document.getElementById("kNavT"); if(kn && /Lernwelt|Learning world/.test(kn.textContent)) kn.textContent = T2("Lernspiele", "Learning games");
+  document.querySelectorAll('#v-home [data-go="kids"]').forEach(t => t.querySelectorAll("b,span,strong,em").forEach(x => { if(/^\s*Kinder\s*$/.test(x.textContent)) x.textContent = T2("Lernspiele", "Games"); }));
+}
+const _st = setTab;
+setTab = function(){ const r = _st.apply(this, arguments); bar(); rename(); return r; };
+let q = 0;
+new MutationObserver(() => { if(!q) q = requestAnimationFrame(() => { q = 0; bar(); rename(); }); }).observe(document.querySelector("main"), {childList: true, subtree: true});
+bar(); rename();
+})();
+
+/* p49_data: zusätzliche Quizfragen (deutsch, mit Quellen) */
+const QX = [{"l":1,"c":"quran","q":"Welcher Vers ist laut Hadith der gewaltigste Vers im Qur'an?","o":["Āyat al-Kursī","Der erste Vers der Fātiḥa","Der letzte Vers von al-Baqara","Der erste Vers von al-Mulk"],"a":0,"e":"Der Prophet ﷺ bestätigte Ubayy ibn Kaʿb: Āyat al-Kursī (2:255) ist der gewaltigste Vers.","s":"Muslim 810","x":1},
+{"l":1,"c":"quran","q":"Was war das erste offenbarte Wort?","o":["Iqraʾ – Lies!","Bismillāh","Al-ḥamdu lillāh","Qul – Sag!"],"a":0,"e":"In der Höhle Ḥirāʾ sagte Dschibrīl: Iqraʾ – Lies!","s":"Qur'an 96:1; Buchārī 3","x":1},
+{"l":1,"c":"quran","q":"Wie nennt man jemanden, der den ganzen Qur'an auswendig kann?","o":["Ḥāfiẓ","Muʾadhdhin","Qāḍī","Imām"],"a":0,"e":"Ein Ḥāfiẓ bewahrt den Qur'an im Herzen.","s":"Buchārī 5027 (Lernen und Lehren des Qur'an)","x":1},
+{"l":1,"c":"quran","q":"Was bedeutet das Wort „Qur'an“?","o":["Das Gelesene / Vorgetragene","Das Buch der Geschichten","Die Gesetze","Das Licht"],"a":0,"e":"Qur'an kommt von qaraʾa – lesen, vortragen.","s":"Qur'an 75:17–18","x":1},
+{"l":1,"c":"hadith","q":"Was sagt man, wenn man niest?","o":["Al-ḥamdu lillāh","Bismillāh","Astaghfirullāh","Subḥānallāh"],"a":0,"e":"Wer niest, sagt al-ḥamdu lillāh.","s":"Buchārī 6224","x":1},
+{"l":1,"c":"hadith","q":"Welcher Tag ist der beste Tag der Woche?","o":["Freitag","Montag","Sonntag","Samstag"],"a":0,"e":"Der beste Tag, an dem die Sonne aufgeht, ist der Freitag.","s":"Muslim 854","x":1},
+{"l":1,"c":"hadith","q":"Was sagte der Prophet ﷺ über das Lernen des Qur'an?","o":["Der Beste von euch lernt und lehrt den Qur'an","Nur Erwachsene sollen ihn lernen","Man soll ihn nur hören","Lernen ist nicht wichtig"],"a":0,"e":"„Der Beste von euch ist, wer den Qur'an lernt und lehrt.“","s":"Buchārī 5027","x":1},
+{"l":1,"c":"hadith","q":"Was soll ein Muslim tun, wenn er nichts Gutes zu sagen hat?","o":["Schweigen","Trotzdem reden","Schreien","Weggehen und lachen"],"a":0,"e":"„Wer an Allah und den Letzten Tag glaubt, sage Gutes oder schweige.“","s":"Buchārī 6018, Muslim 47","x":1},
+{"l":1,"c":"hadith","q":"Wie viele Belohnungen gibt es für eine gute Tat mindestens?","o":["Zehn","Eine","Zwei","Fünf"],"a":0,"e":"Eine gute Tat wird mindestens zehnfach belohnt.","s":"Qur'an 6:160; Buchārī 6491","x":1},
+{"l":1,"c":"hadith","q":"Was bekommt man für jeden gelesenen Buchstaben des Qur'an?","o":["Eine gute Tat, zehnfach","Nichts","Eine Sünde weniger","Einen Stern"],"a":0,"e":"Für jeden Buchstaben gibt es eine gute Tat, und jede gute Tat zählt zehnfach.","s":"Tirmidhī 2910","x":1},
+{"l":1,"c":"gebet","q":"Wie heißt der Ruf direkt vor Beginn des Gemeinschaftsgebets?","o":["Iqāma","Adhān","Taslīm","Tasbīḥ"],"a":0,"e":"Mit der Iqāma beginnt das Gebet in der Gemeinschaft.","s":"Buchārī 605","x":1},
+{"l":1,"c":"gebet","q":"Was macht man, wenn kein Wasser für den Wuḍūʾ da ist?","o":["Tayammum mit reiner Erde","Gar nicht beten","Nur die Hände waschen","Warten bis morgen"],"a":0,"e":"Allah erlaubt Tayammum mit reiner Erde.","s":"Qur'an 5:6","x":1},
+{"l":1,"c":"gebet","q":"Womit endet das Gebet?","o":["Mit dem Salām","Mit „Allāhu akbar“","Mit der Fātiḥa","Mit dem Rukūʿ"],"a":0,"e":"Das Gebet endet mit dem Taslīm: As-salāmu ʿalaikum wa raḥmatullāh.","s":"Abū Dāwūd 61, Tirmidhī 3","x":1},
+{"l":1,"c":"gebet","q":"Wie heißt das gemeinsame Gebet am Freitagmittag?","o":["Dschumuʿa","Tarāwīḥ","Witr","ʿĪd"],"a":0,"e":"Allah ruft zum Freitagsgebet.","s":"Qur'an 62:9","x":1},
+{"l":1,"c":"gebet","q":"Welche Sure liest man in jeder Rakʿa?","o":["al-Fātiḥa","al-Ikhlāṣ","al-Kauthar","an-Nās"],"a":0,"e":"Es gibt kein Gebet ohne al-Fātiḥa.","s":"Buchārī 756, Muslim 394","x":1},
+{"l":1,"c":"gebet","q":"Wie heißt die Verbeugung im Gebet?","o":["Rukūʿ","Sudschūd","Qiyām","Tashahhud"],"a":0,"e":"Im Rukūʿ sagt man Subḥāna rabbiya-l-ʿaẓīm.","s":"Muslim 772","x":1},
+{"l":1,"c":"gebet","q":"Was sagt man in der Niederwerfung (Sudschūd)?","o":["Subḥāna rabbiya-l-aʿlā","Subḥāna rabbiya-l-ʿaẓīm","Samiʿa-llāhu li-man ḥamidah","Allāhu akbar kabīrā"],"a":0,"e":"Im Sudschūd preist man den Höchsten.","s":"Muslim 772","x":1},
+{"l":1,"c":"grund","q":"Was ist die erste Säule des Islam?","o":["Das Glaubensbekenntnis (Schahāda)","Das Gebet","Das Fasten","Die Pilgerfahrt"],"a":0,"e":"Die Schahāda: Es gibt keinen Gott außer Allah, und Muhammad ist Sein Gesandter.","s":"Buchārī 8, Muslim 16","x":1},
+{"l":1,"c":"grund","q":"Welche Stadt ist die heiligste im Islam?","o":["Mekka","Medina","Jerusalem","Kairo"],"a":0,"e":"Das erste Haus für die Menschen ist in Mekka.","s":"Qur'an 3:96","x":1},
+{"l":1,"c":"grund","q":"In welcher Stadt steht die Moschee des Propheten ﷺ?","o":["Medina","Mekka","Jerusalem","Taif"],"a":0,"e":"Al-Masdschid an-Nabawī steht in Medina.","s":"Buchārī 1190","x":1},
+{"l":1,"c":"grund","q":"In welcher Stadt liegt die al-Aqṣā-Moschee?","o":["Jerusalem","Mekka","Medina","Damaskus"],"a":0,"e":"Die Nachtreise führte zur fernsten Moschee in Jerusalem.","s":"Qur'an 17:1","x":1},
+{"l":1,"c":"grund","q":"Wie heißt die Mahlzeit vor der Morgendämmerung im Ramadan?","o":["Suḥūr","Ifṭār","Walīma","ʿĪd"],"a":0,"e":"„Nehmt das Suḥūr, denn darin liegt Segen.“","s":"Buchārī 1923","x":1},
+{"l":1,"c":"grund","q":"Wie heißt das Fastenbrechen am Abend?","o":["Ifṭār","Suḥūr","Tarāwīḥ","Zakāh"],"a":0,"e":"Bei Sonnenuntergang bricht man das Fasten, am besten mit Datteln.","s":"Buchārī 1954; Abū Dāwūd 2356","x":1},
+{"l":1,"c":"grund","q":"Wie heißt das Opferfest?","o":["ʿĪd al-Aḍḥā","ʿĪd al-Fiṭr","Mawlid","Hidschra"],"a":0,"e":"Zum Opferfest gedenkt man des Opfers Ibrāhīms.","s":"Qur'an 37:107; Buchārī 5558","x":1},
+{"l":1,"c":"grund","q":"Wie heißt die Pilgerfahrt nach Mekka?","o":["Ḥaddsch","ʿUmra-Fest","Hidschra","Iʿtikāf"],"a":0,"e":"Der Ḥaddsch ist Pflicht für jeden, der es sich leisten kann.","s":"Qur'an 3:97","x":1},
+{"l":1,"c":"grund","q":"Wie viele Monate hat das islamische Jahr?","o":["12","10","13","11"],"a":0,"e":"„Die Anzahl der Monate bei Allah ist zwölf.“","s":"Qur'an 9:36","x":1},
+{"l":1,"c":"grund","q":"Wie heißt der erste Monat des islamischen Jahres?","o":["Muḥarram","Ramaḍān","Schawwāl","Radschab"],"a":0,"e":"Das Jahr beginnt mit Muḥarram.","s":"Muslim 1163 (Muḥarram, Monat Allahs)","x":1},
+{"l":1,"c":"grund","q":"Wer hat alles erschaffen?","o":["Allah","Die Engel","Die Menschen","Die Natur von selbst"],"a":0,"e":"Allah ist der Schöpfer aller Dinge.","s":"Qur'an 39:62","x":1},
+{"l":1,"c":"grund","q":"Woraus wurden die Engel erschaffen?","o":["Aus Licht","Aus Feuer","Aus Lehm","Aus Wasser"],"a":0,"e":"„Die Engel wurden aus Licht erschaffen.“","s":"Muslim 2996","x":1},
+{"l":1,"c":"grund","q":"Woraus wurden die Dschinn erschaffen?","o":["Aus rauchlosem Feuer","Aus Licht","Aus Lehm","Aus Luft"],"a":0,"e":"Allah erschuf die Dschinn aus rauchlosem Feuer.","s":"Qur'an 55:15; Muslim 2996","x":1},
+{"l":1,"c":"grund","q":"Woraus wurde Ādam erschaffen?","o":["Aus Lehm (Erde)","Aus Licht","Aus Feuer","Aus Wasser allein"],"a":0,"e":"Allah erschuf Ādam aus Lehm.","s":"Qur'an 15:26; Muslim 2996","x":1},
+{"l":1,"c":"propheten","q":"Welchem Propheten machte Allah das Eisen weich?","o":["Dāwūd","Sulaimān","Nūḥ","Hūd"],"a":0,"e":"„Und Wir machten ihm das Eisen geschmeidig.“","s":"Qur'an 34:10","x":1},
+{"l":1,"c":"propheten","q":"Welchem Propheten wurde die Tora gegeben?","o":["Mūsā","ʿĪsā","Dāwūd","Ibrāhīm"],"a":0,"e":"Allah gab Mūsā die Schrift.","s":"Qur'an 2:53","x":1},
+{"l":1,"c":"propheten","q":"Welchem Propheten wurden die Psalmen (Zabūr) gegeben?","o":["Dāwūd","Sulaimān","Mūsā","Yaḥyā"],"a":0,"e":"„Und Dāwūd gaben Wir den Zabūr.“","s":"Qur'an 4:163","x":1},
+{"l":1,"c":"propheten","q":"Welchem Propheten wurde das Evangelium (Indschīl) gegeben?","o":["ʿĪsā","Mūsā","Yaḥyā","Zakariyyā"],"a":0,"e":"Allah gab ʿĪsā das Indschīl.","s":"Qur'an 5:46","x":1},
+{"l":1,"c":"propheten","q":"Wie hieß der Bruder von Mūsā, der ihm half?","o":["Hārūn","Yūsuf","Schuʿaib","Ilyās"],"a":0,"e":"Mūsā bat: Gib mir einen Helfer aus meiner Familie, Hārūn, meinen Bruder.","s":"Qur'an 20:29–30","x":1},
+{"l":1,"c":"sahaba","q":"Wer war der dritte Khalif?","o":["ʿUthmān ibn ʿAffān","ʿAlī","ʿUmar","Ṭalḥa"],"a":0,"e":"ʿUthmān ließ den Qur'an in einheitlichen Abschriften verbreiten.","s":"Buchārī 4987","x":1},
+{"l":1,"c":"sahaba","q":"Welche Tochter des Propheten ﷺ war mit ʿAlī verheiratet?","o":["Fāṭima","Zainab","Ruqayya","Umm Kulthūm"],"a":0,"e":"„Fāṭima ist ein Teil von mir.“","s":"Buchārī 3714","x":1},
+{"l":1,"c":"geschichte","q":"In welcher Stadt wurde der Prophet ﷺ geboren?","o":["Mekka","Medina","Taif","Jerusalem"],"a":0,"e":"Er wurde im Jahr des Elefanten in Mekka geboren.","s":"Qur'an 105; Ibn Hischām","x":1},
+{"l":1,"c":"geschichte","q":"Wie hieß die Mutter des Propheten ﷺ?","o":["Āmina","Ḥalīma","Chadīdscha","Fāṭima"],"a":0,"e":"Āmina bint Wahb starb, als er sechs Jahre alt war.","s":"Muslim 976; Ibn Hischām","x":1},
+{"l":1,"c":"geschichte","q":"Wie hieß der Vater des Propheten ﷺ?","o":["ʿAbdullāh","ʿAbd al-Muṭṭalib","Abū Ṭālib","Ḥamza"],"a":0,"e":"Sein Vater ʿAbdullāh starb vor seiner Geburt.","s":"Ibn Hischām, as-Sīra","x":1},
+{"l":1,"c":"geschichte","q":"In welcher Höhle versteckten sich der Prophet ﷺ und Abū Bakr bei der Hidschra?","o":["Thaur","Ḥirāʾ","Uḥud","Badr"],"a":0,"e":"„Wir zwei – und Allah ist der Dritte.“","s":"Qur'an 9:40; Buchārī 3653","x":1},
+{"l":1,"c":"geschichte","q":"Wie alt war der Prophet ﷺ bei der ersten Offenbarung?","o":["40","25","30","63"],"a":0,"e":"Er wurde mit 40 Jahren zum Propheten.","s":"Buchārī 3851","x":1},
+{"l":1,"c":"geschichte","q":"Wohin wanderten der Prophet ﷺ und die Muslime aus (Hidschra)?","o":["Nach Medina","Nach Taif","Nach Jerusalem","Nach Ägypten"],"a":0,"e":"Medina hieß damals Yathrib.","s":"Buchārī 3905","x":1},
+{"l":1,"c":"ramadan","q":"Was isst man laut Sunna am liebsten zum Fastenbrechen?","o":["Datteln","Brot","Suppe","Süßigkeiten"],"a":0,"e":"Der Prophet ﷺ brach das Fasten mit frischen Datteln, sonst mit trockenen, sonst mit Wasser.","s":"Abū Dāwūd 2356","x":1},
+{"l":1,"c":"ramadan","q":"Von wann bis wann fastet man im Ramadan?","o":["Von der Morgendämmerung bis Sonnenuntergang","Von Mitternacht bis Mittag","Von Sonnenaufgang bis Mitternacht","Den ganzen Tag und die Nacht"],"a":0,"e":"Esst und trinkt, bis sich der weiße Faden vom schwarzen abhebt … dann vollendet das Fasten bis zur Nacht.","s":"Qur'an 2:187","x":1},
+{"l":1,"c":"ramadan","q":"Wie heißen die besonderen Nachtgebete im Ramadan?","o":["Tarāwīḥ","Dschumuʿa","Ḍuḥā","ʿĪd-Gebet"],"a":0,"e":"Wer im Ramadan aus Glauben nachts betet, dem wird vergeben.","s":"Buchārī 37","x":1},
+{"l":1,"c":"ramadan","q":"Was passiert laut Hadith mit den Toren des Paradieses im Ramadan?","o":["Sie werden geöffnet","Sie werden geschlossen","Nichts","Sie werden versteckt"],"a":0,"e":"Wenn Ramadan kommt, werden die Tore des Paradieses geöffnet.","s":"Buchārī 1899","x":1},
+{"l":1,"c":"ramadan","q":"Wer muss im Ramadan NICHT fasten?","o":["Kranke und Reisende (sie holen nach)","Alle Erwachsenen","Lehrer","Jeder, der Hunger hat"],"a":0,"e":"Wer krank ist oder auf Reisen, holt die Tage später nach.","s":"Qur'an 2:184","x":1},
+{"l":1,"c":"ramadan","q":"Was soll ein Fastender tun, wenn jemand mit ihm streiten will?","o":["Sagen: „Ich faste“","Zurückschreien","Weglaufen und das Fasten brechen","Lachen"],"a":0,"e":"„Wenn jemand mit ihm streitet, soll er sagen: Ich faste.“","s":"Buchārī 1904","x":1},
+{"l":1,"c":"ramadan","q":"Wie heißt die Abgabe, die man vor dem ʿĪd-Gebet für Arme gibt?","o":["Zakāt al-Fiṭr","Zakāt al-Māl","Ṣadaqa Dschāriya","Fidya"],"a":0,"e":"Zakāt al-Fiṭr wird vor dem Festgebet gegeben.","s":"Buchārī 1503","x":1},
+{"l":1,"c":"hajj","q":"Wie heißt das Umkreisen der Kaaba?","o":["Ṭawāf","Saʿy","Wuqūf","Ramy"],"a":0,"e":"Beim Ṭawāf umrundet man die Kaaba siebenmal.","s":"Qur'an 22:29; Muslim 1218","x":1},
+{"l":1,"c":"hajj","q":"Wie oft umrundet man die Kaaba beim Ṭawāf?","o":["7-mal","3-mal","5-mal","10-mal"],"a":0,"e":"Der Ṭawāf hat sieben Runden.","s":"Muslim 1218","x":1},
+{"l":1,"c":"hajj","q":"Zwischen welchen Hügeln läuft man beim Saʿy?","o":["Ṣafā und Marwa","Uḥud und Thaur","ʿArafāt und Minā","Ḥirāʾ und Nūr"],"a":0,"e":"„Ṣafā und Marwa gehören zu den Zeichen Allahs.“","s":"Qur'an 2:158","x":1},
+{"l":1,"c":"hajj","q":"Wie heißt die heilige Quelle in Mekka?","o":["Zamzam","Kauthar","Salsabīl","Tasnīm"],"a":0,"e":"Zamzam entsprang für Hādschar und den kleinen Ismāʿīl.","s":"Buchārī 3364","x":1},
+{"l":1,"c":"hajj","q":"Wie heißt die weiße Pilgerkleidung bzw. der Weihezustand?","o":["Iḥrām","Ṭawāf","Kiswa","Miqāt"],"a":0,"e":"Im Iḥrām tragen Männer zwei weiße ungenähte Tücher.","s":"Buchārī 1542","x":1},
+{"l":1,"c":"hajj","q":"Wie heißt der schwarze Stein an der Kaaba?","o":["al-Ḥadschar al-Aswad","Maqām Ibrāhīm","al-Ḥaṭīm","ar-Rukn al-Yamānī"],"a":0,"e":"Der Ṭawāf beginnt am Schwarzen Stein.","s":"Buchārī 1597","x":1},
+{"l":1,"c":"hajj","q":"Was ruft der Pilger immer wieder?","o":["Labbaika-llāhumma labbaik","Allāhu akbar kabīrā","Subḥāna rabbiya-l-aʿlā","Ḥasbunallāh"],"a":0,"e":"Die Talbiya: Hier bin ich, o Allah, hier bin ich …","s":"Buchārī 1549","x":1},
+{"l":1,"c":"glaube","q":"Was bedeutet „Tauḥīd“?","o":["Allah ist einzig","Das Gebet","Die Reise","Die Geduld"],"a":0,"e":"Tauḥīd heißt, Allah als Einzigen anzubeten.","s":"Qur'an 112:1","x":1},
+{"l":1,"c":"glaube","q":"Wie viele schöne Namen Allahs nennt der bekannte Hadith?","o":["99","50","100","33"],"a":0,"e":"Allah hat 99 Namen; wer sie bewahrt, kommt ins Paradies.","s":"Buchārī 2736, Muslim 2677","x":1},
+{"l":1,"c":"glaube","q":"Was bedeutet „Ar-Raḥmān“?","o":["Der Allerbarmer","Der König","Der Starke","Der Erste"],"a":0,"e":"Ar-Raḥmān ist der, dessen Barmherzigkeit alles umfasst.","s":"Qur'an 1:3; 55:1","x":1},
+{"l":1,"c":"glaube","q":"Welche Engel schreiben unsere Taten auf?","o":["Die edlen Schreiber (Kirāman Kātibīn)","Mālik und seine Helfer","Hārūt und Mārūt","Munkar und Nakīr"],"a":0,"e":"„Edle, die aufschreiben; sie wissen, was ihr tut.“","s":"Qur'an 82:10–12","x":1},
+{"l":1,"c":"glaube","q":"Wie heißt das Paradies im Qur'an oft?","o":["Dschanna","Dschahannam","Barzakh","Ṣirāṭ"],"a":0,"e":"Dschanna bedeutet Garten.","s":"Qur'an 2:25","x":1},
+{"l":1,"c":"glaube","q":"Welcher Engel bläst am Ende der Zeit ins Horn?","o":["Isrāfīl","Dschibrīl","Mīkāʾīl","Mālik"],"a":0,"e":"Isrāfīl wird ins Horn (aṣ-Ṣūr) blasen.","s":"Qur'an 39:68; Ibn Kathīr","x":1},
+{"l":1,"c":"glaube","q":"Wie heißt der Wächter des Höllenfeuers?","o":["Mālik","Riḍwān","Isrāfīl","Munkar"],"a":0,"e":"„Sie rufen: O Mālik …“","s":"Qur'an 43:77","x":1},
+{"l":1,"c":"glaube","q":"Was sagt man, wenn man etwas für die Zukunft plant?","o":["Inschāʾallāh","Māschāʾallāh","Astaghfirullāh","Subḥānallāh"],"a":0,"e":"„Sag nie: Ich werde es morgen tun – außer: wenn Allah will.“","s":"Qur'an 18:23–24","x":1},
+{"l":1,"c":"glaube","q":"Was sagt man, wenn man etwas Schönes sieht?","o":["Māschāʾallāh","Inschāʾallāh","Innā lillāh","Bismillāh"],"a":0,"e":"„Was Allah will! Es gibt keine Kraft außer bei Allah.“","s":"Qur'an 18:39","x":1},
+{"l":1,"c":"glaube","q":"Was sagt man, wenn ein Unglück passiert?","o":["Innā lillāhi wa innā ilaihi rādschiʿūn","Māschāʾallāh","Al-ḥamdu lillāh allein","Bismillāh"],"a":0,"e":"Wir gehören Allah, und zu Ihm kehren wir zurück.","s":"Qur'an 2:156","x":1},
+{"l":2,"c":"quran","q":"Welche Sure wird „das Herz des Qur'an“ genannt (bekannte Überlieferung)?","o":["Yā-Sīn","al-Fātiḥa","al-Mulk","ar-Raḥmān"],"a":0,"e":"Yā-Sīn wird oft so genannt; die Überlieferung dazu gilt als schwach.","s":"Tirmidhī 2887 (schwach)","x":1},
+{"l":2,"c":"quran","q":"Welcher Satz wiederholt sich 31-mal in Sure ar-Raḥmān?","o":["Welche der Wohltaten eures Herrn wollt ihr leugnen?","Wehe an jenem Tag den Leugnern!","Allah ist der Allwissende","Lob sei Allah"],"a":0,"e":"Fa-bi-ayyi ālāʾi rabbikumā tukadhdhibān.","s":"Qur'an 55","x":1},
+{"l":2,"c":"quran","q":"Welcher Satz wiederholt sich zehnmal in Sure al-Mursalāt?","o":["Wehe an jenem Tag den Leugnern!","Welche der Wohltaten …?","Und Wir haben den Qur'an leicht gemacht","Gepriesen sei Allah"],"a":0,"e":"Wailun yaumaʾidhin lil-mukadhdhibīn.","s":"Qur'an 77","x":1},
+{"l":2,"c":"quran","q":"Welche Sure erzählt von den Jungen in der Höhle?","o":["al-Kahf","Yūsuf","al-Anbiyāʾ","Maryam"],"a":0,"e":"Die Gefährten der Höhle schliefen über 300 Jahre.","s":"Qur'an 18:9–25","x":1},
+{"l":2,"c":"quran","q":"Wie lange schliefen die Gefährten der Höhle?","o":["309 Jahre","100 Jahre","40 Jahre","1000 Jahre"],"a":0,"e":"„300 Jahre, und sie fügten neun hinzu.“","s":"Qur'an 18:25","x":1},
+{"l":2,"c":"quran","q":"Welche Sure wird „die schönste Geschichte“ genannt?","o":["Yūsuf","al-Qaṣaṣ","al-Kahf","Maryam"],"a":0,"e":"„Wir erzählen dir die schönste Geschichte.“","s":"Qur'an 12:3","x":1},
+{"l":2,"c":"quran","q":"Welche Sure heißt „Die Biene“?","o":["an-Naḥl","an-Naml","al-ʿAnkabūt","al-Baqara"],"a":0,"e":"An-Naḥl (16) erwähnt den Honig als Heilmittel.","s":"Qur'an 16:68–69","x":1},
+{"l":2,"c":"quran","q":"Welche Sure heißt „Die Ameisen“?","o":["an-Naml","an-Naḥl","al-Fīl","al-ʿĀdiyāt"],"a":0,"e":"An-Naml (27) erzählt von Sulaimān und der Ameise.","s":"Qur'an 27:18","x":1},
+{"l":2,"c":"quran","q":"Welche Sure heißt „Die Spinne“?","o":["al-ʿAnkabūt","an-Naml","al-Baqara","al-Fīl"],"a":0,"e":"Das Haus der Spinne ist das schwächste Haus.","s":"Qur'an 29:41","x":1},
+{"l":2,"c":"quran","q":"Welche Sure heißt „Die Kuh“?","o":["al-Baqara","al-Anʿām","al-Fīl","an-Naḥl"],"a":0,"e":"Sie erzählt die Geschichte der Kuh der Banī Isrāʾīl.","s":"Qur'an 2:67–73","x":1},
+{"l":2,"c":"quran","q":"Welche Sure heißt „Das Vieh“?","o":["al-Anʿām","al-Baqara","an-Naḥl","al-ʿĀdiyāt"],"a":0,"e":"Al-Anʿām ist Sure 6.","s":"Qur'an 6","x":1},
+{"l":2,"c":"quran","q":"In welcher Sure findet man die Geschichte von Luqmān und seinem Sohn?","o":["Luqmān","Yūsuf","Maryam","al-Kahf"],"a":0,"e":"Luqmān ermahnt seinen Sohn: Geselle Allah niemanden bei!","s":"Qur'an 31:13","x":1},
+{"l":2,"c":"quran","q":"Welche zwei Verse am Ende von al-Baqara genügen dem, der sie nachts liest?","o":["2:285–286","2:1–2","2:255–256","2:183–184"],"a":0,"e":"Wer die letzten beiden Verse von al-Baqara nachts liest, dem genügen sie.","s":"Buchārī 5009","x":1},
+{"l":2,"c":"quran","q":"Wie viele Suren hat der 30. Juzʾ (ʿAmma)?","o":["37","30","20","45"],"a":0,"e":"Juzʾ ʿAmma reicht von an-Nabaʾ (78) bis an-Nās (114).","s":"Muṣḥaf","x":1},
+{"l":2,"c":"quran","q":"Mit welcher Sure beginnt der 30. Juzʾ?","o":["an-Nabaʾ","al-Mulk","an-Nāziʿāt","ʿAbasa"],"a":0,"e":"Juzʾ ʿAmma beginnt mit „ʿAmma yatasāʾalūn“.","s":"Qur'an 78:1","x":1},
+{"l":2,"c":"quran","q":"Welche Sure handelt vom Zeitpunkt „Al-ʿAṣr“ und vom Verlust des Menschen?","o":["al-ʿAṣr","at-Takāthur","al-Humaza","al-Qāriʿa"],"a":0,"e":"Alle Menschen sind im Verlust – außer denen, die glauben und Gutes tun.","s":"Qur'an 103","x":1},
+{"l":2,"c":"quran","q":"Welche Sure erwähnt den Stamm Quraisch und ihre Reisen im Winter und Sommer?","o":["Quraisch","al-Fīl","al-Māʿūn","al-Kauthar"],"a":0,"e":"Die Karawanen im Winter und Sommer.","s":"Qur'an 106","x":1},
+{"l":2,"c":"quran","q":"Welche Sure erzählt von ʿAbasa – „Er runzelte die Stirn“?","o":["ʿAbasa","at-Takwīr","al-Infiṭār","al-Muṭaffifīn"],"a":0,"e":"Sie erinnert, den blinden ʿAbdullāh ibn Umm Maktūm nicht zu übergehen.","s":"Qur'an 80; Tirmidhī 3331","x":1},
+{"l":2,"c":"quran","q":"Welche Sure handelt vom Erdbeben am Tag des Gerichts?","o":["az-Zalzala","al-Qāriʿa","at-Takwīr","al-Inschiqāq"],"a":0,"e":"Wer ein Stäubchen Gutes tut, wird es sehen.","s":"Qur'an 99:7","x":1},
+{"l":2,"c":"quran","q":"In welcher Sure steht: „Lā ikrāha fi-d-dīn – kein Zwang im Glauben“?","o":["al-Baqara","Āl ʿImrān","al-Kāfirūn","an-Nisāʾ"],"a":0,"e":"Direkt nach Āyat al-Kursī.","s":"Qur'an 2:256","x":1},
+{"l":2,"c":"quran","q":"Wie heißt die Wissenschaft der richtigen Qur'an-Aussprache?","o":["Tadschwīd","Tafsīr","Fiqh","Sīra"],"a":0,"e":"Tadschwīd bedeutet „verschönern, gut machen“.","s":"Qur'an 73:4","x":1},
+{"l":2,"c":"quran","q":"Was ist „Tafsīr“?","o":["Die Erklärung des Qur'an","Das Auswendiglernen","Der Gebetsruf","Die Schönschrift"],"a":0,"e":"Tafsīr erklärt Bedeutung und Hintergrund der Verse.","s":"Qur'an 16:44","x":1},
+{"l":2,"c":"quran","q":"Welcher Vers enthält die Pflicht des Fastens?","o":["„O ihr Gläubigen, vorgeschrieben ist euch das Fasten …“","„Lies im Namen deines Herrn …“","„Sag: Er ist Allah, ein Einziger“","„Wenn die Hilfe Allahs kommt …“"],"a":0,"e":"Das Fasten wurde euch vorgeschrieben wie denen vor euch.","s":"Qur'an 2:183","x":1},
+{"l":2,"c":"quran","q":"Welche Sure gilt als eine der letzten vollständig offenbarten Suren?","o":["an-Naṣr","al-Fātiḥa","al-ʿAlaq","al-Muddaththir"],"a":0,"e":"Ibn ʿAbbās: an-Naṣr kündigte das Lebensende des Propheten ﷺ an.","s":"Buchārī 4970; Muslim 3024","x":1},
+{"l":2,"c":"hadith","q":"Wer ist laut Hadith ein „Muslim“?","o":["Vor dessen Zunge und Hand die Muslime sicher sind","Wer am lautesten betet","Wer viel Geld hat","Wer in Mekka wohnt"],"a":0,"e":"Der Muslim ist der, vor dessen Zunge und Hand die anderen sicher sind.","s":"Buchārī 10","x":1},
+{"l":2,"c":"hadith","q":"Welche Arbeit ist laut Hadith am besten?","o":["Was man mit eigener Hand verdient","Betteln","Nichts tun","Glücksspiel"],"a":0,"e":"Dāwūd aß von der Arbeit seiner Hände.","s":"Buchārī 2072","x":1},
+{"l":2,"c":"hadith","q":"Was ist „Ṣadaqa Dschāriya“?","o":["Eine Spende, deren Lohn weiterfließt","Eine Spende nur am Freitag","Eine Strafe","Ein Gebet"],"a":0,"e":"Nach dem Tod bleiben: fortlaufende Spende, nützliches Wissen, ein Kind, das für einen betet.","s":"Muslim 1631","x":1},
+{"l":2,"c":"hadith","q":"Was sind laut Hadith zwei Gaben, bei denen viele Menschen betrogen werden?","o":["Gesundheit und freie Zeit","Geld und Gold","Essen und Trinken","Haus und Auto"],"a":0,"e":"Viele Menschen verlieren den Wert von Gesundheit und Freizeit.","s":"Buchārī 6412","x":1},
+{"l":2,"c":"hadith","q":"Welche Worte sind laut Hadith leicht auf der Zunge und schwer auf der Waage?","o":["Subḥānallāhi wa biḥamdih, subḥānallāhi-l-ʿaẓīm","Lā ilāha illallāh allein","Allāhu akbar","Astaghfirullāh"],"a":0,"e":"Sie sind dem Barmherzigen lieb.","s":"Buchārī 6406","x":1},
+{"l":2,"c":"hadith","q":"Was soll man laut Hadith tun, wenn man zornig ist und steht?","o":["Sich hinsetzen","Rennen","Schreien","Etwas werfen"],"a":0,"e":"Wenn einer zornig ist und steht, setze er sich; wenn es nicht vergeht, lege er sich hin.","s":"Abū Dāwūd 4782","x":1},
+{"l":2,"c":"hadith","q":"Wer soll laut Hadith zuerst grüßen?","o":["Der Reitende den Gehenden, der Gehende den Sitzenden","Immer der Ältere","Immer der Jüngere zuletzt","Niemand"],"a":0,"e":"Und die Kleineren die Größeren, die Wenigen die Vielen.","s":"Buchārī 6231, 6234","x":1},
+{"l":2,"c":"hadith","q":"Was sagt man beim Betreten des Hauses?","o":["Bismillāh und Salām","Nichts","Allāhu akbar","Āmīn"],"a":0,"e":"Wer beim Eintreten Allahs gedenkt, dem sagt Schaitān: Hier gibt es keine Übernachtung.","s":"Muslim 2018","x":1},
+{"l":2,"c":"hadith","q":"Was ist laut Hadith das beste Wort des Gedenkens (Dhikr)?","o":["Lā ilāha illallāh","Subḥānallāh","Al-ḥamdu lillāh","Allāhu akbar"],"a":0,"e":"Das beste Dhikr ist Lā ilāha illallāh.","s":"Tirmidhī 3383","x":1},
+{"l":2,"c":"hadith","q":"Wohin zeigte der Prophet ﷺ, als er sagte: „Die Gottesfurcht ist hier“?","o":["Auf seine Brust (das Herz)","Auf den Kopf","Auf die Hände","Zum Himmel"],"a":0,"e":"Er zeigte dreimal auf seine Brust.","s":"Muslim 2564","x":1},
+{"l":2,"c":"hadith","q":"Was löscht laut Hadith Sünden aus, wie Wasser Feuer löscht?","o":["Die Ṣadaqa","Der Schlaf","Das Essen","Der Sport"],"a":0,"e":"Die Ṣadaqa löscht die Sünde, wie Wasser das Feuer löscht.","s":"Tirmidhī 614","x":1},
+{"l":2,"c":"hadith","q":"Was soll man tun, wenn man eine schlechte Tat begangen hat?","o":["Eine gute Tat folgen lassen","Sie verstecken und vergessen","Aufgeben","Nichts"],"a":0,"e":"Lass der schlechten Tat eine gute folgen, die sie auslöscht.","s":"Tirmidhī 1987","x":1},
+{"l":2,"c":"hadith","q":"Was ist laut Hadith eine Ṣadaqa für jeden Knochen des Körpers jeden Tag?","o":["Gute Taten, auch zwei Rakʿāt Ḍuḥā","Nur Geld","Nichts","Viel Schlaf"],"a":0,"e":"Für jedes Gelenk ist täglich eine Ṣadaqa fällig; zwei Rakʿāt Ḍuḥā genügen dafür.","s":"Muslim 720","x":1},
+{"l":2,"c":"hadith","q":"Wie viele Menschen sitzen laut Hadith am Tag des Gerichts im Schatten Allahs?","o":["Sieben Arten von Menschen","Drei","Zehn","Hundert"],"a":0,"e":"Darunter ein Jugendlicher, der in der Anbetung Allahs aufwuchs.","s":"Buchārī 660, Muslim 1031","x":1},
+{"l":2,"c":"hadith","q":"Was ist laut Hadith das Entfernen eines Hindernisses vom Weg?","o":["Eine Ṣadaqa und Teil des Glaubens","Unnötig","Eine Sünde","Nur für Erwachsene"],"a":0,"e":"Der Glaube hat über 70 Zweige … der niedrigste ist das Entfernen von Schädlichem vom Weg.","s":"Muslim 35","x":1},
+{"l":2,"c":"hadith","q":"Welche Eigenschaft ist laut Hadith ein Zweig des Glaubens?","o":["Das Schamgefühl (Ḥayāʾ)","Die Faulheit","Der Stolz","Der Neid"],"a":0,"e":"Al-Ḥayāʾ ist ein Zweig des Glaubens.","s":"Buchārī 9, Muslim 35","x":1},
+{"l":2,"c":"hadith","q":"Was sagt der Hadith über die Sauberkeit des Mundes mit dem Siwāk?","o":["Er reinigt den Mund und gefällt dem Herrn","Er ist verboten","Er ist unwichtig","Nur im Ramadan"],"a":0,"e":"Der Siwāk reinigt den Mund und erfreut den Herrn.","s":"Nasāʾī 5; Buchārī (muʿallaq)","x":1},
+{"l":2,"c":"hadith","q":"Was sagte der Prophet ﷺ über Barmherzigkeit?","o":["Wer nicht barmherzig ist, dem wird kein Erbarmen gezeigt","Barmherzigkeit ist Schwäche","Nur Tieren gegenüber","Nur im Ramadan"],"a":0,"e":"Der Prophet ﷺ küsste seinen Enkel al-Ḥasan und sagte das.","s":"Buchārī 5997","x":1},
+{"l":2,"c":"hadith","q":"Wofür bekam eine Person laut Hadith Vergebung, die einem Hund Wasser gab?","o":["Für das Tränken eines durstigen Hundes","Für ein langes Gebet","Für viel Geld","Für eine Reise"],"a":0,"e":"Allah dankte ihm und vergab ihm – in jedem lebenden Wesen liegt Lohn.","s":"Buchārī 2363","x":1},
+{"l":2,"c":"hadith","q":"Wie soll man laut Hadith essen?","o":["Von dem, was vor einem liegt","Vom Teller des anderen","Im Gehen","Möglichst schnell"],"a":0,"e":"„Iss von dem, was vor dir ist.“","s":"Buchārī 5376","x":1},
+{"l":2,"c":"hadith","q":"Wie viel des Magens soll man laut Hadith für Essen nutzen?","o":["Ein Drittel","Alles","Die Hälfte","Zwei Drittel"],"a":0,"e":"Ein Drittel für Essen, ein Drittel für Trinken, ein Drittel für den Atem.","s":"Tirmidhī 2380","x":1},
+{"l":2,"c":"gebet","q":"Wie viele Rakʿāt hat das ʿIschāʾ-Gebet?","o":["4","3","2","5"],"a":0,"e":"ʿIschāʾ hat vier Pflicht-Rakʿāt.","s":"Konsens; Buchārī 350","x":1},
+{"l":2,"c":"gebet","q":"Wie viele Rakʿāt hat das ʿAṣr-Gebet?","o":["4","2","3","6"],"a":0,"e":"ʿAṣr hat vier Pflicht-Rakʿāt.","s":"Konsens; Buchārī 350","x":1},
+{"l":2,"c":"gebet","q":"Wie viele Rakʿāt hat das Freitagsgebet?","o":["2","4","3","1"],"a":0,"e":"Die Dschumuʿa hat zwei Rakʿāt nach der Predigt.","s":"Nasāʾī 1420; Konsens","x":1},
+{"l":2,"c":"gebet","q":"Wie heißt die Predigt beim Freitagsgebet?","o":["Khuṭba","Adhān","Duʿāʾ","Dhikr"],"a":0,"e":"Wer während der Khuṭba „sei still“ sagt, hat schon Unnötiges gesagt.","s":"Buchārī 934","x":1},
+{"l":2,"c":"gebet","q":"Was sagt man nach dem Aufrichten aus dem Rukūʿ?","o":["Samiʿa-llāhu li-man ḥamidah","Subḥāna rabbiya-l-aʿlā","As-salāmu ʿalaikum","Allāhu akbar kabīrā"],"a":0,"e":"Allah hört den, der Ihn lobt – Rabbanā wa laka-l-ḥamd.","s":"Buchārī 789","x":1},
+{"l":2,"c":"gebet","q":"Wie heißt das Sitzen mit „At-taḥiyyātu lillāh“?","o":["Taschahhud","Qunūt","Qiyām","Rukūʿ"],"a":0,"e":"Im Taschahhud bezeugt man den Glauben.","s":"Buchārī 831","x":1},
+{"l":2,"c":"gebet","q":"Wie heißt das Gebet mit ungerader Rakʿa-Zahl nach ʿIschāʾ?","o":["Witr","Ḍuḥā","Tahadschdschud","Istikhāra"],"a":0,"e":"„Macht den Witr zu eurem letzten Gebet in der Nacht.“","s":"Buchārī 998","x":1},
+{"l":2,"c":"gebet","q":"Wie heißt das Gebet am Vormittag?","o":["Ḍuḥā","Fadschr","Witr","Tarāwīḥ"],"a":0,"e":"Der Prophet ﷺ empfahl Abū Huraira zwei Rakʿāt Ḍuḥā.","s":"Buchārī 1981","x":1},
+{"l":2,"c":"gebet","q":"Wie heißt das Gebet, mit dem man Allah um die richtige Entscheidung bittet?","o":["Istikhāra","Istisqāʾ","Kusūf","Dschanāza"],"a":0,"e":"Der Prophet ﷺ lehrte es wie eine Sure des Qur'an.","s":"Buchārī 1162","x":1},
+{"l":2,"c":"gebet","q":"Wie heißt das Totengebet?","o":["Ṣalāt al-Dschanāza","Ṣalāt al-Kusūf","Ṣalāt al-ʿĪd","Ṣalāt al-Istisqāʾ"],"a":0,"e":"Es hat keine Rakʿāt mit Rukūʿ und Sudschūd, sondern vier Takbīre.","s":"Buchārī 1333","x":1},
+{"l":2,"c":"gebet","q":"Wie heißt das Gebet um Regen?","o":["Ṣalāt al-Istisqāʾ","Ṣalāt al-Kusūf","Ṣalāt al-Witr","Ṣalāt aḍ-Ḍuḥā"],"a":0,"e":"Der Prophet ﷺ ging hinaus und bat um Regen.","s":"Buchārī 1012","x":1},
+{"l":2,"c":"gebet","q":"Wie heißt das Gebet bei einer Sonnenfinsternis?","o":["Ṣalāt al-Kusūf","Ṣalāt al-Istisqāʾ","Ṣalāt al-Khauf","Ṣalāt at-Tarāwīḥ"],"a":0,"e":"Sonne und Mond sind Zeichen Allahs – betet, wenn ihr eine Finsternis seht.","s":"Buchārī 1044","x":1},
+{"l":2,"c":"gebet","q":"Wie heißt die Sunna-Waschung des ganzen Körpers, z. B. vor dem Freitagsgebet?","o":["Ghusl","Wuḍūʾ","Tayammum","Istindschāʾ"],"a":0,"e":"Wer zur Dschumuʿa kommt, soll Ghusl machen.","s":"Buchārī 877","x":1},
+{"l":2,"c":"gebet","q":"Welches Körperteil wäscht man beim Wuḍūʾ zuerst (nach Absicht und Bismillāh)?","o":["Die Hände","Die Füße","Das Gesicht","Den Kopf"],"a":0,"e":"ʿUthmān zeigte: zuerst dreimal die Hände.","s":"Buchārī 159","x":1},
+{"l":2,"c":"gebet","q":"Was wischt man beim Wuḍūʾ statt es zu waschen?","o":["Den Kopf","Das Gesicht","Die Arme","Die Hände"],"a":0,"e":"„… und streicht über eure Köpfe.“","s":"Qur'an 5:6","x":1},
+{"l":2,"c":"gebet","q":"Bis wohin wäscht man beim Wuḍūʾ die Arme?","o":["Bis einschließlich Ellbogen","Bis zum Handgelenk","Bis zur Schulter","Nur die Finger"],"a":0,"e":"„… eure Hände bis zu den Ellbogen.“","s":"Qur'an 5:6","x":1},
+{"l":2,"c":"gebet","q":"Wie heißt die Gebetsnische in der Moschee?","o":["Miḥrāb","Minbar","Minarett","Qibla-Uhr"],"a":0,"e":"Der Miḥrāb zeigt die Gebetsrichtung.","s":"Allgemeines Wissen","x":1},
+{"l":2,"c":"gebet","q":"Wie heißt die Kanzel, von der die Freitagspredigt gehalten wird?","o":["Minbar","Miḥrāb","Minarett","Kursī"],"a":0,"e":"Der Prophet ﷺ predigte zuerst an einem Palmstamm, dann auf einem Minbar.","s":"Buchārī 3583","x":1},
+{"l":2,"c":"gebet","q":"Was sagt man im Adhān beim Fadschr zusätzlich?","o":["Aṣ-ṣalātu khairun mina-n-naum","Ḥayya ʿala-l-falāḥ zweimal mehr","Allāhu akbar fünfmal","Nichts"],"a":0,"e":"„Das Gebet ist besser als der Schlaf.“","s":"Abū Dāwūd 500","x":1},
+{"l":2,"c":"gebet","q":"Wo steht der Imam beim Gemeinschaftsgebet?","o":["Vorne vor den Reihen","Hinten","In der Mitte der Reihe","Draußen"],"a":0,"e":"Die Betenden folgen dem Imam, der vorne steht.","s":"Buchārī 722","x":1},
+{"l":2,"c":"gebet","q":"Was sagt man am Ende der Fātiḥa im Gebet?","o":["Āmīn","Allāhu akbar","Bismillāh","Al-ḥamdu lillāh"],"a":0,"e":"Wessen Āmīn mit dem der Engel übereinstimmt, dem wird vergeben.","s":"Buchārī 780","x":1},
+{"l":2,"c":"grund","q":"Wie hoch ist die Mindestmenge (Niṣāb) für die Zakāh auf Gold?","o":["85 g Gold (20 Mithqāl)","1 g Gold","1 kg Gold","10 g Gold"],"a":0,"e":"20 Dīnār (Mithqāl) entsprechen etwa 85 g Gold.","s":"Abū Dāwūd 1573","x":1},
+{"l":2,"c":"grund","q":"Was ist „ḥalāl“?","o":["Erlaubt","Verboten","Unbekannt","Pflicht"],"a":0,"e":"Ḥalāl ist das Erlaubte, ḥarām das Verbotene.","s":"Buchārī 52","x":1},
+{"l":2,"c":"grund","q":"Welches Fleisch ist für Muslime verboten?","o":["Schweinefleisch","Rindfleisch","Hühnchen","Fisch"],"a":0,"e":"Verboten sind Verendetes, Blut und Schweinefleisch.","s":"Qur'an 2:173","x":1},
+{"l":2,"c":"grund","q":"Welches Getränk ist verboten?","o":["Alkohol (Khamr)","Milch","Wasser","Saft"],"a":0,"e":"„Wein, Glücksspiel … sind Gräuel – meidet sie.“","s":"Qur'an 5:90","x":1},
+{"l":2,"c":"grund","q":"Wie heißt das Fasten am 10. Muḥarram?","o":["ʿĀschūrāʾ","ʿArafa","Schawwāl","Ayyām al-Bīḍ"],"a":0,"e":"Allah rettete an diesem Tag Mūsā. Das Fasten sühnt das vergangene Jahr.","s":"Buchārī 2004; Muslim 1162","x":1},
+{"l":2,"c":"grund","q":"Wie viele Tage Schawwāl-Fasten empfiehlt der Hadith nach Ramadan?","o":["6","3","10","30"],"a":0,"e":"Wer Ramadan fastet und sechs Tage Schawwāl, ist, als hätte er das Jahr gefastet.","s":"Muslim 1164","x":1},
+{"l":2,"c":"grund","q":"An welchen Wochentagen fastete der Prophet ﷺ gern?","o":["Montag und Donnerstag","Freitag und Samstag","Sonntag und Dienstag","Mittwoch"],"a":0,"e":"An diesen Tagen werden die Taten vorgelegt.","s":"Tirmidhī 747","x":1},
+{"l":2,"c":"grund","q":"Was ist die islamische Begrüßung beim Fest?","o":["Taqabbala-llāhu minnā wa minkum","Frohe Weihnachten","Gute Reise","Yarḥamuka-llāh"],"a":0,"e":"Die Sahāba grüßten sich am ʿĪd so.","s":"Ibn Ḥadschar, Fatḥ al-Bārī 2/446","x":1},
+{"l":2,"c":"grund","q":"Wer verwaltete laut Qur'an die Schätze Ägyptens?","o":["Yūsuf","Mūsā","Hārūn","Yaʿqūb"],"a":0,"e":"„Setze mich über die Vorratskammern des Landes.“","s":"Qur'an 12:55","x":1},
+{"l":2,"c":"propheten","q":"Welcher Prophet wurde mit einem Stock beschenkt, der zur Schlange wurde?","o":["Mūsā","Hārūn","ʿĪsā","Sulaimān"],"a":0,"e":"„Wirf ihn hin, Mūsā!“ – und er war eine Schlange.","s":"Qur'an 20:19–20","x":1},
+{"l":2,"c":"propheten","q":"Wessen Volk war das Volk ʿĀd?","o":["Hūd","Ṣāliḥ","Lūṭ","Schuʿaib"],"a":0,"e":"Zu ʿĀd sandte Allah ihren Bruder Hūd.","s":"Qur'an 7:65","x":1},
+{"l":2,"c":"propheten","q":"Zu welchem Volk wurde Schuʿaib geschickt?","o":["Madyan","Thamūd","ʿĀd","Babylon"],"a":0,"e":"Schuʿaib mahnte, beim Messen und Wiegen nicht zu betrügen.","s":"Qur'an 7:85","x":1},
+{"l":2,"c":"propheten","q":"Wie hieß der Vater von Yūsuf?","o":["Yaʿqūb","Isḥāq","Ibrāhīm","Ismāʿīl"],"a":0,"e":"Yaʿqūb wurde vor Kummer um Yūsuf blind.","s":"Qur'an 12:84","x":1},
+{"l":2,"c":"propheten","q":"Wie viele Brüder hatte Yūsuf (inkl. Binyāmīn)?","o":["11","10","12","7"],"a":0,"e":"Yūsuf sah elf Sterne, Sonne und Mond.","s":"Qur'an 12:4","x":1},
+{"l":2,"c":"propheten","q":"Was sah Yūsuf im Traum, das sich vor ihm verneigte?","o":["Elf Sterne, Sonne und Mond","Sieben Kühe","Einen Vogel","Ein Schiff"],"a":0,"e":"Der Traum wurde Jahre später wahr.","s":"Qur'an 12:4, 12:100","x":1},
+{"l":2,"c":"propheten","q":"Welcher Prophet wurde als Baby in einem Kästchen auf den Fluss gesetzt?","o":["Mūsā","Yūsuf","ʿĪsā","Ismāʿīl"],"a":0,"e":"Allah gab seiner Mutter ein, ihn in den Nil zu setzen.","s":"Qur'an 20:39; 28:7","x":1},
+{"l":2,"c":"propheten","q":"Wer zog Mūsā im Palast auf?","o":["Die Frau des Pharao (Āsiya)","Seine Schwester","Hārūn","Schuʿaib"],"a":0,"e":"„Ein Augentrost für mich und dich – tötet ihn nicht.“","s":"Qur'an 28:9","x":1},
+{"l":2,"c":"propheten","q":"Welche Tiere und Wesen standen Sulaimān zu Diensten?","o":["Dschinn, Vögel und der Wind","Nur Pferde","Löwen","Fische"],"a":0,"e":"Der Wind wehte auf seinen Befehl.","s":"Qur'an 27:17; 34:12","x":1},
+{"l":2,"c":"propheten","q":"Welcher Vogel brachte Sulaimān Nachricht von der Königin von Sabaʾ?","o":["Der Wiedehopf","Der Rabe","Die Taube","Der Adler"],"a":0,"e":"Der Hudhud kam mit sicherer Kunde aus Sabaʾ.","s":"Qur'an 27:20–22","x":1},
+{"l":2,"c":"propheten","q":"Welcher Vogel zeigte dem Sohn Ādams, wie man einen Toten begräbt?","o":["Der Rabe","Der Wiedehopf","Die Taube","Der Spatz"],"a":0,"e":"Allah schickte einen Raben, der im Boden scharrte.","s":"Qur'an 5:31","x":1},
+{"l":2,"c":"propheten","q":"Welchem Propheten wurde befohlen, seinen Sohn zu opfern – dann aber ein Widder geschickt?","o":["Ibrāhīm","Nūḥ","Yaʿqūb","Zakariyyā"],"a":0,"e":"„Wir lösten ihn aus durch ein gewaltiges Opfer.“","s":"Qur'an 37:102–107","x":1},
+{"l":2,"c":"propheten","q":"Welcher Prophet wurde in den Himmel erhoben und kommt zurück?","o":["ʿĪsā","Idrīs","Mūsā","Ilyās"],"a":0,"e":"Allah erhob ʿĪsā zu Sich.","s":"Qur'an 4:157–158; Buchārī 3448","x":1},
+{"l":2,"c":"propheten","q":"Welcher Prophet zerschlug die Götzen und ließ den größten stehen?","o":["Ibrāhīm","Mūsā","Muhammad ﷺ","Nūḥ"],"a":0,"e":"„Fragt sie doch, wenn sie reden können!“","s":"Qur'an 21:58–63","x":1},
+{"l":2,"c":"propheten","q":"Wie hieß die Mutter von Ismāʿīl?","o":["Hādschar","Sāra","Āsiya","Maryam"],"a":0,"e":"Hādschar suchte zwischen Ṣafā und Marwa nach Wasser.","s":"Buchārī 3364","x":1},
+{"l":2,"c":"propheten","q":"Welcher Prophet war Schmied und Rüstungsbauer?","o":["Dāwūd","Nūḥ","Idrīs","Hūd"],"a":0,"e":"„Wir lehrten ihn das Herstellen von Panzerhemden.“","s":"Qur'an 21:80","x":1},
+{"l":2,"c":"propheten","q":"Welcher Prophet besiegte als junger Mann Dschālūt (Goliath)?","o":["Dāwūd","Sulaimān","Mūsā","Ṭālūt"],"a":0,"e":"„Und Dāwūd tötete Dschālūt.“","s":"Qur'an 2:251","x":1},
+{"l":2,"c":"sahaba","q":"Wer wurde „al-Fārūq“ genannt?","o":["ʿUmar ibn al-Khaṭṭāb","Abū Bakr","ʿAlī","ʿUthmān"],"a":0,"e":"Al-Fārūq – der zwischen Wahrheit und Falschem unterscheidet.","s":"Ibn Saʿd, aṭ-Ṭabaqāt","x":1},
+{"l":2,"c":"sahaba","q":"Wer wurde „Dhu-n-Nūrain“ (der mit den zwei Lichtern) genannt?","o":["ʿUthmān ibn ʿAffān","ʿAlī","Abū Bakr","Ṭalḥa"],"a":0,"e":"Er heiratete nacheinander zwei Töchter des Propheten ﷺ.","s":"Ibn Saʿd, aṭ-Ṭabaqāt","x":1},
+{"l":2,"c":"sahaba","q":"Welcher Junge nahm als einer der Ersten den Islam an?","o":["ʿAlī ibn Abī Ṭālib","Anas","Ibn ʿAbbās","Usāma"],"a":0,"e":"ʿAlī war damals etwa zehn Jahre alt.","s":"Tirmidhī 3734","x":1},
+{"l":2,"c":"sahaba","q":"Wer war der Onkel des Propheten ﷺ, „Löwe Allahs“ genannt?","o":["Ḥamza","Abū Ṭālib","al-ʿAbbās","Abū Lahab"],"a":0,"e":"Ḥamza starb als Märtyrer bei Uḥud.","s":"Buchārī 4072","x":1},
+{"l":2,"c":"sahaba","q":"Welcher Onkel schützte den Propheten ﷺ, nahm aber den Islam nicht an?","o":["Abū Ṭālib","Ḥamza","al-ʿAbbās","Abū Lahab"],"a":0,"e":"Er beschützte ihn bis zu seinem Tod.","s":"Buchārī 3884","x":1},
+{"l":2,"c":"sahaba","q":"Welcher Onkel wird in Sure al-Masad verurteilt?","o":["Abū Lahab","Abū Ṭālib","Ḥamza","al-ʿAbbās"],"a":0,"e":"„Zugrunde gehen sollen die Hände Abū Lahabs.“","s":"Qur'an 111","x":1},
+{"l":2,"c":"sahaba","q":"Wer wurde „Dhāt an-Niṭāqain“ genannt, weil sie Essen zur Höhle brachte?","o":["Asmāʾ bint Abī Bakr","ʿĀʾischa","Fāṭima","Umm Salama"],"a":0,"e":"Sie teilte ihren Gürtel in zwei, um den Proviant festzubinden.","s":"Buchārī 2979","x":1},
+{"l":2,"c":"sahaba","q":"Welcher Cousin des Propheten ﷺ wurde „Übersetzer des Qur'an“ genannt?","o":["ʿAbdullāh ibn ʿAbbās","Anas","Abū Huraira","Muʿādh"],"a":0,"e":"Der Prophet ﷺ betete: O Allah, lehre ihn die Deutung.","s":"Buchārī 143; 75","x":1},
+{"l":2,"c":"sahaba","q":"Wer war der adoptierte Sohn des Propheten ﷺ, der im Qur'an namentlich steht?","o":["Zaid ibn Ḥāritha","Usāma","Anas","Bilāl"],"a":0,"e":"Zaid ist der einzige Sahābī, der im Qur'an mit Namen genannt wird.","s":"Qur'an 33:37","x":1},
+{"l":2,"c":"sahaba","q":"Welcher Sahābī schlug vor, den Graben (Khandaq) auszuheben?","o":["Salmān al-Fārisī","ʿUmar","Abū Bakr","Ṭalḥa"],"a":0,"e":"Salmān kannte die Technik aus Persien.","s":"Ibn Hischām; Ibn Kathīr, al-Bidāya","x":1},
+{"l":2,"c":"sahaba","q":"Welche Frau des Propheten ﷺ überlieferte sehr viele Hadithe?","o":["ʿĀʾischa","Chadīdscha","Sauda","Maimūna"],"a":0,"e":"ʿĀʾischa gehört zu den Sahāba mit den meisten Überlieferungen.","s":"adh-Dhahabī, Siyar","x":1},
+{"l":2,"c":"geschichte","q":"Welche große Schlacht fand im Jahr 2 n. H. statt?","o":["Badr","Uḥud","Khandaq","Ḥunain"],"a":0,"e":"Bei Badr waren die Muslime etwa 313.","s":"Qur'an 3:123; Buchārī 3957","x":1},
+{"l":2,"c":"geschichte","q":"Wie viele Muslime kämpften etwa bei Badr?","o":["313","1000","50","10.000"],"a":0,"e":"Etwa so viele wie die Gefährten Ṭālūts.","s":"Buchārī 3957","x":1},
+{"l":2,"c":"geschichte","q":"Welcher Vertrag wurde 6 n. H. mit den Quraisch geschlossen?","o":["Vertrag von Ḥudaibiya","Vertrag von Medina","Vertrag von Taif","Vertrag von Badr"],"a":0,"e":"Allah nannte ihn einen „offenkundigen Sieg“.","s":"Qur'an 48:1; Buchārī 2731","x":1},
+{"l":2,"c":"geschichte","q":"In welchem Jahr nach der Hidschra wurde Mekka befreit?","o":["8 n. H.","2 n. H.","10 n. H.","5 n. H."],"a":0,"e":"Mekka wurde fast ohne Kampf eingenommen.","s":"Buchārī 4280","x":1},
+{"l":2,"c":"geschichte","q":"Wie alt wurde der Prophet ﷺ?","o":["63 Jahre","60 Jahre","70 Jahre","40 Jahre"],"a":0,"e":"Er starb mit 63 Jahren in Medina.","s":"Buchārī 3536, Muslim 2349","x":1},
+{"l":2,"c":"geschichte","q":"Wohin ging der Prophet ﷺ, um zu predigen, und wurde mit Steinen beworfen?","o":["Nach Ṭāʾif","Nach Medina","Nach Syrien","Nach Abessinien"],"a":0,"e":"Trotzdem betete er für sie, statt sie zu verfluchen.","s":"Buchārī 3231","x":1},
+{"l":2,"c":"geschichte","q":"In welches Land flohen die ersten Muslime unter einem gerechten König?","o":["Abessinien (Ḥabascha)","Ägypten","Persien","Jemen"],"a":0,"e":"Der Nadschāschī beschützte sie.","s":"Ibn Hischām; Aḥmad 1740","x":1},
+{"l":2,"c":"geschichte","q":"Wie heißt die Nachtreise und Himmelfahrt des Propheten ﷺ?","o":["Isrāʾ und Miʿrādsch","Hidschra","Ḥaddsch","Laylat al-Qadr"],"a":0,"e":"Bei der Miʿrādsch wurden die fünf Gebete vorgeschrieben.","s":"Qur'an 17:1; Buchārī 349","x":1},
+{"l":2,"c":"geschichte","q":"Auf welchem Reittier reiste der Prophet ﷺ bei der Isrāʾ?","o":["al-Burāq","al-Qaṣwāʾ","einem Pferd","einem Esel"],"a":0,"e":"Ein weißes Reittier, größer als ein Esel, kleiner als ein Maultier.","s":"Buchārī 3207, Muslim 162","x":1},
+{"l":2,"c":"geschichte","q":"Wie hieß die Kamelstute des Propheten ﷺ bei der Hidschra-Ankunft?","o":["al-Qaṣwāʾ","al-Burāq","Duldul","Yaʿfūr"],"a":0,"e":"Sie kniete dort nieder, wo die Moschee gebaut wurde.","s":"Buchārī 3906","x":1},
+{"l":2,"c":"geschichte","q":"Wo kniete die Kamelstute in Medina nieder?","o":["Wo heute die Prophetenmoschee steht","Am Berg Uḥud","In Qubāʾ","Am Markt"],"a":0,"e":"Dort wurde die Moschee gebaut.","s":"Buchārī 3906","x":1},
+{"l":2,"c":"geschichte","q":"Welche Moschee wurde als erste im Islam gebaut?","o":["Masdschid Qubāʾ","Masdschid an-Nabawī","al-Aqṣā","Masdschid al-Ḥarām"],"a":0,"e":"„Eine Moschee, auf Gottesfurcht gegründet vom ersten Tag an.“","s":"Qur'an 9:108; Ibn Hischām","x":1},
+{"l":2,"c":"geschichte","q":"Wie hieß die Amme, die den kleinen Muhammad ﷺ in der Wüste stillte?","o":["Ḥalīma as-Saʿdiyya","Āmina","Umm Aiman","Chadīdscha"],"a":0,"e":"Bei ihr wuchs er in der Wüste auf.","s":"Ibn Hischām, as-Sīra","x":1},
+{"l":2,"c":"geschichte","q":"Welchen Beinamen hatte der Prophet ﷺ schon vor der Offenbarung?","o":["al-Amīn – der Vertrauenswürdige","al-Fārūq","aṣ-Ṣiddīq","Saifullāh"],"a":0,"e":"Selbst Gegner vertrauten ihm ihre Sachen an.","s":"Aḥmad 15504; Ibn Hischām","x":1},
+{"l":2,"c":"ramadan","q":"Wie viele Tage hat der Ramadan?","o":["29 oder 30","28","31","Genau 30"],"a":0,"e":"Der Monat beginnt und endet mit Sichtung des Neumonds.","s":"Buchārī 1909","x":1},
+{"l":2,"c":"ramadan","q":"In welchen Nächten soll man Laylat al-Qadr besonders suchen?","o":["In den ungeraden der letzten zehn","In der ersten Woche","Nur in der 15. Nacht","In der Mitte"],"a":0,"e":"Sucht sie in den ungeraden der letzten zehn Nächte.","s":"Buchārī 2017","x":1},
+{"l":2,"c":"ramadan","q":"Welche Duʿāʾ lehrte der Prophet ﷺ für Laylat al-Qadr?","o":["Allāhumma innaka ʿafuwwun tuḥibbu-l-ʿafwa faʿfu ʿannī","Rabbanā ātinā fi-d-dunyā ḥasana","Ḥasbunallāhu wa niʿma-l-wakīl","Lā ḥaula wa lā quwwata illā billāh"],"a":0,"e":"O Allah, Du bist vergebend und liebst Vergebung, so vergib mir.","s":"Tirmidhī 3513","x":1},
+{"l":2,"c":"ramadan","q":"Wie heißt das Zurückziehen in die Moschee in den letzten zehn Tagen?","o":["Iʿtikāf","Ṭawāf","Hidschra","Khalwa"],"a":0,"e":"Der Prophet ﷺ machte jedes Jahr Iʿtikāf in den letzten zehn Tagen.","s":"Buchārī 2026","x":1},
+{"l":2,"c":"ramadan","q":"Wie viel besser ist Laylat al-Qadr als normale Nächte?","o":["Besser als 1000 Monate","Wie 10 Nächte","Wie ein Jahr","Wie eine Woche"],"a":0,"e":"„Die Nacht der Bestimmung ist besser als tausend Monate.“","s":"Qur'an 97:3","x":1},
+{"l":2,"c":"ramadan","q":"Was ist für den Fastenden der Geruch seines Mundes bei Allah?","o":["Lieber als Moschusduft","Unangenehm","Egal","Verboten"],"a":0,"e":"Der Mundgeruch des Fastenden ist bei Allah besser als Moschus.","s":"Buchārī 1904","x":1},
+{"l":2,"c":"ramadan","q":"Wie heißt das Tor des Paradieses nur für die Fastenden?","o":["ar-Rayyān","al-Firdaus","as-Salām","Tor des Gebets"],"a":0,"e":"Durch ar-Rayyān treten nur die Fastenden ein.","s":"Buchārī 1896","x":1},
+{"l":2,"c":"ramadan","q":"Welchen Lohn bekommt, wer einem Fastenden das Ifṭār gibt?","o":["Den gleichen Lohn wie der Fastende","Keinen","Die Hälfte","Nur Dank"],"a":0,"e":"Er erhält dessen Lohn, ohne dass dessen Lohn weniger wird.","s":"Tirmidhī 807","x":1},
+{"l":2,"c":"hajj","q":"An welchem Tag stehen die Pilger am Berg ʿArafāt?","o":["Am 9. Dhu-l-Ḥiddscha","Am 1. Ramadan","Am 10. Muḥarram","Am 27. Radschab"],"a":0,"e":"„Der Ḥaddsch ist ʿArafa.“","s":"Tirmidhī 889","x":1},
+{"l":2,"c":"hajj","q":"Welches Fasten empfiehlt man für Nicht-Pilger am 9. Dhu-l-Ḥiddscha?","o":["Das Fasten am Tag von ʿArafa","ʿĀschūrāʾ","Schawwāl","Kein Fasten"],"a":0,"e":"Es sühnt das vergangene und das kommende Jahr.","s":"Muslim 1162","x":1},
+{"l":2,"c":"hajj","q":"Was wirft man in Minā auf die Dschamarāt?","o":["Kleine Steinchen","Blumen","Wasser","Datteln"],"a":0,"e":"Der Prophet ﷺ warf Steinchen so groß wie Kichererbsen.","s":"Muslim 1299","x":1},
+{"l":2,"c":"hajj","q":"Wo übernachten die Pilger nach ʿArafāt?","o":["In Muzdalifa","In Medina","In Ṭāʾif","In Dschidda"],"a":0,"e":"In Muzdalifa sammelt man auch die Steinchen.","s":"Qur'an 2:198; Muslim 1218","x":1},
+{"l":2,"c":"hajj","q":"Wie heißt die „kleine Pilgerfahrt“, die man jederzeit machen kann?","o":["ʿUmra","Ḥaddsch","Hidschra","Ziyāra"],"a":0,"e":"Eine ʿUmra im Ramadan gleicht einem Ḥaddsch.","s":"Buchārī 1782","x":1},
+{"l":2,"c":"hajj","q":"Wer hat laut Qur'an zuerst zum Ḥaddsch gerufen?","o":["Ibrāhīm","Ādam","Muhammad ﷺ","Ismāʿīl"],"a":0,"e":"„Und rufe unter den Menschen zum Ḥaddsch auf.“","s":"Qur'an 22:27","x":1},
+{"l":2,"c":"glaube","q":"Wie heißen die zwei Engel, die im Grab befragen?","o":["Munkar und Nakīr","Hārūt und Mārūt","Dschibrīl und Mīkāʾīl","Riḍwān und Mālik"],"a":0,"e":"Sie fragen: Wer ist dein Herr? Was ist deine Religion? Wer ist dein Prophet?","s":"Tirmidhī 1071","x":1},
+{"l":2,"c":"glaube","q":"Welcher Engel ist für den Regen zuständig?","o":["Mīkāʾīl","Dschibrīl","Isrāfīl","Mālik"],"a":0,"e":"Mīkāʾīl ist mit Regen und Versorgung beauftragt.","s":"Qur'an 2:98; Ibn Kathīr","x":1},
+{"l":2,"c":"glaube","q":"Was ist „Schirk“?","o":["Allah etwas beigesellen","Danken","Fasten","Spenden"],"a":0,"e":"Schirk ist die größte Sünde.","s":"Qur'an 4:48; 31:13","x":1},
+{"l":2,"c":"glaube","q":"Was ist der Name Allahs „Al-Ghafūr“?","o":["Der Allvergebende","Der Allsehende","Der Schöpfer","Der Ewige"],"a":0,"e":"Allah vergibt dem, der bereut.","s":"Qur'an 39:53","x":1},
+{"l":2,"c":"glaube","q":"Was bedeutet „Al-Khāliq“?","o":["Der Schöpfer","Der Versorger","Der Hörende","Der Weise"],"a":0,"e":"Er ist Allah, der Schöpfer, der Erschaffende.","s":"Qur'an 59:24","x":1},
+{"l":2,"c":"glaube","q":"Was bedeutet „Ar-Razzāq“?","o":["Der Versorger","Der Richter","Der Sanfte","Der Gerechte"],"a":0,"e":"Allah ist der Versorger, der Starke.","s":"Qur'an 51:58","x":1},
+{"l":2,"c":"glaube","q":"Wie heißt die Brücke über das Feuer am Tag des Gerichts?","o":["aṣ-Ṣirāṭ","al-Mīzān","al-Kauthar","al-Barzakh"],"a":0,"e":"Sie ist dünner als ein Haar und schärfer als ein Schwert.","s":"Muslim 183","x":1},
+{"l":2,"c":"glaube","q":"Wie heißt die Waage am Tag des Gerichts?","o":["al-Mīzān","aṣ-Ṣirāṭ","al-Ḥauḍ","al-Lauḥ"],"a":0,"e":"„Wir stellen die gerechten Waagen auf.“","s":"Qur'an 21:47","x":1},
+{"l":2,"c":"glaube","q":"Wie heißt die Zeit zwischen Tod und Auferstehung?","o":["Barzakh","Dunyā","Ākhira","Qiyāma"],"a":0,"e":"„Hinter ihnen ist eine Schranke bis zum Tag der Auferweckung.“","s":"Qur'an 23:100","x":1},
+{"l":2,"c":"glaube","q":"Wie heißt der Fluss/Teich, den Allah dem Propheten ﷺ im Paradies gab?","o":["al-Kauthar","Zamzam","Salsabīl","Nil"],"a":0,"e":"„Wir haben dir al-Kauthar gegeben.“","s":"Qur'an 108:1; Muslim 400","x":1},
+{"l":3,"c":"quran","q":"Wie viele Verse hat der Qur'an nach kufischer Zählung?","o":["6236","6666","6000","6348"],"a":0,"e":"Die verbreitete Zählung (Ḥafṣ ʿan ʿĀṣim) ergibt 6236 Verse.","s":"Tanzil-Daten; ad-Dānī, al-Bayān","x":1},
+{"l":3,"c":"quran","q":"Welcher Vers ist der längste im Qur'an?","o":["Der Vers über das Schuldenaufschreiben (2:282)","Āyat al-Kursī (2:255)","Der Lichtvers (24:35)","Der erste Vers von Yā-Sīn"],"a":0,"e":"Āyat ad-Dain regelt das Aufschreiben von Schulden.","s":"Qur'an 2:282","x":1},
+{"l":3,"c":"quran","q":"Wie viele Sadschda-Stellen (Niederwerfung beim Lesen) gibt es im Muṣḥaf meist?","o":["15","10","7","20"],"a":0,"e":"Im üblichen Muṣḥaf sind 15 Sudschūd at-Tilāwa markiert.","s":"Abū Dāwūd 1401","x":1},
+{"l":3,"c":"quran","q":"Welche Sure hat zwei Sadschda-Stellen?","o":["al-Ḥadsch","al-Baqara","Maryam","al-ʿAlaq"],"a":0,"e":"Sure 22 hat zwei Niederwerfungsstellen.","s":"Abū Dāwūd 1402","x":1},
+{"l":3,"c":"quran","q":"Welcher Prophet wird nach Mūsā am häufigsten im Qur'an namentlich genannt?","o":["Ibrāhīm","ʿĪsā","Nūḥ","Yūsuf"],"a":0,"e":"Ibrāhīm wird etwa 69-mal genannt.","s":"Konkordanz (al-Muʿdscham al-Mufahras)","x":1},
+{"l":3,"c":"quran","q":"Welche Sure beginnt mit „Tabāraka“ und heißt auch „al-Mānīʿa“ (die Schützende)?","o":["al-Mulk","al-Furqān","al-Insān","Qāf"],"a":0,"e":"Al-Mulk schützt vor der Strafe des Grabes.","s":"Tirmidhī 2890","x":1},
+{"l":3,"c":"quran","q":"Wie viele Suren sind nach Propheten benannt (Yūnus, Hūd, Yūsuf, Ibrāhīm, Nūḥ, Muhammad)?","o":["6","4","8","10"],"a":0,"e":"Dazu kommen Suren wie Maryam und Luqmān, die keine Propheten sind.","s":"Muṣḥaf","x":1},
+{"l":3,"c":"quran","q":"Welche Sure heißt auch „al-Faḍiḥa“ (die Bloßstellende), weil sie die Heuchler entlarvt?","o":["at-Tauba","al-Munāfiqūn","al-Aḥzāb","al-Ḥaschr"],"a":0,"e":"Ibn ʿAbbās nannte at-Tauba al-Faḍiḥa.","s":"Buchārī 4882","x":1},
+{"l":3,"c":"quran","q":"In welcher Sure steht der Lichtvers „Allah ist das Licht der Himmel und der Erde“?","o":["an-Nūr","al-Ḥadīd","al-Fatḥ","ar-Raʿd"],"a":0,"e":"Āyat an-Nūr – ein Gleichnis wie eine Nische mit einer Lampe.","s":"Qur'an 24:35","x":1},
+{"l":3,"c":"quran","q":"Welche Sure enthält den „Thronvers“ und auch „Āyat ad-Dain“?","o":["al-Baqara","Āl ʿImrān","an-Nisāʾ","al-Māʾida"],"a":0,"e":"Beide stehen in Sure 2.","s":"Qur'an 2:255; 2:282","x":1},
+{"l":3,"c":"quran","q":"Welche zwei Suren nennt der Prophet ﷺ „az-Zahrāwān“ (die zwei Leuchtenden)?","o":["al-Baqara und Āl ʿImrān","al-Falaq und an-Nās","al-Mulk und as-Sadschda","al-Kahf und Maryam"],"a":0,"e":"Sie kommen am Tag des Gerichts wie zwei Wolken.","s":"Muslim 804","x":1},
+{"l":3,"c":"quran","q":"Welche Sure endet mit dem Bittgebet „Rabbanā lā tuʾākhidhnā …“?","o":["al-Baqara","Āl ʿImrān","al-Fātiḥa","al-Aʿrāf"],"a":0,"e":"Der letzte Vers von al-Baqara.","s":"Qur'an 2:286","x":1},
+{"l":3,"c":"quran","q":"Welche Sure enthält die Geschichte von Mūsā und al-Khaḍir?","o":["al-Kahf","Ṭā-Hā","al-Qaṣaṣ","asch-Schuʿarāʾ"],"a":0,"e":"Al-Khaḍir lehrte Mūsā Geduld mit drei Ereignissen.","s":"Qur'an 18:60–82; Buchārī 122","x":1},
+{"l":3,"c":"quran","q":"Welcher König baute den Damm gegen Yādschūdsch und Mādschūdsch?","o":["Dhu-l-Qarnain","Sulaimān","Ṭālūt","Dāwūd"],"a":0,"e":"Er baute ihn aus Eisen und geschmolzenem Kupfer.","s":"Qur'an 18:94–97","x":1},
+{"l":3,"c":"quran","q":"Wie viele Suren beginnen mit „Alif Lām Mīm“?","o":["6","3","9","12"],"a":0,"e":"al-Baqara, Āl ʿImrān, al-ʿAnkabūt, ar-Rūm, Luqmān, as-Sadschda.","s":"Muṣḥaf","x":1},
+{"l":3,"c":"quran","q":"Welche Sure beginnt mit dem einzelnen Buchstaben „Qāf“?","o":["Sure 50","Sure 38","Sure 68","Sure 20"],"a":0,"e":"Ṣād beginnt Sure 38, Nūn Sure 68, Qāf Sure 50.","s":"Muṣḥaf","x":1},
+{"l":3,"c":"quran","q":"Wer ließ die Buchstaben des Muṣḥaf mit Punkten und Vokalzeichen versehen (Tradition)?","o":["Abu-l-Aswad ad-Duʾalī und Schüler","ʿUmar ibn al-Khaṭṭāb","Imām al-Buchārī","Ibn Kathīr"],"a":0,"e":"Zuerst Vokalpunkte, später unterscheidende Punkte durch seine Schüler.","s":"ad-Dānī, al-Muḥkam","x":1},
+{"l":3,"c":"quran","q":"Welche Qirāʾa (Lesart) ist heute weltweit am verbreitetsten?","o":["Ḥafṣ ʿan ʿĀṣim","Warsch ʿan Nāfiʿ","Qālūn ʿan Nāfiʿ","ad-Dūrī ʿan Abī ʿAmr"],"a":0,"e":"Warsch ist in Nord- und Westafrika verbreitet.","s":"Ibn al-Dschazarī, an-Naschr","x":1},
+{"l":3,"c":"quran","q":"Welche Sure enthält die Erbregeln ausführlich?","o":["an-Nisāʾ","al-Baqara","al-Māʾida","an-Nūr"],"a":0,"e":"Die Verse 11, 12 und 176 regeln das Erbe.","s":"Qur'an 4:11–12, 176","x":1},
+{"l":3,"c":"quran","q":"In welcher Sure wird der Name „Aḥmad“ für den Propheten ﷺ erwähnt?","o":["aṣ-Ṣaff","Muhammad","al-Fatḥ","al-Aḥzāb"],"a":0,"e":"ʿĪsā verkündet einen Gesandten namens Aḥmad.","s":"Qur'an 61:6","x":1},
+{"l":3,"c":"quran","q":"Wie oft wird „Muhammad“ im Qur'an namentlich genannt?","o":["4-mal","10-mal","25-mal","1-mal"],"a":0,"e":"In 3:144, 33:40, 47:2 und 48:29.","s":"Qur'an","x":1},
+{"l":3,"c":"quran","q":"Welcher Engel wird im Qur'an zusammen mit Dschibrīl namentlich genannt?","o":["Mīkāl","Isrāfīl","ʿIzrāʾīl","Riḍwān"],"a":0,"e":"„Wer ein Feind ist Allahs … Dschibrīls und Mīkāls …“","s":"Qur'an 2:98","x":1},
+{"l":3,"c":"quran","q":"Welcher Sahābī schrieb den Qur'an als Hauptschreiber der Offenbarung?","o":["Zaid ibn Thābit","Abū Huraira","Bilāl","Salmān"],"a":0,"e":"Der Prophet ﷺ rief Zaid, um Verse zu schreiben.","s":"Buchārī 4990","x":1},
+{"l":3,"c":"quran","q":"Welcher Dschinn-Bericht steht in Sure 72?","o":["Dschinn hörten den Qur'an und glaubten","Dschinn bauten die Kaaba","Dschinn kämpften bei Badr","Dschinn wurden Propheten"],"a":0,"e":"„Wir haben einen wunderbaren Qur'an gehört.“","s":"Qur'an 72:1","x":1},
+{"l":3,"c":"hadith","q":"Wer überlieferte den Hadith „Die Taten sind nur gemäß den Absichten“?","o":["ʿUmar ibn al-Khaṭṭāb","Abū Huraira","ʿĀʾischa","Anas"],"a":0,"e":"Er steht am Anfang von Ṣaḥīḥ al-Buchārī.","s":"Buchārī 1","x":1},
+{"l":3,"c":"hadith","q":"Was bezeichnet man als „al-Kutub as-Sitta“?","o":["Die sechs großen Hadith-Sammlungen","Die sechs Bücher des Fiqh","Sechs Tafsīr-Werke","Sechs Sīra-Bücher"],"a":0,"e":"Buchārī, Muslim, Abū Dāwūd, Tirmidhī, Nasāʾī, Ibn Mādscha.","s":"Ibn Ṭāhir al-Maqdisī","x":1},
+{"l":3,"c":"hadith","q":"Wer stellte die „40 Hadithe“ (al-Arbaʿūn) zusammen, die sehr bekannt sind?","o":["Imām an-Nawawī","Imām Mālik","Ibn Taimiyya","Imām Aḥmad"],"a":0,"e":"An-Nawawīs Sammlung enthält eigentlich 42 Hadithe.","s":"an-Nawawī, al-Arbaʿūn","x":1},
+{"l":3,"c":"hadith","q":"Wie heißt die Kette der Überlieferer eines Hadith?","o":["Isnād","Matn","Tafsīr","Sīra"],"a":0,"e":"Der Text heißt Matn, die Kette Isnād.","s":"Muslim, Muqaddima","x":1},
+{"l":3,"c":"hadith","q":"Wie heißt ein Hadith, bei dem Allah spricht, aber er ist kein Qur'an?","o":["Ḥadīth Qudsī","Ḥadīth Mursal","Ḥadīth Mauḍūʿ","Ḥadīth Ḍaʿīf"],"a":0,"e":"Z. B.: „O Meine Diener, Ich habe Mir das Unrecht verboten …“","s":"Muslim 2577","x":1},
+{"l":3,"c":"hadith","q":"Was ist ein „mauḍūʿ“ Hadith?","o":["Ein erfundener Hadith","Ein sehr starker Hadith","Ein Hadith mit langer Kette","Ein Ḥadīth Qudsī"],"a":0,"e":"„Wer absichtlich über mich lügt, nehme seinen Platz im Feuer ein.“","s":"Buchārī 110","x":1},
+{"l":3,"c":"hadith","q":"Welcher Hadith beschreibt Islam, Īmān und Iḥsān mit Dschibrīl als Fragendem?","o":["Ḥadīth Dschibrīl","Ḥadīth an-Niyya","Ḥadīth al-Bitāqa","Ḥadīth al-Ifk"],"a":0,"e":"Ein Mann in weißer Kleidung fragte den Propheten ﷺ.","s":"Muslim 8","x":1},
+{"l":3,"c":"hadith","q":"Was sind laut Hadith die drei Zeichen des Heuchlers?","o":["Lügen, Versprechen brechen, Vertrauen missbrauchen","Beten, Fasten, Spenden","Lachen, Essen, Schlafen","Reisen, Lernen, Arbeiten"],"a":0,"e":"Wenn er spricht, lügt er; verspricht er, bricht er es; wird ihm vertraut, betrügt er.","s":"Buchārī 33, Muslim 59","x":1},
+{"l":3,"c":"hadith","q":"Welcher Imam schrieb den „Musnad“ mit rund 27.000 Hadithen?","o":["Aḥmad ibn Ḥanbal","Abū Ḥanīfa","asch-Schāfiʿī","Ibn Mādscha"],"a":0,"e":"Der Musnad ist nach Sahāba geordnet.","s":"adh-Dhahabī, Siyar","x":1},
+{"l":3,"c":"hadith","q":"Aus welcher Stadt stammte Imām al-Buchārī?","o":["Buchara","Bagdad","Kairo","Damaskus"],"a":0,"e":"Er lebte 194–256 n. H.","s":"adh-Dhahabī, Siyar 12/391","x":1},
+{"l":3,"c":"hadith","q":"Wie viele Hadithe (mit Wiederholungen) enthält Ṣaḥīḥ al-Buchārī etwa?","o":["Etwa 7500","Etwa 500","Etwa 50.000","Etwa 1000"],"a":0,"e":"Ohne Wiederholungen sind es etwa 2600.","s":"Ibn Ḥadschar, Hady as-Sārī","x":1},
+{"l":3,"c":"hadith","q":"Was ist laut Hadith die größte der großen Sünden?","o":["Allah etwas beizugesellen","Lügen","Stehlen","Schimpfen"],"a":0,"e":"Dann Ungehorsam gegen die Eltern und falsches Zeugnis.","s":"Buchārī 2654","x":1},
+{"l":3,"c":"hadith","q":"Welche Eigenschaft liebt Allah laut Hadith in allen Dingen?","o":["Sanftheit (Rifq)","Härte","Schnelligkeit","Lautstärke"],"a":0,"e":"Allah ist sanft und liebt die Sanftheit in allen Angelegenheiten.","s":"Buchārī 6927","x":1},
+{"l":3,"c":"hadith","q":"Was ist laut Hadith „ad-Dīn an-Naṣīḥa“?","o":["Die Religion ist aufrichtiger Rat","Die Religion ist schwer","Die Religion ist nur Gebet","Die Religion ist Wissen"],"a":0,"e":"Für Allah, Sein Buch, Seinen Gesandten, die Führer und alle Muslime.","s":"Muslim 55","x":1},
+{"l":3,"c":"hadith","q":"Was ist „Ḥadīth al-Biṭāqa“?","o":["Die Karte mit Lā ilāha illallāh, die 99 Register überwiegt","Ein Hadith über Reisen","Ein Hadith über das Essen","Ein Hadith über Tiere"],"a":0,"e":"Die kleine Karte ist schwerer als alle Sündenregister.","s":"Tirmidhī 2639","x":1},
+{"l":3,"c":"hadith","q":"Was erleichtert Allah dem, der einen Weg geht, um Wissen zu suchen?","o":["Einen Weg zum Paradies","Viel Geld","Eine schnelle Reise","Gute Noten"],"a":0,"e":"Wer einen Weg geht, um Wissen zu suchen, dem erleichtert Allah einen Weg ins Paradies.","s":"Muslim 2699","x":1},
+{"l":3,"c":"gebet","q":"Wie viele Takbīre hat das Totengebet?","o":["4","2","6","7"],"a":0,"e":"Der Prophet ﷺ sprach beim Nadschāschī vier Takbīre.","s":"Buchārī 1333","x":1},
+{"l":3,"c":"gebet","q":"Wie viele zusätzliche Takbīre hat das ʿĪd-Gebet in der ersten Rakʿa (nach verbreiteter Meinung)?","o":["7","3","5","12"],"a":0,"e":"Sieben in der ersten, fünf in der zweiten Rakʿa.","s":"Abū Dāwūd 1151; Tirmidhī 536","x":1},
+{"l":3,"c":"gebet","q":"Was ist „Sudschūd asch-Schukr“?","o":["Niederwerfung aus Dankbarkeit","Niederwerfung beim Vergessen","Niederwerfung am Ende","Eine Pflicht-Rakʿa"],"a":0,"e":"Bei guter Nachricht warf sich der Prophet ﷺ dankbar nieder.","s":"Abū Dāwūd 2774","x":1},
+{"l":3,"c":"gebet","q":"Wie viele Rakʿāt betet der Reisende bei Dhuhr, ʿAṣr und ʿIschāʾ?","o":["2","3","4","1"],"a":0,"e":"Das Gebet des Reisenden ist verkürzt (Qaṣr).","s":"Qur'an 4:101; Buchārī 1090","x":1},
+{"l":3,"c":"gebet","q":"Welche Gebete darf man auf Reisen zusammenlegen?","o":["Dhuhr mit ʿAṣr, Maghrib mit ʿIschāʾ","Fadschr mit Dhuhr","ʿAṣr mit Maghrib","Alle fünf"],"a":0,"e":"Das Zusammenlegen heißt Dschamʿ.","s":"Buchārī 1107; Muslim 705","x":1},
+{"l":3,"c":"gebet","q":"Wie heißt das Bittgebet im Witr oder bei Unglück im Stehen?","o":["Qunūt","Taschahhud","Istiʿādha","Iqāma"],"a":0,"e":"Al-Ḥasan lernte: Allāhumma-hdinī fīman hadait …","s":"Abū Dāwūd 1425","x":1},
+{"l":3,"c":"gebet","q":"Wie viele Rakʿāt Sunna betete der Prophet ﷺ regelmäßig vor Fadschr?","o":["2","4","1","0"],"a":0,"e":"Die zwei Rakʿāt vor Fadschr sind besser als die Welt und was darin ist.","s":"Muslim 725","x":1},
+{"l":3,"c":"gebet","q":"Wie heißt die Sitzhaltung im letzten Taschahhud mit dem linken Fuß unter dem rechten Bein?","o":["Tawarruk","Iftirāsch","Iqʿāʾ","Qiyām"],"a":0,"e":"Abū Ḥumaid beschrieb Tawarruk im letzten Sitzen.","s":"Buchārī 828","x":1},
+{"l":3,"c":"gebet","q":"Wann beginnt die Zeit des ʿAṣr-Gebets (nach Mehrheit)?","o":["Wenn der Schatten so lang ist wie der Gegenstand","Bei Sonnenaufgang","Bei Mitternacht","Bei Sonnenuntergang"],"a":0,"e":"Dschibrīl betete ʿAṣr, als der Schatten gleich lang war.","s":"Abū Dāwūd 393; Tirmidhī 149","x":1},
+{"l":3,"c":"gebet","q":"Wann endet die Fadschr-Zeit?","o":["Bei Sonnenaufgang","Um 12 Uhr","Bei Sonnenuntergang","Bei Dhuhr"],"a":0,"e":"Die Zeit des Morgengebets reicht bis zum Sonnenaufgang.","s":"Muslim 612","x":1},
+{"l":3,"c":"gebet","q":"Was ist das „Gebet der Furcht“ (Ṣalāt al-Khauf)?","o":["Gebet in Gefahr, in Gruppen abwechselnd","Gebet bei Gewitter","Gebet vor Prüfungen","Totengebet"],"a":0,"e":"Eine Gruppe betet, die andere wacht.","s":"Qur'an 4:102","x":1},
+{"l":3,"c":"gebet","q":"Was sagte der Prophet ﷺ über die erste Reihe im Gebet?","o":["Wüssten sie, sie würden darum losen","Gar keinen","Die Hälfte","Er ist gleich"],"a":0,"e":"Wüssten die Menschen, was im Adhān und der ersten Reihe liegt …","s":"Buchārī 615","x":1},
+{"l":3,"c":"grund","q":"Wie viele Arten von Empfängern der Zakāh nennt der Qur'an?","o":["8","5","3","10"],"a":0,"e":"Arme, Bedürftige, Verwalter, Herzen-Gewinnende, Sklavenbefreiung, Verschuldete, Weg Allahs, Reisende.","s":"Qur'an 9:60","x":1},
+{"l":3,"c":"grund","q":"Was ist „Fidya“?","o":["Ersatzzahlung für wer dauerhaft nicht fasten kann","Eine Strafe für Diebe","Das Opfertier","Ein Gebet"],"a":0,"e":"Für jeden Tag einen Bedürftigen speisen.","s":"Qur'an 2:184","x":1},
+{"l":3,"c":"grund","q":"Was ist „Kaffāra“ für absichtlichen Fastenbruch durch Geschlechtsverkehr im Ramadan?","o":["60 Tage durchgehend fasten (oder Alternativen)","1 Tag nachholen","10 Tage fasten","Nichts"],"a":0,"e":"Sklaven befreien, sonst 60 Tage fasten, sonst 60 Arme speisen.","s":"Buchārī 1936","x":1},
+{"l":3,"c":"grund","q":"Welche vier Rechtsschulen (Madhāhib) der Sunniten gibt es?","o":["Ḥanafī, Mālikī, Schāfiʿī, Ḥanbalī","Buchārī, Muslim, Tirmidhī, Nasāʾī","Mekka, Medina, Kufa, Basra","Qurṭubī, Ṭabarī, Kathīr, Rāzī"],"a":0,"e":"Benannt nach Abū Ḥanīfa, Mālik, asch-Schāfiʿī und Aḥmad.","s":"adh-Dhahabī, Siyar","x":1},
+{"l":3,"c":"grund","q":"Welcher Imam ist der Gründer der ältesten der vier Rechtsschulen?","o":["Abū Ḥanīfa","Imām Mālik","asch-Schāfiʿī","Aḥmad ibn Ḥanbal"],"a":0,"e":"Abū Ḥanīfa starb 150 n. H.","s":"adh-Dhahabī, Siyar 6/390","x":1},
+{"l":3,"c":"grund","q":"Welcher Imam war Lehrer von asch-Schāfiʿī?","o":["Imām Mālik","Abū Ḥanīfa","Aḥmad ibn Ḥanbal","al-Buchārī"],"a":0,"e":"Asch-Schāfiʿī lernte das Muwaṭṭaʾ bei Mālik in Medina.","s":"adh-Dhahabī, Siyar 10/5","x":1},
+{"l":3,"c":"grund","q":"Welche vier Monate sind laut Qur'an „heilig“?","o":["Dhu-l-Qaʿda, Dhu-l-Ḥiddscha, Muḥarram, Radschab","Ramaḍān, Schawwāl, Schaʿbān, Ṣafar","Nur Ramaḍān","Alle zwölf"],"a":0,"e":"Davon sind vier heilig.","s":"Qur'an 9:36; Buchārī 3197","x":1},
+{"l":3,"c":"grund","q":"Wie heißt der 8. Monat des islamischen Kalenders?","o":["Schaʿbān","Radschab","Ramaḍān","Schawwāl"],"a":0,"e":"Im Schaʿbān fastete der Prophet ﷺ besonders viel.","s":"Buchārī 1969","x":1},
+{"l":3,"c":"grund","q":"Was ist „Ayyām al-Bīḍ“ – die weißen Tage?","o":["13., 14. und 15. jedes Monats","Die ersten drei Tage","Die ʿĪd-Tage","Jeder Freitag"],"a":0,"e":"Der Prophet ﷺ empfahl, an ihnen zu fasten.","s":"Nasāʾī 2420; Tirmidhī 761","x":1},
+{"l":3,"c":"propheten","q":"Wie viele Gesandte gehören zu den „Ulu-l-ʿAzm“ (Standhaften)?","o":["5","3","7","10"],"a":0,"e":"Nūḥ, Ibrāhīm, Mūsā, ʿĪsā und Muhammad ﷺ.","s":"Qur'an 33:7; 46:35","x":1},
+{"l":3,"c":"propheten","q":"Wie lange rief Nūḥ sein Volk zum Glauben?","o":["950 Jahre","100 Jahre","40 Jahre","300 Jahre"],"a":0,"e":"„Er verweilte unter ihnen tausend Jahre weniger fünfzig.“","s":"Qur'an 29:14","x":1},
+{"l":3,"c":"propheten","q":"Welcher Prophet wurde „Kalīmullāh“ genannt, weil Allah direkt mit ihm sprach?","o":["Mūsā","Ibrāhīm","Muhammad ﷺ","Hārūn"],"a":0,"e":"„Und Allah sprach mit Mūsā wirklich.“","s":"Qur'an 4:164","x":1},
+{"l":3,"c":"propheten","q":"Auf welchem Berg sprach Allah zu Mūsā?","o":["Ṭūr Sīnāʾ","Uḥud","ʿArafāt","Ḥirāʾ"],"a":0,"e":"Am rechten Hang des Berges Ṭūr.","s":"Qur'an 19:52; 95:2","x":1},
+{"l":3,"c":"propheten","q":"Welcher Herrscher stritt mit Ibrāhīm über das Lebendigmachen und Sterbenlassen?","o":["Namrūd (Nimrod)","Firʿaun","Dschālūt","Abraha"],"a":0,"e":"„Allah lässt die Sonne im Osten aufgehen – bring du sie im Westen!“","s":"Qur'an 2:258; Ibn Kathīr","x":1},
+{"l":3,"c":"propheten","q":"Welcher Prophet aß von den Früchten Maryams im Gebetsraum und staunte?","o":["Zakariyyā","Yaḥyā","ʿImrān","Dāwūd"],"a":0,"e":"„Woher hast du das?“ – „Es ist von Allah.“","s":"Qur'an 3:37","x":1},
+{"l":3,"c":"propheten","q":"Unter welchem Baum gebar Maryam ʿĪsā?","o":["Einer Dattelpalme","Einem Olivenbaum","Einem Feigenbaum","Einer Zeder"],"a":0,"e":"„Schüttle den Stamm der Palme, frische Datteln fallen.“","s":"Qur'an 19:23–25","x":1},
+{"l":3,"c":"propheten","q":"Wie viele Jahre diente Mūsā bei Schuʿaib (Madyan) mindestens?","o":["8 (bzw. 10)","3","20","40"],"a":0,"e":"„Acht Jahre, und wenn du zehn vollendest, ist es von dir.“","s":"Qur'an 28:27","x":1},
+{"l":3,"c":"propheten","q":"Wie viele Jahre wanderten die Banī Isrāʾīl in der Wüste umher?","o":["40","10","70","100"],"a":0,"e":"„So ist es ihnen 40 Jahre verwehrt; sie irren auf der Erde umher.“","s":"Qur'an 5:26","x":1},
+{"l":3,"c":"propheten","q":"Welcher Prophet war Bruder von Mūsā und Sprecher für ihn?","o":["Hārūn","Yūschaʿ","Schuʿaib","Ilyās"],"a":0,"e":"Hārūn war beredter als Mūsā.","s":"Qur'an 28:34","x":1},
+{"l":3,"c":"propheten","q":"Welcher Prophet ist Schüler von Mūsā und führte die Banī Isrāʾīl ins Land?","o":["Yūschaʿ ibn Nūn","Ilyās","Hārūn","Dāwūd"],"a":0,"e":"Für ihn wurde die Sonne angehalten.","s":"Buchārī 3124; Muslim 1747","x":1},
+{"l":3,"c":"propheten","q":"Welcher Prophet wurde zu Ninive gesandt?","o":["Yūnus","Ilyās","Hūd","Lūṭ"],"a":0,"e":"Sein Volk glaubte schließlich als einziges vollständig.","s":"Qur'an 10:98; Buchārī 3395 (Ibn Mattā)","x":1},
+{"l":3,"c":"propheten","q":"Welcher Prophet tadelte sein Volk, weil sie den Götzen Baʿl anbeteten?","o":["Ilyās","Idrīs","Yūnus","Ṣāliḥ"],"a":0,"e":"„Ruft ihr Baʿl an und lasst den besten Schöpfer?“","s":"Qur'an 37:123–125","x":1},
+{"l":3,"c":"propheten","q":"Welcher Prophet war bekannt als Erster, der mit dem Schreibrohr schrieb (Überlieferung)?","o":["Idrīs","Ādam","Nūḥ","Schīth"],"a":0,"e":"So berichten Gelehrte der Geschichte über Idrīs.","s":"Ibn Kathīr, Qiṣaṣ al-Anbiyāʾ","x":1},
+{"l":3,"c":"sahaba","q":"Wer gehört NICHT zu den zehn Sahāba, denen das Paradies verkündet wurde?","o":["Bilāl","Ṭalḥa","az-Zubair","Saʿd ibn Abī Waqqāṣ"],"a":0,"e":"Die Zehn: die vier Khalifen, Ṭalḥa, Zubair, ʿAbd ar-Raḥmān ibn ʿAuf, Saʿd, Saʿīd, Abū ʿUbaida.","s":"Tirmidhī 3747","x":1},
+{"l":3,"c":"sahaba","q":"Welcher Sahābī warf als Erster einen Pfeil auf dem Weg Allahs?","o":["Saʿd ibn Abī Waqqāṣ","Khālid","ʿAlī","Ḥamza"],"a":0,"e":"Der Prophet ﷺ sagte zu ihm: Schieß – mein Vater und meine Mutter für dich!","s":"Buchārī 4059; 3728","x":1},
+{"l":3,"c":"sahaba","q":"Welcher Sahābī wurde als Gesandter in den Jemen geschickt und kannte das Erlaubte/Verbotene am besten?","o":["Muʿādh ibn Dschabal","Abū Mūsā","Khālid","Anas"],"a":0,"e":"„Der Kundigste über Erlaubtes und Verbotenes ist Muʿādh.“","s":"Tirmidhī 3790; Buchārī 1395","x":1},
+{"l":3,"c":"sahaba","q":"Wer war der Sahābī mit der schönsten Qur'an-Stimme, „wie die Flöten der Familie Dāwūd“?","o":["Abū Mūsā al-Aschʿarī","Bilāl","Ubayy ibn Kaʿb","Ibn Masʿūd"],"a":0,"e":"Der Prophet ﷺ lobte seine Rezitation so.","s":"Buchārī 5048","x":1},
+{"l":3,"c":"sahaba","q":"Welchen Sahābī bat der Prophet ﷺ, ihm den Qur'an vorzulesen, bis ihm Tränen kamen?","o":["ʿAbdullāh ibn Masʿūd","Abū Bakr","Zaid","Muʿādh"],"a":0,"e":"Er las an-Nisāʾ bis Vers 41.","s":"Buchārī 5050","x":1},
+{"l":3,"c":"sahaba","q":"Wer war der jüngste Heerführer, den der Prophet ﷺ vor seinem Tod ernannte?","o":["Usāma ibn Zaid","ʿAlī","Anas","Ibn ʿUmar"],"a":0,"e":"Usāma war etwa 18 Jahre alt.","s":"Buchārī 4469","x":1},
+{"l":3,"c":"sahaba","q":"Welcher Sahābī kam aus Persien und suchte lange nach der Wahrheit?","o":["Salmān al-Fārisī","Bilāl","Ṣuhaib","Abū Dharr"],"a":0,"e":"Er zog von Lehrer zu Lehrer, bis er nach Medina kam.","s":"Aḥmad 23737","x":1},
+{"l":3,"c":"sahaba","q":"Wofür ist Ṣuhaib ar-Rūmī bekannt?","o":["Er gab sein ganzes Vermögen, um auszuwandern","Er baute die Moschee","Er war der erste Khalif","Er schrieb den Qur'an"],"a":0,"e":"„Gewinnbringend war der Handel, Abū Yaḥyā!“","s":"al-Ḥākim 5706; Qur'an 2:207","x":1},
+{"l":3,"c":"sahaba","q":"Welche Frau verteidigte den Propheten ﷺ bei Uḥud mit dem Schwert?","o":["Nusaiba (Umm ʿUmāra)","ʿĀʾischa","Asmāʾ","Ḥafṣa"],"a":0,"e":"Sie stand vor ihm und wehrte Angreifer ab.","s":"Ibn Saʿd, aṭ-Ṭabaqāt 8/412","x":1},
+{"l":3,"c":"sahaba","q":"Bei welcher Sahābīya wurde der Qur'an-Muṣḥaf von Abū Bakr aufbewahrt?","o":["Ḥafṣa bint ʿUmar","ʿĀʾischa","Umm Salama","Fāṭima"],"a":0,"e":"Nach ʿUmars Tod lagen die Blätter bei Ḥafṣa.","s":"Buchārī 4986","x":1},
+{"l":3,"c":"geschichte","q":"In welchem Jahr (n. Chr.) war die Hidschra?","o":["622","570","632","610"],"a":0,"e":"Die Hidschra war 622 n. Chr.","s":"Allgemeine Chronologie","x":1},
+{"l":3,"c":"geschichte","q":"In welchem Jahr n. Chr. starb der Prophet ﷺ?","o":["632","622","640","610"],"a":0,"e":"Er starb im Jahr 11 n. H.","s":"Buchārī 4466","x":1},
+{"l":3,"c":"geschichte","q":"Welche Schlacht wird auch „Schlacht der Verbündeten“ (al-Aḥzāb) genannt?","o":["Khandaq (Graben)","Badr","Uḥud","Ḥunain"],"a":0,"e":"Die Verbündeten belagerten Medina im Jahr 5 n. H.","s":"Qur'an 33:9–22","x":1},
+{"l":3,"c":"geschichte","q":"Welche Gruppe verließ bei Uḥud gegen den Befehl ihren Posten?","o":["Die Bogenschützen auf dem Hügel","Die Reiter","Die Fahnenträger","Die Frauen"],"a":0,"e":"Ihr Fehler wendete die Schlacht.","s":"Buchārī 3039","x":1},
+{"l":3,"c":"geschichte","q":"Wie hieß der Berg, auf dem die Bogenschützen bei Uḥud standen?","o":["ʿAinain (Dschabal ar-Rumāt)","Ḥirāʾ","Thaur","Sala'"],"a":0,"e":"Er heißt heute „Berg der Bogenschützen“.","s":"Ibn Hischām; Buchārī 3039","x":1},
+{"l":3,"c":"geschichte","q":"Wo hielt der Prophet ﷺ die Abschiedspredigt?","o":["Am Berg ʿArafāt","In Medina","In Ṭāʾif","Bei Badr"],"a":0,"e":"„Heute habe Ich euch eure Religion vervollkommnet.“","s":"Qur'an 5:3; Muslim 1218","x":1},
+{"l":3,"c":"geschichte","q":"Welcher Khalif eroberte Jerusalem friedlich und erhielt die Schlüssel?","o":["ʿUmar ibn al-Khaṭṭāb","Abū Bakr","ʿAlī","Muʿāwiya"],"a":0,"e":"Im Jahr 15/16 n. H. kam ʿUmar selbst nach Jerusalem.","s":"aṭ-Ṭabarī, Tārīkh 3/607","x":1},
+{"l":3,"c":"geschichte","q":"Welcher Feldherr befreite Jerusalem 583 n. H. (1187)?","o":["Ṣalāḥ ad-Dīn al-Ayyūbī","Ṭāriq ibn Ziyād","Khālid ibn al-Walīd","Saif ad-Dīn Quṭuz"],"a":0,"e":"Nach der Schlacht von Ḥiṭṭīn.","s":"Ibn Kathīr, al-Bidāya 12/322","x":1},
+{"l":3,"c":"geschichte","q":"Welcher Feldherr setzte 711 nach Andalusien über?","o":["Ṭāriq ibn Ziyād","Ṣalāḥ ad-Dīn","Mūsā ibn Nuṣair","ʿUqba ibn Nāfiʿ"],"a":0,"e":"Der Felsen von Gibraltar (Dschabal Ṭāriq) ist nach ihm benannt.","s":"Ibn ʿIdhārī, al-Bayān","x":1},
+{"l":3,"c":"geschichte","q":"Welcher osmanische Sultan eroberte 1453 Konstantinopel?","o":["Muḥammad (Mehmed) al-Fātiḥ","Sulaimān","Selim","Orhan"],"a":0,"e":"Er war damals 21 Jahre alt.","s":"Allgemeine Geschichte","x":1},
+{"l":3,"c":"geschichte","q":"Was war das „Haus der Weisheit“ (Bait al-Ḥikma)?","o":["Eine große Bibliothek und Akademie in Bagdad","Eine Moschee in Mekka","Ein Palast in Kairo","Eine Burg in Damaskus"],"a":0,"e":"Dort wurden Wissen gesammelt und übersetzt.","s":"Allgemeine Geschichte","x":1},
+{"l":3,"c":"geschichte","q":"Welcher muslimische Gelehrte gilt als Vater der Algebra?","o":["al-Khwārizmī","Ibn Sīnā","al-Bīrūnī","Ibn Rušd"],"a":0,"e":"Das Wort „Algorithmus“ kommt von seinem Namen.","s":"Allgemeine Wissenschaftsgeschichte","x":1},
+{"l":3,"c":"geschichte","q":"Wer schrieb den „Kanon der Medizin“?","o":["Ibn Sīnā","al-Khwārizmī","Ibn Khaldūn","al-Ghazālī"],"a":0,"e":"Er wurde in Europa jahrhundertelang gelehrt.","s":"Allgemeine Wissenschaftsgeschichte","x":1},
+{"l":3,"c":"ramadan","q":"In welchem Jahr nach der Hidschra wurde das Ramadan-Fasten Pflicht?","o":["2 n. H.","1 n. H.","5 n. H.","10 n. H."],"a":0,"e":"Der Prophet ﷺ fastete neun Ramadane.","s":"an-Nawawī, al-Madschmūʿ 6/250","x":1},
+{"l":3,"c":"ramadan","q":"Welche Schlacht fand im Ramadan statt?","o":["Badr","Uḥud","Khandaq","Tabūk"],"a":0,"e":"Badr war am 17. Ramadan 2 n. H.","s":"Ibn Hischām; Qur'an 8:41","x":1},
+{"l":3,"c":"ramadan","q":"Wie oft wiederholte Dschibrīl den Qur'an mit dem Propheten ﷺ im letzten Ramadan?","o":["Zweimal","Einmal","Dreimal","Gar nicht"],"a":0,"e":"Sonst jedes Jahr einmal; im letzten Jahr zweimal.","s":"Buchārī 4998","x":1},
+{"l":3,"c":"ramadan","q":"Was bricht das Fasten NICHT?","o":["Vergessliches Essen","Absichtliches Essen","Absichtliches Trinken","Absichtliches Erbrechen"],"a":0,"e":"Wer vergisst und isst, vollende sein Fasten – Allah hat ihn gespeist.","s":"Buchārī 1933; Tirmidhī 720","x":1},
+{"l":3,"c":"hajj","q":"Was ist der „Maqām Ibrāhīm“?","o":["Der Stein, auf dem Ibrāhīm beim Bau stand","Das Grab Ibrāhīms","Ein Berg in Mekka","Die Quelle Zamzam"],"a":0,"e":"„Nehmt den Standort Ibrāhīms als Gebetsstätte.“","s":"Qur'an 2:125; Buchārī 3365","x":1},
+{"l":3,"c":"hajj","q":"Wie heißt der Ort, ab dem man den Iḥrām anlegen muss?","o":["Mīqāt","Muzdalifa","Minā","Ḥaram"],"a":0,"e":"Der Prophet ﷺ legte die Mīqāte für die Regionen fest.","s":"Buchārī 1524","x":1},
+{"l":3,"c":"hajj","q":"Was ist der „Ṭawāf al-Ifāḍa“?","o":["Ein Pflicht-Ṭawāf nach ʿArafāt","Der Abschiedsumlauf","Der Ankunftsumlauf","Ein freiwilliger Umlauf"],"a":0,"e":"Er ist eine Säule (Rukn) des Ḥaddsch.","s":"Qur'an 22:29; Buchārī 1733","x":1},
+{"l":3,"c":"hajj","q":"Wie heißen die drei Tage nach dem Opferfest in Minā?","o":["Ayyām at-Taschrīq","Ayyām al-Bīḍ","Laylat al-Qadr","Ayyām al-ʿAschr"],"a":0,"e":"Tage des Essens, Trinkens und Gedenkens Allahs.","s":"Muslim 1141","x":1},
+{"l":3,"c":"glaube","q":"Welches Buch wird „Umm al-Kitāb“ (Mutter des Buches) genannt?","o":["al-Fātiḥa","al-Baqara","Yā-Sīn","al-Ikhlāṣ"],"a":0,"e":"Al-Fātiḥa ist Umm al-Qur'an.","s":"Buchārī 4704","x":1},
+{"l":3,"c":"glaube","q":"Wie heißt die bewahrte Tafel, auf der alles geschrieben ist?","o":["al-Lauḥ al-Maḥfūẓ","al-Mīzān","al-Kursī","al-ʿArsch"],"a":0,"e":"„Es ist ein ruhmreicher Qur'an auf einer wohlverwahrten Tafel.“","s":"Qur'an 85:21–22","x":1},
+{"l":3,"c":"glaube","q":"Wie heißt die höchste Stufe des Paradieses?","o":["al-Firdaus","ʿAdn","an-Naʿīm","al-Maʾwā"],"a":0,"e":"Bittet Allah um al-Firdaus – sie ist die Mitte und Höchste.","s":"Buchārī 2790","x":1},
+{"l":3,"c":"glaube","q":"Was ist die „Schafāʿa“?","o":["Die Fürsprache am Tag des Gerichts","Die Pilgerfahrt","Das Fasten","Die Grabfrage"],"a":0,"e":"Der Prophet ﷺ hat eine besondere Fürsprache aufbewahrt.","s":"Buchārī 6304","x":1},
+{"l":3,"c":"glaube","q":"Wer erscheint vor dem Ende der Zeit als falscher Messias?","o":["ad-Daddschāl","Yādschūdsch","Firʿaun","Iblīs"],"a":0,"e":"Der Prophet ﷺ lehrte, im Gebet Schutz vor ihm zu suchen.","s":"Muslim 588","x":1},
+{"l":3,"c":"glaube","q":"Welche Verse schützen laut Hadith vor dem Daddschāl?","o":["Die ersten zehn Verse von al-Kahf","Die letzten Verse von Yā-Sīn","al-Fātiḥa","Āyat al-Kursī"],"a":0,"e":"Wer die ersten zehn Verse von al-Kahf auswendig kann, ist geschützt.","s":"Muslim 809","x":1},
+{"l":3,"c":"glaube","q":"Was ist der Name Allahs „Al-Qayyūm“?","o":["Der durch Sich selbst Bestehende, alles Erhaltende","Der Starke","Der Vergebende","Der Erste"],"a":0,"e":"Er steht in Āyat al-Kursī: al-Ḥayy al-Qayyūm.","s":"Qur'an 2:255","x":1},
+{"l":3,"c":"glaube","q":"Wer war Iblīs?","o":["Ein Dschinn, der sich weigerte, sich vor Ādam niederzuwerfen","Ein Engel, der gehorchte","Ein Prophet","Ein König"],"a":0,"e":"„Er war einer der Dschinn.“","s":"Qur'an 18:50","x":1}];
+
+/* =================== p49: Quizshow „Wer ist der schlauste Muslim?“ – 15 Stufen, Timer, Joker, Duell, Rangliste =================== */
+(function(){
+const EN = () => lang === "en";
+const T2 = (de, en) => EN() ? en : de;
+const F = () => window.lmFam || {};
+
+/* ---------- Daten: neue Fragen und Bereiche ---------- */
+const EN_N = QS_EN.length;
+QX.forEach(q => QS.push(q));
+[["ramadan", "Ramadan", "Ramadan"], ["hajj", "Ḥaddsch & ʿUmra", "Hajj & Umrah"], ["glaube", "Glaube", "Faith"], ["geschichte", "Geschichte", "History"]]
+  .forEach(([id, de, en]) => { if(!QCATS.some(c => c.id === id)){ QCATS.push({id, n: de}); QCATS_EN[id] = en; } });
+
+const PTS = [100, 200, 300, 500, 1000, 2000, 4000, 8000, 16000, 32000, 64000, 125000, 250000, 500000, 1000000];
+const SAFE = [4, 9];
+const LIMIT = i => i < 5 ? 30 : i < 10 ? 45 : 60;
+const fmt = n => n.toLocaleString(EN() ? "en-US" : "de-DE");
+const ALPHA = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+const newCode = () => Array.from({length: 6}, () => ALPHA[Math.floor(Math.random() * 32)]).join("");
+const cleanCode = s => String(s || "").toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 6);
+function rngOf(code){
+  let h = 2166136261; for(const ch of code){ h ^= ch.charCodeAt(0); h = Math.imul(h, 16777619); }
+  let a = h >>> 0;
+  return () => { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; };
+}
+const rshuffle = (arr, r) => { const a = arr.slice(); for(let i = a.length - 1; i > 0; i--){ const j = Math.floor(r() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+const okey = q => (q._o && q._o.q) || q.q;
+/* Gleicher Code → gleiche 15 Fragen in gleicher Reihenfolge, auf jedem Gerät */
+function pick(code){
+  const r = rngOf(code), list = [];
+  [1, 2, 3].forEach(l => {
+    const pool = QS.filter((q, i) => q.l === l && (!EN() || i < EN_N)).sort((a, b) => okey(a) < okey(b) ? -1 : okey(a) > okey(b) ? 1 : 0);
+    rshuffle(pool, r).slice(0, 5).forEach(q => {
+      const order = rshuffle([0, 1, 2, 3], r);
+      list.push({q, shown: order.map(k => q.o[k]), ok: order.indexOf(q.a)});
+    });
+  });
+  return list;
+}
+
+/* ---------- Speicher ---------- */
+const S = {get: (k, d) => { try{ return store.get(k, d); }catch(e){ return d; } }, set: (k, v) => { try{ store.set(k, v); }catch(e){} }};
+const me = () => { const f = F(); const k = f.kidOf && f.active ? f.kidOf(f.active) : null; return k ? {id: k.id, name: k.name, av: k.avatar} : {id: null, name: T2("Ich", "Me"), av: "⭐"}; };
+const cloudOK = () => { const f = F(); return !!(f.CLOUD && f.code && f.active); };
+
+/* ---------- Klang ---------- */
+let AC = null, snd = S.get("lm-wsm-snd", true);
+function beep(seq){
+  if(!snd) return;
+  try{
+    AC = AC || new (window.AudioContext || window.webkitAudioContext)();
+    if(AC.state === "suspended") AC.resume();
+    let t = AC.currentTime;
+    seq.forEach(([f, d, v = .12, type = "sine"]) => {
+      const o = AC.createOscillator(), g = AC.createGain();
+      o.type = type; o.frequency.value = f; g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(v, t + .01); g.gain.exponentialRampToValueAtTime(.0001, t + d);
+      o.connect(g); g.connect(AC.destination); o.start(t); o.stop(t + d + .02); t += d * .85;
+    });
+  }catch(e){}
+}
+const SND = {
+  tick: () => beep([[1250, .05, .06, "square"]]),
+  lock: () => beep([[220, .5, .14, "triangle"]]),
+  ok: () => beep([[523, .12], [659, .12], [784, .12], [1047, .35, .16]]),
+  bad: () => beep([[330, .25, .14, "sawtooth"], [247, .5, .12, "sawtooth"]]),
+  joker: () => beep([[880, .08], [1175, .15]]),
+  win: () => beep([[523, .15], [659, .15], [784, .15], [1047, .15], [1319, .5, .18]])
+};
+
+/* ---------- Logo (eigene Gestaltung: Achtstern, Halbmond, Buch) ---------- */
+const LOGO = (sz = 120) => `<svg class="wsm-logo" viewBox="0 0 120 120" width="${sz}" height="${sz}" aria-hidden="true">
+  <defs><linearGradient id="wsmG" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#FFE7A3"/><stop offset=".5" stop-color="#E7B84A"/><stop offset="1" stop-color="#B9852A"/></linearGradient>
+  <radialGradient id="wsmB" cx=".5" cy=".42" r=".6"><stop offset="0" stop-color="#2A4AA8"/><stop offset="1" stop-color="#0B1640"/></radialGradient></defs>
+  <g transform="translate(60 60)">
+    <rect x="-44" y="-44" width="88" height="88" rx="6" fill="url(#wsmB)" stroke="url(#wsmG)" stroke-width="3.5"/>
+    <rect x="-44" y="-44" width="88" height="88" rx="6" fill="url(#wsmB)" stroke="url(#wsmG)" stroke-width="3.5" transform="rotate(45)"/>
+    <circle r="33" fill="none" stroke="url(#wsmG)" stroke-width="1.4" stroke-dasharray="2 4" opacity=".8"/>
+    <path d="M6-24a22 22 0 1 0 0 40a17 17 0 1 1 0-40z" fill="url(#wsmG)" transform="translate(-4 -2)"/>
+    <path d="M12-12l2.6 5.3 5.8.8-4.2 4.1 1 5.8-5.2-2.7-5.2 2.7 1-5.8-4.2-4.1 5.8-.8z" fill="url(#wsmG)" transform="translate(6 2)"/>
+    <path d="M-14 22q14-6 28 0v5q-14-6-28 0z" fill="url(#wsmG)"/><path d="M0 19v7" stroke="#0B1640" stroke-width="1.2"/>
+  </g></svg>`;
+
+/* ---------- Stil ---------- */
+const css = document.createElement("style");
+css.textContent = `
+.wsm-hero{position:relative;overflow:hidden;border-radius:26px;padding:22px 18px 20px;margin:4px 0 16px;text-align:center;color:#fff;
+  background:radial-gradient(120% 90% at 50% 0%,#24439C 0%,#13235E 45%,#0B1640 100%);box-shadow:0 18px 40px -22px #0B1640}
+.wsm-hero::before{content:"";position:absolute;inset:0;background:repeating-conic-gradient(from 0deg at 50% 38%,rgba(231,184,74,.07) 0 6deg,transparent 6deg 18deg);pointer-events:none}
+.wsm-hero>*{position:relative}
+.wsm-hero .wsm-logo{filter:drop-shadow(0 6px 18px rgba(231,184,74,.35));margin-bottom:6px}
+.wsm-hero h2{margin:4px 0 4px;font-size:26px;line-height:1.15;font-weight:800;letter-spacing:-.01em;text-wrap:balance;color:#FFE7A3}
+.wsm-hero .ar{font-family:var(--ar-font,serif);font-size:19px;color:#E7B84A;margin:0 0 6px;direction:rtl}
+.wsm-hero p.sub{margin:0 auto 16px;max-width:30ch;font-size:14.5px;color:#C9D3F5}
+.wsm-btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;border:0;cursor:pointer;font:inherit;font-weight:800;font-size:17px;padding:14px 26px;border-radius:999px;
+  color:#1B1405;background:linear-gradient(180deg,#FFE7A3,#E7B84A 55%,#C7922F);box-shadow:0 10px 24px -10px rgba(231,184,74,.8),inset 0 1px 0 rgba(255,255,255,.6)}
+.wsm-btn:active{transform:scale(.97)}
+.wsm-btn.ghost{background:rgba(255,255,255,.08);color:#FFE7A3;box-shadow:inset 0 0 0 1.5px rgba(231,184,74,.6)}
+.wsm-best{display:flex;justify-content:center;gap:18px;margin-top:14px;font-size:13px;color:#C9D3F5}
+.wsm-best b{display:block;font-size:17px;color:#fff;font-variant-numeric:tabular-nums}
+.wsm-menu .row{display:flex;align-items:center;gap:12px;width:100%;padding:13px 14px;border:0;background:var(--surface);color:var(--ink);font:inherit;text-align:left;cursor:pointer}
+.wsm-menu .row+.row{border-top:1px solid var(--sep)}
+.wsm-menu .row .ic{width:38px;height:38px;border-radius:11px;display:grid;place-items:center;font-size:20px;flex:none}
+.wsm-menu .row b{display:block;font-size:16px}.wsm-menu .row span{font-size:13px;color:var(--muted)}
+.wsm-menu .row .chev{margin-left:auto;color:var(--muted);font-size:20px}
+.wsm-hist{display:flex;flex-direction:column}
+.wsm-hist .h{display:flex;align-items:center;gap:10px;padding:10px 14px;background:var(--surface);font-size:14px}
+.wsm-hist .h+.h{border-top:1px solid var(--sep)}
+.wsm-hist .h b{font-variant-numeric:tabular-nums}.wsm-hist .h .c{margin-left:auto;font-family:ui-monospace,monospace;font-size:12.5px;color:var(--muted)}
+.wsm-back{display:inline-flex;align-items:center;gap:6px;border:0;background:var(--fill);color:var(--ink);font:inherit;font-weight:600;font-size:14px;padding:8px 14px;border-radius:999px;margin:0 0 10px;cursor:pointer}
+
+#v-quiz.wsm-land .lm-hd{display:none!important}
+/* Vollbild-Show */
+body.wsm-on{overflow:hidden}
+body.wsm-on .tabbar,body.wsm-on .mini{display:none!important}
+.wsm{position:fixed;inset:0;z-index:95;color:#fff;overflow-y:auto;-webkit-overflow-scrolling:touch;
+  background:radial-gradient(130% 70% at 50% -10%,#2A4AA8 0%,#13235E 40%,#070E2B 100%);
+  padding:calc(env(safe-area-inset-top,0px) + 10px) 16px calc(env(safe-area-inset-bottom,0px) + 18px);font-size:15px}
+.wsm::before{content:"";position:fixed;inset:0;pointer-events:none;background:repeating-conic-gradient(from 0deg at 50% 18%,rgba(231,184,74,.05) 0 5deg,transparent 5deg 15deg)}
+.wsm>.in{position:relative;max-width:560px;margin:0 auto;display:flex;flex-direction:column;gap:12px;min-height:100%}
+.wsm-top{display:flex;align-items:center;gap:10px}
+.wsm-top .t{flex:1;text-align:center;font-weight:700;font-size:14px;color:#C9D3F5;letter-spacing:.04em;text-transform:uppercase}
+.wsm-ib{width:40px;height:40px;border-radius:50%;border:0;background:rgba(255,255,255,.1);color:#fff;font-size:18px;display:grid;place-items:center;cursor:pointer;flex:none}
+.wsm-steps{display:grid;grid-template-columns:repeat(15,1fr);gap:4px;padding:0 2px}
+.wsm-steps i{height:8px;border-radius:4px;background:rgba(255,255,255,.14)}
+.wsm-steps i.done{background:#2FB566}.wsm-steps i.cur{background:#E7B84A;box-shadow:0 0 10px #E7B84A}
+.wsm-steps i.safe{outline:1.5px solid #E7B84A;outline-offset:1px}
+.wsm-mid{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.wsm-prize{font-size:13px;color:#C9D3F5;line-height:1.25}.wsm-prize b{display:block;font-size:22px;color:#FFE7A3;font-variant-numeric:tabular-nums}
+.wsm-timer{position:relative;width:76px;height:76px;flex:none}
+.wsm-timer svg{width:100%;height:100%;transform:rotate(-90deg)}
+.wsm-timer .n{position:absolute;inset:0;display:grid;place-items:center;font-size:26px;font-weight:800;font-variant-numeric:tabular-nums}
+.wsm-timer.low .n{color:#FF6B6B;animation:wsmPulse .5s ease-in-out infinite alternate}
+.wsm-timer.low{filter:drop-shadow(0 0 10px rgba(255,80,80,.6))}
+@keyframes wsmPulse{to{transform:scale(1.15)}}
+.wsm-jok{display:flex;gap:8px}
+.wsm-jok button{width:50px;height:38px;border-radius:999px;border:1.5px solid rgba(231,184,74,.7);background:rgba(11,22,64,.6);color:#FFE7A3;font:inherit;font-weight:800;font-size:13px;cursor:pointer}
+.wsm-jok button:disabled{opacity:.3;text-decoration:line-through;cursor:default}
+.wsm-q{position:relative;margin:4px 0 0;padding:18px 18px;border-radius:20px;text-align:center;font-size:19px;font-weight:700;line-height:1.35;text-wrap:balance;
+  background:linear-gradient(180deg,#1C2F78,#0E1A4A);box-shadow:inset 0 0 0 2px rgba(231,184,74,.75),0 12px 30px -16px #000}
+.wsm-q .cat{display:block;font-size:11.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#E7B84A;margin-bottom:6px}
+.wsm-ans{display:grid;grid-template-columns:1fr;gap:10px}
+@media (min-width:520px){.wsm-ans{grid-template-columns:1fr 1fr}}
+.wsm-a{position:relative;display:flex;align-items:center;gap:10px;min-height:54px;padding:10px 16px;border:0;border-radius:999px;cursor:pointer;font:inherit;font-size:16px;font-weight:600;text-align:left;color:#fff;
+  background:linear-gradient(180deg,#1A2B6D,#0E1A4A);box-shadow:inset 0 0 0 1.5px rgba(231,184,74,.55);transition:background .25s,transform .15s}
+.wsm-a:active{transform:scale(.98)}
+.wsm-a .k{color:#E7B84A;font-weight:800;flex:none}
+.wsm-a .k::before{content:"◆ ";font-size:.8em}
+.wsm-a .pc{position:absolute;right:14px;font-size:13px;font-weight:800;color:#FFE7A3}
+.wsm-a .bar{position:absolute;left:0;top:0;bottom:0;border-radius:999px;background:rgba(231,184,74,.22);pointer-events:none}
+.wsm-a.gone{visibility:hidden}
+.wsm-a.lock{background:linear-gradient(180deg,#F7A64B,#E07A12);color:#1B1405;box-shadow:inset 0 0 0 2px #FFD199}
+.wsm-a.lock .k{color:#1B1405}
+.wsm-a.ok{background:linear-gradient(180deg,#45D07F,#1F9A52);color:#fff;box-shadow:inset 0 0 0 2px #9BF0BE;animation:wsmBlink .35s 3}
+.wsm-a.ok .k{color:#fff}
+.wsm-a.bad{background:linear-gradient(180deg,#F06A6E,#B9262C);color:#fff}
+.wsm-a.bad .k{color:#fff}
+.wsm-a:disabled{cursor:default}
+@keyframes wsmBlink{50%{filter:brightness(1.35)}}
+.wsm-ban{text-align:center;font-size:30px;font-weight:900;letter-spacing:.04em;margin:4px 0 0;animation:wsmPop .45s cubic-bezier(.2,1.6,.4,1)}
+.wsm-ban.ok{color:#5BE69A;text-shadow:0 0 22px rgba(47,181,102,.7)}.wsm-ban.bad{color:#FF7A7E}
+@keyframes wsmPop{from{transform:scale(.4);opacity:0}}
+.wsm-exp{background:rgba(255,255,255,.07);border-radius:16px;padding:12px 14px;font-size:14.5px;line-height:1.45;color:#E4E9FB}
+.wsm-exp .src{margin:6px 0 0;font-size:12.5px;color:#9FB0E6}.wsm-exp .src a{color:#FFE7A3}
+.wsm-foot{display:flex;flex-direction:column;gap:10px;margin-top:auto;padding-top:4px}
+.wsm-foot .wsm-btn{width:100%}
+.wsm-quit{border:0;background:none;color:#C9D3F5;font:inherit;font-size:14px;text-decoration:underline;text-underline-offset:3px;cursor:pointer;padding:6px}
+.wsm-quit.warn{color:#FFB37A;font-weight:700;text-decoration:none}
+.wsm-lad{display:flex;flex-direction:column-reverse;gap:3px;background:rgba(0,0,0,.25);border-radius:16px;padding:10px}
+.wsm-lad div{display:flex;justify-content:space-between;padding:5px 12px;border-radius:999px;font-variant-numeric:tabular-nums;font-size:14px;color:#C9D3F5}
+.wsm-lad div.safe{color:#fff;font-weight:700}.wsm-lad div.safe::after{content:" ◆";color:#E7B84A}
+.wsm-lad div.cur{background:linear-gradient(180deg,#F7A64B,#E07A12);color:#1B1405;font-weight:800}
+.wsm-lad div.done{color:#5BE69A}
+.wsm-end{text-align:center;display:flex;flex-direction:column;align-items:center;gap:6px;padding-top:8px}
+.wsm-end h2{margin:6px 0 0;font-size:24px;color:#FFE7A3;text-wrap:balance}
+.wsm-end .big{font-size:44px;font-weight:900;font-variant-numeric:tabular-nums;color:#fff;text-shadow:0 0 30px rgba(231,184,74,.6)}
+.wsm-end .meta{color:#C9D3F5;font-size:14px}
+.wsm-code{display:inline-flex;align-items:center;gap:10px;margin:6px auto;padding:10px 16px;border-radius:14px;background:rgba(255,255,255,.08);box-shadow:inset 0 0 0 1.5px rgba(231,184,74,.5)}
+.wsm-code b{font-family:ui-monospace,monospace;font-size:26px;letter-spacing:.18em;color:#FFE7A3}
+.wsm-in{width:100%;box-sizing:border-box;text-align:center;font-family:ui-monospace,monospace;font-size:26px;letter-spacing:.25em;text-transform:uppercase;padding:12px;border-radius:14px;border:1.5px solid rgba(231,184,74,.6);background:rgba(0,0,0,.25);color:#FFE7A3}
+.wsm-card{background:rgba(255,255,255,.07);border-radius:18px;padding:14px}
+.wsm-card h3{margin:0 0 6px;font-size:16px;color:#FFE7A3}.wsm-card p{margin:0;color:#C9D3F5;font-size:14px;line-height:1.45}
+.wsm-seg{display:flex;gap:6px;background:rgba(0,0,0,.25);padding:4px;border-radius:999px}
+.wsm-seg button{flex:1;border:0;border-radius:999px;padding:8px 10px;background:none;color:#C9D3F5;font:inherit;font-weight:700;font-size:14px;cursor:pointer}
+.wsm-seg button[aria-pressed="true"]{background:#E7B84A;color:#1B1405}
+.wsm-chips{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;margin:0 -16px;padding:0 16px}
+.wsm-chips button{flex:none;border:0;border-radius:999px;padding:7px 13px;background:rgba(255,255,255,.08);color:#E4E9FB;font:inherit;font-size:13.5px;cursor:pointer;white-space:nowrap}
+.wsm-chips button[aria-pressed="true"]{background:#fff;color:#0B1640;font-weight:700}
+.wsm-rank{display:flex;flex-direction:column;gap:6px}
+.wsm-rank .rk{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:14px;background:rgba(255,255,255,.06)}
+.wsm-rank .rk.mine{box-shadow:inset 0 0 0 1.5px rgba(231,184,74,.7)}
+.wsm-rank .rk-p{width:28px;text-align:center;font-weight:800;color:#9FB0E6;font-variant-numeric:tabular-nums}
+.wsm-rank .rk-av{font-size:24px}.wsm-rank .rk-nm{flex:1;min-width:0}.wsm-rank .rk-nm b{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.wsm-rank .rk-nm span{font-size:12px;color:#9FB0E6}
+.wsm-rank .rk-sc{text-align:right;font-weight:800;color:#FFE7A3;font-variant-numeric:tabular-nums}.wsm-rank .rk-sc span{display:block;font-size:11.5px;font-weight:500;color:#9FB0E6}
+.wsm-note{font-size:13px;color:#9FB0E6;text-align:center;line-height:1.45}
+.wsm-conf{position:fixed;inset:0;pointer-events:none;z-index:96;overflow:hidden}
+.wsm-conf i{position:absolute;top:-20px;width:9px;height:14px;border-radius:2px;animation:wsmFall 2.6s linear forwards}
+@keyframes wsmFall{to{transform:translateY(110vh) rotate(720deg)}}
+`;
+document.head.appendChild(css);
+
+/* ---------- Spielzustand ---------- */
+let G = null, root = null, timer = null, lastTick = 0;
+function overlay(){
+  if(root) return root;
+  root = document.createElement("div"); root.className = "wsm"; root.setAttribute("role", "dialog"); root.setAttribute("aria-modal", "true");
+  root.innerHTML = `<div class="in"></div>`;
+  document.body.appendChild(root); document.body.classList.add("wsm-on");
+  root.addEventListener("click", onClick);
+  root.addEventListener("input", e => { if(e.target.id === "wsmIn"){ const v = cleanCode(e.target.value); if(e.target.value !== v) e.target.value = v; const b = root.querySelector("#wsmJoin"); if(b) b.disabled = v.length !== 6; } });
+  return root;
+}
+function close(){
+  stopTimer();
+  if(root){ root.remove(); root = null; }
+  document.body.classList.remove("wsm-on");
+  G = null; if(document.querySelector("#v-quiz.active")) renderQuiz();
+}
+const inner = () => overlay().querySelector(".in");
+
+function start(code, duel){
+  code = cleanCode(code) || newCode();
+  G = {code, duel: !!duel, list: pick(code), i: 0, phase: "ask", jok: {f: 1, p: 1, t: 1}, gone: [], poll: null, ms: 0, left: 0, picked: -1, quitAsk: false, me: me()};
+  if(G.list.length < 15){ toast(T2("Zu wenige Fragen für diese Sprache.", "Not enough questions for this language.")); G = null; return; }
+  overlay(); beep([[392, .12], [523, .12], [659, .25]]);
+  ask();
+}
+function ask(){
+  G.phase = "ask"; G.gone = []; G.poll = null; G.picked = -1; G.quitAsk = false;
+  G.limit = LIMIT(G.i) * 1000; G.left = G.limit; G.t0 = performance.now();
+  draw(); startTimer();
+}
+function startTimer(){
+  stopTimer(); lastTick = Math.ceil(G.left / 1000);
+  let prev = performance.now();
+  timer = setInterval(() => {
+    if(!G || G.phase !== "ask"){ stopTimer(); return; }
+    const now = performance.now(); G.left -= now - prev; G.ms += now - prev; prev = now;
+    const s = Math.max(0, Math.ceil(G.left / 1000));
+    if(s !== lastTick){ lastTick = s; if(s <= 10 && s > 0) SND.tick(); }
+    paintTimer();
+    if(G.left <= 0){ stopTimer(); timeout(); }
+  }, 100);
+}
+function stopTimer(){ if(timer){ clearInterval(timer); timer = null; } }
+function paintTimer(){
+  const el = root && root.querySelector(".wsm-timer"); if(!el) return;
+  const s = Math.max(0, Math.ceil(G.left / 1000)), f = Math.max(0, G.left / G.limit);
+  el.querySelector(".n").textContent = s;
+  el.querySelector(".arc").style.strokeDashoffset = (1 - f) * 207.3;
+  el.querySelector(".arc").style.stroke = s <= 10 ? "#FF5A5F" : f < .5 ? "#F7A64B" : "#E7B84A";
+  el.classList.toggle("low", s <= 10);
+}
+const won = i => i > 0 ? PTS[i - 1] : 0;
+const safeAt = i => i >= 10 ? PTS[9] : i >= 5 ? PTS[4] : 0;
+
+function choose(k){
+  if(G.phase !== "ask" || G.gone.includes(k)) return;
+  stopTimer(); G.phase = "lock"; G.picked = k; SND.lock(); draw();
+  setTimeout(() => reveal(), G.i >= 10 ? 2200 : G.i >= 5 ? 1700 : 1200);
+}
+function reveal(){
+  if(!G) return;
+  const it = G.list[G.i], right = G.picked === it.ok;
+  G.phase = "reveal"; G.right = right;
+  if(right){
+    SND.ok(); if(navigator.vibrate) navigator.vibrate(30);
+    try{ if(window.lmChallenge) lmChallenge.add("q", 1); }catch(e){}
+  } else { SND.bad(); if(navigator.vibrate) navigator.vibrate([40, 60, 40]); }
+  draw();
+}
+function timeout(){
+  if(!G) return;
+  G.phase = "reveal"; G.right = false; G.picked = -1; G.timeout = true; SND.bad(); draw();
+}
+function next(){
+  if(G.right){
+    G.i++;
+    if(G.i >= 15) return finish("win");
+    return ask();
+  }
+  finish("lost");
+}
+function finish(how){
+  stopTimer();
+  const score = how === "win" ? PTS[14] : how === "quit" ? won(G.i) : safeAt(G.i);
+  const correct = how === "win" ? 15 : G.i;
+  G.phase = "end"; G.how = how; G.score = score; G.correct = correct;
+  const rec = {code: G.code, score, correct, ms: Math.round(G.ms), at: Date.now(), name: G.me.name, av: G.me.av, kid: G.me.id, duel: G.duel};
+  const h = S.get("lm-wsm-hist", []); h.unshift(rec); S.set("lm-wsm-hist", h.slice(0, 40));
+  const loc = S.get("lm-wsm-duels", {}); (loc[G.code] = loc[G.code] || []).push({name: rec.name, av: rec.av, kid: rec.kid, score, correct, ms: rec.ms});
+  const keys = Object.keys(loc); if(keys.length > 30) delete loc[keys[0]]; S.set("lm-wsm-duels", loc);
+  if(cloudOK()){ const p = S.get("lm-wsm-pend", []); p.push({kid: F().active, score, correct, ms: rec.ms, duel: G.code}); S.set("lm-wsm-pend", p.slice(-20)); flush(); }
+  if(how === "win"){ SND.win(); confetti(); }
+  draw();
+  if(G.duel || cloudOK()) setTimeout(() => loadDuel(G.code), 900);
+}
+let flushing = false;
+async function flush(){
+  if(flushing || !cloudOK()) return; flushing = true;
+  try{
+    let p = S.get("lm-wsm-pend", []);
+    while(p.length){
+      const x = p[0];
+      try{ await F().rpc("quiz_submit", {p_code: F().code, p_kid: x.kid, p_score: x.score, p_correct: x.correct, p_ms: x.ms, p_duel: x.duel}); }
+      catch(e){ if(/kid_not_found|family_not_found|too_many|violates/.test(e.message)){ /* verwerfen */ } else break; }
+      p.shift(); S.set("lm-wsm-pend", p);
+    }
+  } finally { flushing = false; }
+}
+function confetti(){
+  const c = document.createElement("div"); c.className = "wsm-conf";
+  const col = ["#FFE7A3", "#E7B84A", "#5BE69A", "#7FA8FF", "#FF9AB0"];
+  c.innerHTML = Array.from({length: 70}, () => `<i style="left:${Math.random() * 100}%;background:${col[Math.floor(Math.random() * 5)]};animation-delay:${Math.random() * .9}s;animation-duration:${2 + Math.random() * 1.6}s"></i>`).join("");
+  document.body.appendChild(c); setTimeout(() => c.remove(), 4200);
+}
+
+/* ---------- Joker ---------- */
+function joker(j){
+  if(G.phase !== "ask" || !G.jok[j]) return;
+  G.jok[j] = 0; SND.joker();
+  const it = G.list[G.i];
+  if(j === "f"){
+    const wrong = [0, 1, 2, 3].filter(k => k !== it.ok);
+    G.gone = wrong.sort(() => Math.random() - .5).slice(0, 2);
+  } else if(j === "p"){
+    const vis = [0, 1, 2, 3].filter(k => !G.gone.includes(k));
+    const lvl = it.q.l, base = lvl === 1 ? 72 : lvl === 2 ? 55 : 42;
+    let rightP = Math.min(92, base + Math.floor(Math.random() * 18));
+    if(Math.random() < (lvl === 3 ? .15 : lvl === 2 ? .05 : 0)) rightP = 18 + Math.floor(Math.random() * 15); // das Publikum irrt sich manchmal
+    const others = vis.filter(k => k !== it.ok), w = others.map(() => Math.random() + .2), sw = w.reduce((a, b) => a + b, 0);
+    const poll = {}; let rest = 100 - rightP;
+    others.forEach((k, n) => { const v = n === others.length - 1 ? rest : Math.round((100 - rightP) * w[n] / sw); poll[k] = v; rest -= v; });
+    poll[it.ok] = rightP;
+    if(others.length && Math.max(...others.map(k => poll[k])) > rightP && Math.random() < .5){ /* bleibt so – Joker sind kein Garant */ }
+    G.poll = poll;
+  } else if(j === "t"){
+    G.left += 30000; G.limit = Math.max(G.limit, G.left);
+  }
+  draw();
+}
+
+/* ---------- Zeichnen ---------- */
+function stepsHTML(){
+  return `<div class="wsm-steps" aria-hidden="true">${PTS.map((p, i) => `<i class="${i < G.i ? "done" : i === G.i && G.phase !== "end" ? "cur" : ""} ${SAFE.includes(i) ? "safe" : ""}"></i>`).join("")}</div>`;
+}
+function ladderHTML(){
+  return `<div class="wsm-lad">${PTS.map((p, i) => `<div class="${i < G.i ? "done" : ""} ${i === G.i ? "cur" : ""} ${SAFE.includes(i) ? "safe" : ""}"><span>${i + 1}</span><span>${fmt(p)}</span></div>`).join("")}</div>`;
+}
+function draw(){
+  if(!G) return;
+  const el = inner();
+  if(G.phase === "end") return drawEnd(el);
+  const it = G.list[G.i], Q = it.q, cn = (QCATS.find(c => c.id === Q.c) || {n: ""}).n;
+  const lock = G.phase === "lock", rev = G.phase === "reveal";
+  const top = `<div class="wsm-top"><button class="wsm-ib" data-w="menu" aria-label="${T2("Menü", "Menu")}">✕</button>
+      <div class="t">${T2("Frage", "Question")} ${G.i + 1} / 15${G.duel ? " · ⚔️ " + G.code : ""}</div>
+      <button class="wsm-ib" data-w="snd" aria-label="${T2("Ton", "Sound")}">${snd ? "🔊" : "🔇"}</button></div>`;
+  const s = Math.max(0, Math.ceil(G.left / 1000));
+  const mid = `<div class="wsm-mid">
+      <div class="wsm-prize">${T2("Es geht um", "Playing for")}<b>${fmt(PTS[G.i])}</b>${T2("Punkte", "points")}${SAFE.includes(G.i) ? " ◆" : ""}</div>
+      <div class="wsm-timer" role="timer" aria-label="${T2("Restzeit", "Time left")}"><svg viewBox="0 0 76 76"><circle cx="38" cy="38" r="33" fill="rgba(0,0,0,.3)" stroke="rgba(255,255,255,.12)" stroke-width="6"/>
+        <circle class="arc" cx="38" cy="38" r="33" fill="none" stroke="#E7B84A" stroke-width="6" stroke-linecap="round" stroke-dasharray="207.3" stroke-dashoffset="0"/></svg><div class="n">${s}</div></div>
+      <div class="wsm-jok">
+        <button data-j="f" ${G.jok.f && !lock && !rev ? "" : "disabled"} aria-label="${T2("Joker 50:50", "50:50 lifeline")}">50:50</button>
+        <button data-j="p" ${G.jok.p && !lock && !rev ? "" : "disabled"} aria-label="${T2("Publikumsjoker", "Ask the audience")}">👥</button>
+        <button data-j="t" ${G.jok.t && !lock && !rev ? "" : "disabled"} aria-label="${T2("30 Sekunden mehr", "30 more seconds")}">+30</button>
+      </div></div>`;
+  const ans = `<div class="wsm-ans">${it.shown.map((o, k) => {
+      let c = "";
+      if(G.gone.includes(k)) c = "gone";
+      if(lock && k === G.picked) c = "lock";
+      if(rev){ if(k === it.ok) c = "ok"; else if(k === G.picked) c = "bad"; }
+      const pc = G.poll && G.poll[k] != null && !G.gone.includes(k) ? G.poll[k] : null;
+      return `<button class="wsm-a ${c}" data-k="${k}" ${lock || rev || c === "gone" ? "disabled" : ""}>${pc != null && !rev && !lock ? `<span class="bar" style="width:${pc}%"></span>` : ""}<span class="k">${"ABCD"[k]}</span><span>${esc(o)}</span>${pc != null ? `<span class="pc">${pc} %</span>` : ""}</button>`;
+    }).join("")}</div>`;
+  let foot = "";
+  if(rev){
+    const last = G.right && G.i === 14;
+    foot = `<div class="wsm-ban ${G.right ? "ok" : "bad"}">${G.right ? T2("RICHTIG!", "CORRECT!") : G.timeout ? T2("ZEIT IST UM!", "TIME'S UP!") : T2("LEIDER FALSCH", "WRONG")}</div>
+      <div class="wsm-exp">${G.right ? "" : `<b>${T2("Richtig ist", "Correct answer")}: ${esc(it.shown[it.ok])}</b><br>`}${esc(Q.e)}<p class="src">${T2("Quelle", "Source")}: ${typeof srcLinks === "function" ? srcLinks(Q.s) : esc(Q.s)}</p></div>
+      <div class="wsm-foot"><button class="wsm-btn" data-w="next">${G.right ? (last ? T2("🏆 Zum Ergebnis", "🏆 See result") : `${T2("Weiter zu", "On to")} ${fmt(PTS[G.i + 1])}`) : T2("Ergebnis ansehen", "See result")}</button></div>`;
+  } else {
+    foot = `<div class="wsm-foot">${lock ? `<p class="wsm-note">${T2("Eingeloggt … ist das richtig?", "Locked in … is it right?")}</p>` :
+      `<button class="wsm-quit ${G.quitAsk ? "warn" : ""}" data-w="quit">${G.quitAsk ? T2(`Wirklich aussteigen? Du nimmst ${fmt(won(G.i))} Punkte mit – tippe nochmal`, `Really walk away? You keep ${fmt(won(G.i))} points – tap again`) : T2(`Aussteigen mit ${fmt(won(G.i))} Punkten`, `Walk away with ${fmt(won(G.i))} points`)}</button>`}</div>`;
+  }
+  el.innerHTML = top + stepsHTML() + mid + `<div class="wsm-q"><span class="cat">${esc(cn)} · ${"★".repeat(Q.l)}</span>${esc(Q.q)}</div>` + ans + foot;
+  paintTimer();
+  if(rev) setTimeout(() => { const b = root && root.querySelector('[data-w="next"]'); if(b) b.scrollIntoView({block: "nearest", behavior: "smooth"}); }, 250);
+}
+function drawEnd(el){
+  const win = G.how === "win";
+  const head = win ? T2("Māschāʾallāh! Alle 15 Fragen geschafft!", "Māshāʾallāh! All 15 questions done!")
+    : G.how === "quit" ? T2("Klug ausgestiegen!", "Smart move!")
+    : G.correct >= 10 ? T2("Stark gespielt!", "Great game!") : G.correct >= 5 ? T2("Gut gemacht!", "Well done!") : T2("Nicht aufgeben – nochmal!", "Don't give up – try again!");
+  const sec = Math.round(G.ms / 1000);
+  el.innerHTML = `<div class="wsm-top"><button class="wsm-ib" data-w="close" aria-label="${T2("Schließen", "Close")}">✕</button><div class="t">${win ? "🏆 " : ""}${T2("Ergebnis", "Result")}</div><span style="width:40px"></span></div>
+    <div class="wsm-end">${LOGO(win ? 120 : 92)}
+      <h2>${head}</h2>
+      <div class="big">${fmt(G.score)}</div><div class="meta">${T2("Punkte", "points")} · ${G.correct}/15 ${T2("richtig", "correct")} · ${Math.floor(sec / 60)}:${String(sec % 60).padStart(2, "0")} min</div>
+      ${win ? `<p class="wsm-note">${T2("Du bist der schlauste Muslim – für heute! 😉", "You are the smartest Muslim – for today! 😉")}</p>` : ""}
+    </div>
+    <div class="wsm-card"><h3>⚔️ ${T2("Wer schafft mehr?", "Who can beat it?")}</h3>
+      <p>${T2("Schick diesen Code – dann bekommen die anderen genau dieselben 15 Fragen.", "Share this code – the others get exactly the same 15 questions.")}</p>
+      <div style="text-align:center"><span class="wsm-code"><b>${G.code}</b></span></div>
+      <div class="wsm-foot" style="margin-top:6px"><button class="wsm-btn ghost" data-w="share">${T2("Code teilen", "Share code")}</button></div>
+      <div id="wsmDuel" style="margin-top:10px"></div></div>
+    <div class="wsm-foot">
+      <button class="wsm-btn" data-w="again">${T2("Neues Spiel", "New game")}</button>
+      <button class="wsm-btn ghost" data-w="board">🏅 ${T2("Rangliste", "Leaderboard")}</button>
+    </div>`;
+  drawDuel();
+}
+
+/* ---------- Duell-Ergebnisse ---------- */
+let duelRows = null, duelFor = null;
+async function loadDuel(code){
+  duelFor = code; duelRows = null;
+  if(cloudOK()){
+    try{ await flush(); const r = await F().rpc("quiz_duel", {p_code: F().code, p_duel: code}); if(duelFor === code){ duelRows = r || []; drawDuel(); } }
+    catch(e){ duelRows = null; drawDuel(); }
+  } else drawDuel();
+}
+function drawDuel(){
+  const box = root && root.querySelector("#wsmDuel"); if(!box || !G) return;
+  const loc = (S.get("lm-wsm-duels", {})[G.code] || []);
+  let rows = duelRows && duelFor === G.code ? duelRows.map(r => ({name: r.name, av: r.avatar, fam: r.fam, score: r.score, correct: r.correct, ms: r.ms, mine: r.mine})) : [];
+  loc.forEach(l => { if(!rows.some(r => r.name === l.name && r.score === l.score && r.ms === l.ms)) rows.push({...l, mine: true}); });
+  const best = {}; rows.forEach(r => { const k = r.name + "|" + (r.fam || ""); if(!best[k] || r.score > best[k].score || (r.score === best[k].score && r.ms < best[k].ms)) best[k] = r; });
+  rows = Object.values(best).sort((a, b) => b.score - a.score || a.ms - b.ms);
+  if(rows.length < 2){ box.innerHTML = `<p class="wsm-note">${T2("Noch hat niemand sonst diesen Code gespielt.", "Nobody else has played this code yet.")}</p>`; return; }
+  box.innerHTML = `<div class="wsm-rank">${rows.slice(0, 10).map((r, i) => rowHTML(i, r.av, r.name, r.fam, r.score, `${r.correct}/15 · ${Math.round(r.ms / 1000)} s`, r.mine)).join("")}</div>`;
+}
+const MED = ["🥇", "🥈", "🥉"];
+const rowHTML = (i, av, name, fam, score, sub, mine) => `<div class="rk ${mine ? "mine" : ""}"><span class="rk-p">${MED[i] || i + 1}</span><span class="rk-av">${esc(av || "⭐")}</span>
+  <span class="rk-nm"><b>${esc(name || "?")}</b>${fam ? `<span>${esc(fam)}</span>` : ""}</span><span class="rk-sc">${fmt(score)}<span>${esc(sub)}</span></span></div>`;
+
+/* ---------- Duell-Bildschirm ---------- */
+function duelScreen(code){
+  G = null; stopTimer();
+  const el = inner(), c = cleanCode(code) || newCode();
+  el.innerHTML = `<div class="wsm-top"><button class="wsm-ib" data-w="close" aria-label="${T2("Schließen", "Close")}">✕</button><div class="t">⚔️ ${T2("Duell", "Duel")}</div><span style="width:40px"></span></div>
+    <div class="wsm-card"><h3>${T2("1. Herausfordern", "1. Challenge someone")}</h3>
+      <p>${T2("Du spielst zuerst. Dann schickst du den Code an Geschwister, Freunde oder Eltern – sie bekommen dieselben Fragen.", "You play first. Then send the code to siblings, friends or parents – they get the same questions.")}</p>
+      <div style="text-align:center"><span class="wsm-code"><b>${c}</b></span></div>
+      <div class="wsm-foot"><button class="wsm-btn" data-w="playcode" data-code="${c}">▶ ${T2("Mit diesem Code spielen", "Play this code")}</button></div></div>
+    <div class="wsm-card"><h3>${T2("2. Code bekommen?", "2. Got a code?")}</h3>
+      <p>${T2("Gib den 6-stelligen Code ein, den du bekommen hast.", "Enter the 6-character code you received.")}</p>
+      <input id="wsmIn" class="wsm-in" maxlength="8" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="ABC123" style="margin-top:10px">
+      <div class="wsm-foot" style="margin-top:10px"><button class="wsm-btn ghost" id="wsmJoin" data-w="join" disabled>${T2("Annehmen & spielen", "Accept & play")}</button></div></div>
+    <p class="wsm-note">${cloudOK() ? T2("Die Ergebnisse siehst du nach dem Spiel – auch von anderen Familien aus deinen Challenge-Gruppen.", "You'll see results after the game – also from families in your challenge groups.")
+      : T2("Tipp: Mit einem Familien-Konto werden Duelle und die Rangliste über alle Handys geteilt.", "Tip: with a family account, duels and the leaderboard are shared across phones.")}</p>`;
+}
+
+/* ---------- Rangliste ---------- */
+const B = {scope: "fam", days: 7, groups: null, rows: null, err: null};
+async function boardScreen(){
+  G = null; stopTimer();
+  B.rows = null; B.err = null; drawBoard();
+  if(cloudOK()){
+    try{ await flush(); }catch(e){}
+    if(!B.groups){ try{ const j = await F().rpc("my_groups", {p_code: F().code}); B.groups = (j && j.groups) || []; }catch(e){ B.groups = []; } drawBoard(); }
+    loadBoard();
+  }
+}
+async function loadBoard(){
+  const key = B.scope + B.days; B.rows = null; B.err = null; drawBoard();
+  try{
+    const r = await F().rpc("quiz_board", {p_code: F().code, p_group: B.scope === "fam" ? null : B.scope, p_days: B.days});
+    if(B.scope + B.days === key){ B.rows = r || []; drawBoard(); }
+  }catch(e){ B.err = /Could not find|PGRST202|404|does not exist/.test(e.message) ? "setup" : "net"; drawBoard(); }
+}
+function localRows(){
+  const since = B.days ? Date.now() - B.days * 864e5 : 0, by = {};
+  S.get("lm-wsm-hist", []).filter(h => h.at >= since).forEach(h => {
+    const k = h.kid || h.name; const b = by[k] || (by[k] = {name: h.name, av: h.av, best: 0, games: 0, ms: 0});
+    b.games++; if(h.score > b.best || (h.score === b.best && h.ms < b.ms)){ b.best = h.score; b.ms = h.ms; }
+  });
+  return Object.values(by).sort((a, b) => b.best - a.best || a.ms - b.ms);
+}
+function drawBoard(){
+  const el = inner();
+  const online = cloudOK() && !B.err;
+  const rows = online ? B.rows : localRows();
+  const chips = cloudOK() && B.groups && B.groups.length ? `<div class="wsm-chips">${[["fam", T2("Familie", "Family")]].concat(B.groups.map(g => [g.id, g.name || T2("Gruppe", "Group")])).map(([id, n]) => `<button data-scope="${id}" aria-pressed="${B.scope === id}">${esc(n)}</button>`).join("")}</div>` : "";
+  el.innerHTML = `<div class="wsm-top"><button class="wsm-ib" data-w="close" aria-label="${T2("Schließen", "Close")}">✕</button><div class="t">🏅 ${T2("Rangliste", "Leaderboard")}</div><span style="width:40px"></span></div>
+    <div style="text-align:center">${LOGO(70)}</div>
+    <div class="wsm-seg" role="group"><button data-days="7" aria-pressed="${B.days === 7}">${T2("Diese Woche", "This week")}</button><button data-days="0" aria-pressed="${B.days === 0}">${T2("Gesamt", "All time")}</button></div>
+    ${chips}
+    <div class="wsm-rank">${rows == null ? `<p class="wsm-note">${T2("Lädt …", "Loading …")}</p>`
+      : rows.length ? rows.slice(0, 30).map((r, i) => rowHTML(i, r.avatar || r.av, r.name, r.fam, r.best, `${r.games} ${r.games === 1 ? T2("Spiel", "game") : T2("Spiele", "games")}`, r.mine)).join("")
+      : `<p class="wsm-note">${T2("Noch keine Spiele in diesem Zeitraum. Sei der Erste!", "No games in this period yet. Be the first!")}</p>`}</div>
+    <p class="wsm-note">${B.err === "setup" ? T2("Die Online-Rangliste wird freigeschaltet, sobald das Server-Update eingespielt ist. Bis dahin siehst du die Spiele auf diesem Gerät.", "The online leaderboard unlocks once the server update is installed. Until then you see games on this device.")
+      : B.err === "net" ? T2("Keine Verbindung – hier sind die Spiele auf diesem Gerät.", "No connection – showing games on this device.")
+      : cloudOK() ? T2("Gezählt wird das beste Spiel jedes Kindes. Bei Gleichstand gewinnt, wer schneller war.", "Each child's best game counts. Ties go to the faster player.")
+      : T2("Spiele auf diesem Gerät. Mit einem Familien-Konto spielt ihr über alle Handys und Gruppen gegeneinander.", "Games on this device. With a family account you compete across phones and groups.")}</p>
+    <div class="wsm-foot"><button class="wsm-btn" data-w="again">▶ ${T2("Jetzt spielen", "Play now")}</button></div>`;
+}
+
+/* ---------- Klicks ---------- */
+async function shareCode(code){
+  const txt = T2(`⚔️ Ich fordere dich heraus bei „Wer ist der schlauste Muslim?“ in Little Muslim! Mein Code: ${code}`, `⚔️ I challenge you in "Who is the smartest Muslim?" in Little Muslim! My code: ${code}`) + "\n" + (F().WEBAPP || location.href.split("#")[0]) + "#duell-" + code;
+  try{ if(navigator.share){ await navigator.share({text: txt}); return; } }catch(e){ if(e && e.name === "AbortError") return; }
+  try{ await navigator.clipboard.writeText(txt); toast(T2("Code kopiert – jetzt einfügen und senden.", "Code copied – paste and send it.")); }
+  catch(e){ toast(T2("Code: ", "Code: ") + code); }
+}
+function toast(m){ try{ (F().toast || (x => alert(x)))(m); }catch(e){} }
+function onClick(e){
+  const k = e.target.closest("[data-k]"); if(k){ choose(+k.dataset.k); return; }
+  const j = e.target.closest("[data-j]"); if(j){ joker(j.dataset.j); return; }
+  const sc = e.target.closest("[data-scope]"); if(sc){ B.scope = sc.dataset.scope; loadBoard(); return; }
+  const dy = e.target.closest("[data-days]"); if(dy){ B.days = +dy.dataset.days; if(cloudOK()) loadBoard(); else drawBoard(); return; }
+  const w = e.target.closest("[data-w]"); if(!w) return;
+  const a = w.dataset.w;
+  if(a === "snd"){ snd = !snd; S.set("lm-wsm-snd", snd); w.textContent = snd ? "🔊" : "🔇"; return; }
+  if(a === "next"){ next(); return; }
+  if(a === "quit"){ if(!G.quitAsk){ G.quitAsk = true; draw(); return; } finish("quit"); return; }
+  if(a === "menu"){
+    if(G && G.phase === "ask" && G.i > 0){ if(!G.quitAsk){ G.quitAsk = true; draw(); return; } finish("quit"); return; }
+    close(); return;
+  }
+  if(a === "close"){ close(); return; }
+  if(a === "again"){ start(null, false); return; }
+  if(a === "board"){ boardScreen(); return; }
+  if(a === "share"){ shareCode(G.code); return; }
+  if(a === "playcode"){ start(w.dataset.code, true); return; }
+  if(a === "join"){ const v = cleanCode(root.querySelector("#wsmIn").value); if(v.length === 6) start(v, true); return; }
+}
+document.addEventListener("keydown", e => {
+  if(!root || !G) return;
+  if(G.phase === "ask" && /^[a-dA-D1-4]$/.test(e.key)){ const k = "abcd1234".indexOf(e.key.toLowerCase()) % 4; choose(k); }
+  else if(G.phase === "reveal" && (e.key === "Enter" || e.key === " ")){ e.preventDefault(); next(); }
+});
+/* Wenn die App in den Hintergrund geht, läuft die Zeit nicht weiter, sondern die Frage wird pausiert */
+document.addEventListener("visibilitychange", () => {
+  if(!G || G.phase !== "ask") return;
+  if(document.hidden) stopTimer(); else startTimer();
+});
+
+/* ---------- Startseite im Quiz-Reiter ---------- */
+let practice = false;
+const _rq = renderQuiz;
+renderQuiz = function(){
+  const body = document.getElementById("qBody");
+  const vq = document.getElementById("v-quiz");
+  if(vq) vq.classList.toggle("wsm-land", quiz.stage === "start" && !practice);
+  if(quiz.stage === "start" && !practice){
+    document.getElementById("qzTitle").hidden = true;
+    const qb = document.getElementById("qzBack"); if(qb) qb.hidden = true;
+    const nt = document.getElementById("qzNavT"); if(nt){ nt.textContent = T2("Quiz", "Quiz"); nt.classList.remove("always"); }
+    const tp = document.getElementById("qTop"); if(tp) tp.textContent = "";
+    landing(body); return;
+  }
+  _rq.apply(this, arguments);
+  if(quiz.stage === "start" && practice){
+    body.insertAdjacentHTML("afterbegin", `<button class="wsm-back" data-wsm="show">‹ ${T2("Zur Quizshow", "Back to the quiz show")}</button>`);
+    const t = document.getElementById("qzTitle"); if(t){ t.hidden = false; t.textContent = T2("Freies Üben", "Free practice"); }
+  }
+};
+function landing(body){
+  const h = S.get("lm-wsm-hist", []), mine = me();
+  const my = h.filter(x => (x.kid || null) === (mine.id || null));
+  const best = my.reduce((m, x) => Math.max(m, x.score), 0);
+  const nQ = EN() ? EN_N : QS.length;
+  body.innerHTML = `
+    <div class="wsm-hero">${LOGO(112)}
+      <p class="ar">مَنْ هُوَ أَذْكَى مُسْلِم؟</p>
+      <h2>${T2("Wer ist der schlauste Muslim?", "Who is the smartest Muslim?")}</h2>
+      <p class="sub">${T2("15 Fragen, 3 Joker, Timer – bis zu 1.000.000 Punkte.", "15 questions, 3 lifelines, a timer – up to 1,000,000 points.")}</p>
+      <button class="wsm-btn" data-wsm="go">▶ ${T2("Spiel starten", "Start game")}</button>
+      <div class="wsm-best"><span><b>${fmt(best)}</b>${T2("dein Rekord", "your best")}</span><span><b>${my.length}</b>${T2("Spiele", "games")}</span><span><b>${nQ}</b>${T2("Fragen", "questions")}</span></div>
+    </div>
+    <div class="group wsm-menu">
+      <button class="row" data-wsm="duel"><span class="ic" style="background:#FDE7E7">⚔️</span><div><b>${T2("Duell", "Duel")}</b><span>${T2("Gleiche Fragen – wer schafft mehr?", "Same questions – who scores more?")}</span></div><span class="chev">›</span></button>
+      <button class="row" data-wsm="board"><span class="ic" style="background:#FFF3D6">🏅</span><div><b>${T2("Rangliste", "Leaderboard")}</b><span>${T2("Familie und Challenge-Gruppen", "Family and challenge groups")}</span></div><span class="chev">›</span></button>
+      <button class="row" data-wsm="practice"><span class="ic" style="background:#E5F0FF">📝</span><div><b>${T2("Freies Üben", "Free practice")}</b><span>${T2("Ohne Zeit, nach Stufe und Bereich", "No timer, by level and topic")}</span></div><span class="chev">›</span></button>
+    </div>
+    <p class="ghead">${T2("So geht's", "How it works")}</p>
+    <div class="group" style="padding:12px 14px;background:var(--surface);font-size:14.5px;line-height:1.5;color:var(--ink)">
+      ${T2("Jede Frage wird schwerer und ist mehr Punkte wert. Bei <b>1.000</b> und <b>32.000</b> Punkten (◆) bist du sicher – die behältst du auch bei einer falschen Antwort. Du kannst jederzeit aussteigen und deine Punkte mitnehmen. Joker: <b>50:50</b>, <b>👥 Publikum</b> und <b>+30 Sekunden</b>.",
+           "Each question gets harder and is worth more. At <b>1,000</b> and <b>32,000</b> points (◆) you are safe – you keep them even after a wrong answer. You can walk away at any time. Lifelines: <b>50:50</b>, <b>👥 audience</b> and <b>+30 seconds</b>.")}
+    </div>
+    ${my.length ? `<p class="ghead">${T2("Deine letzten Spiele", "Your recent games")}</p><div class="group wsm-hist">${my.slice(0, 5).map(x => `<div class="h"><span>${x.correct === 15 ? "🏆" : x.duel ? "⚔️" : "🎯"}</span><b>${fmt(x.score)}</b><span style="color:var(--muted)">${x.correct}/15</span><span class="c">${x.code}</span></div>`).join("")}</div>` : ""}`;
+  if(cloudOK() && S.get("lm-wsm-pend", []).length) flush();
+}
+document.getElementById("qBody").addEventListener("click", e => {
+  const b = e.target.closest("[data-wsm]"); if(!b) return;
+  const a = b.dataset.wsm;
+  if(a === "go") start(null, false);
+  else if(a === "duel"){ overlay(); duelScreen(); }
+  else if(a === "board"){ overlay(); boardScreen(); }
+  else if(a === "practice"){ practice = true; quiz.stage = "start"; renderQuiz(); window.scrollTo(0, 0); }
+  else if(a === "show"){ practice = false; quiz.stage = "start"; renderQuiz(); window.scrollTo(0, 0); }
+});
+/* Zurück aus dem Üben-Modus über die Navigationsleiste */
+const qzBack = document.getElementById("qzBack");
+if(qzBack) qzBack.addEventListener("click", () => setTimeout(() => { if(quiz.stage === "start") renderQuiz(); }, 0));
+/* Link „#duell-ABC123“ öffnet das Duell direkt */
+function fromHash(){
+  const m = /^#?(?:duell|duel)-?([A-Za-z0-9]{6})$/.exec(location.hash || "");
+  if(m){ try{ setTab("quiz"); }catch(e){} overlay(); duelScreen(m[1]); const i = root.querySelector("#wsmIn"); if(i){ i.value = cleanCode(m[1]); root.querySelector("#wsmJoin").disabled = false; } }
+}
+setTimeout(fromHash, 800);
+window.lmQuizShow = {start, duel: () => { overlay(); duelScreen(); }, board: () => { overlay(); boardScreen(); }, pick, close, get state(){ return G; }};
+renderQuiz();
+})();
+
 /* ---------- init ---------- */
 localize(); applyTheme(); applyPrefs(); renderHome(); renderGebet(); renderQuran(); renderQuiz(); renderKids(); renderNames();
 document.querySelectorAll("[data-learn]").forEach(b => b.setAttribute("aria-pressed", b.dataset.learn === learnSub));
@@ -12640,6 +13642,6 @@ setTab("home");
 if(lang === "en") translateTree(document.body);
 </script>
 <script>if("serviceWorker" in navigator&&location.protocol==="https:"){addEventListener("load",()=>navigator.serviceWorker.register("sw.js").catch(()=>{}));}</script>
-<script>window.LM_BUILD="20261015222027";(function(){function chk(){fetch("version.json?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.json()}).then(function(v){if(!v||!v.b||v.b===window.LM_BUILD)return;try{if(sessionStorage.getItem("lm-upd")===v.b)return;sessionStorage.setItem("lm-upd",v.b)}catch(e){}location.reload()}).catch(function(){})}if(location.protocol==="https:"){addEventListener("load",function(){setTimeout(chk,1500)});document.addEventListener("visibilitychange",function(){if(document.visibilityState==="visible")chk()})}})();</script>
+<script>window.LM_BUILD="20261016065644";(function(){function chk(){fetch("version.json?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.json()}).then(function(v){if(!v||!v.b||v.b===window.LM_BUILD)return;try{if(sessionStorage.getItem("lm-upd")===v.b)return;sessionStorage.setItem("lm-upd",v.b)}catch(e){}location.reload()}).catch(function(){})}if(location.protocol==="https:"){addEventListener("load",function(){setTimeout(chk,1500)});document.addEventListener("visibilitychange",function(){if(document.visibilityState==="visible")chk()})}})();</script>
 </body>
 </html>
