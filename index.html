@@ -5632,7 +5632,7 @@ const hdThemeName = id => { const t = H_THEMES.find(x => x.id === id); return t 
 function hdCard(h, i){
   const on = hdLearned.has(i);
   return `<article class="hd-card" data-hd="${i}">
-    <div class="hd-top"><span class="hd-n">${i + 1}</span><span class="hd-tag">${hdThemeName(h.t)}</span>${h.nw ? `<span class="hd-nw">an-Nawawī ${h.nw}</span>` : ""}<button class="hd-lr" data-hl="${i}" aria-pressed="${on}">${on ? L("✓ Gelernt", "✓ Learned") : L("Gelernt?", "Learned?")}</button></div>
+    <div class="hd-top"><span class="hd-n">${i + 1}</span><span class="hd-tag">${hdThemeName(h.t)}</span>${h.nw ? `<span class="hd-nw">an-Nawawī ${h.nw}</span>` : ""}<span class="hd-mk">${(() => { const st = window.lmProg ? lmProg.hState(i) : (on ? "h" : ""); return `<button class="r" data-hmk="read" data-i="${i}" aria-pressed="${!!st}">${st ? "✓ " : ""}${L("Gelesen", "Read")}</button><button class="h" data-hmk="hifz" data-i="${i}" aria-pressed="${st === "h"}">${st === "h" ? "🧠 " : ""}${L("Auswendig", "By heart")}</button>`; })()}</span></div>
     <p class="ar" lang="ar" dir="rtl">${h.ar}</p>
     <p class="de">${lang === "en" ? h.en : h.de}</p>
     <details class="hd-x"><summary>${L("Was bedeutet das?", "What does it mean?")}</summary><p>${srcLinks(lang === "en" ? h.xen : h.xde)}</p></details>
@@ -5650,7 +5650,7 @@ function renderHadith(){
     <h1 class="ltitle">${L("Hadithe", "Hadiths")}</h1>
     <p class="lsub">${L(`${tot} kurze Hadithe – die bekanntesten aus an-Nawawīs „40 Hadithen“ und weitere zu Glaube, Gebet, Charakter und Familie. Mit Erklärung und geprüfter Quelle.`, `${tot} short hadiths – the best-known from an-Nawawī's “40 Hadiths” and more on faith, prayer, character and family. With explanation and checked source.`)}</p>
     <div class="hd-sum"><svg class="hd-ring" viewBox="0 0 48 48"><circle cx="24" cy="24" r="20" fill="none" stroke="var(--fill)" stroke-width="5"/><circle cx="24" cy="24" r="20" fill="none" stroke="var(--gold)" stroke-width="5" stroke-linecap="round" stroke-dasharray="${C}" stroke-dashoffset="${C * (1 - pct)}" transform="rotate(-90 24 24)"/><text x="24" y="28" text-anchor="middle" font-size="12" font-weight="700" fill="currentColor">${Math.round(pct * 100)}%</text></svg>
-      <div><b>${n} / ${tot} ${L("gelernt", "learned")}</b><span>${L("Markiere einen Hadith, sobald du ihn auswendig kannst.", "Mark a hadith once you know it by heart.")}</span></div></div>
+      <div><b>${n} / ${tot} ${L("auswendig", "memorised")}${window.lmProg ? ` · ${(store.get("hd-read", []) || []).length} ${L("gelesen", "read")}` : ""}</b><span>${L("📜 Hadith-Punkte: gelesen 2 · auswendig 10 – getrennt von den Qur'an-Punkten.", "📜 Hadith points: read 2 · memorised 10 – separate from Qur'an points.")}</span></div></div>
     <div class="search-box"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="8.5" cy="8.5" r="6"/><path d="M13 13l5 5"/></svg>
       <input class="search" id="hdQ" type="search" placeholder="${L("Hadith suchen", "Search hadiths")}" value="${esc(hdQ)}"></div>
     <div class="hd-chips">${H_THEMES.map(t => `<button class="chip" data-ht="${t.id}" aria-pressed="${hdTheme === t.id}">${lang === "en" ? t.en : t.de}</button>`).join("")}</div>
@@ -5661,6 +5661,10 @@ function hdText(i){ const h = HADITHS[i]; return `${h.ar}\n\n${lang === "en" ? h
 $("#hdV").addEventListener("click", async e => {
   if(e.target.closest("a")) return;
   const t = e.target.closest("[data-ht]"); if(t){ hdTheme = t.dataset.ht; store.set("hd-theme", hdTheme); renderHadith(); return; }
+  const mk = e.target.closest("[data-hmk]"); if(mk && window.lmProg){ const i = +mk.dataset.i, k = mk.dataset.hmk, on = mk.getAttribute("aria-pressed") !== "true";
+    lmProg.setHadith(i, k, on); hdLearned.clear(); (store.get("hd-learned", []) || []).forEach(x => hdLearned.add(+x));
+    if(on) toast(k === "hifz" ? L("Māschāʾallāh – auswendig! 🧠", "Māshāʾallāh – memorised! 🧠") : L("Gelesen ✓", "Read ✓"));
+    const y = window.scrollY; renderHadith(); window.scrollTo(0, y); return; }
   const l = e.target.closest("[data-hl]"); if(l){ const i = +l.dataset.hl; hdLearned.has(i) ? hdLearned.delete(i) : (hdLearned.add(i), toast(L("Māschāʾallāh – gelernt!", "Māshāʾallāh – learned!"))); store.set("hd-learned", [...hdLearned]); const y = window.scrollY; renderHadith(); window.scrollTo(0, y); return; }
   const c = e.target.closest("[data-hcopy]"); if(c){ try{ await navigator.clipboard.writeText(hdText(+c.dataset.hcopy)); toast(L("Kopiert", "Copied")); }catch(_){ toast(L("Kopieren nicht möglich", "Copying not possible")); } return; }
   const s = e.target.closest("[data-hshare]"); if(s){ try{ await navigator.share({text: hdText(+s.dataset.hshare)}); }catch(_){} }
@@ -8119,8 +8123,8 @@ const today = () => dayKey(new Date());
 
 /* ---------- 1. Punkte-Tagebuch (lm-pts) ---------- */
 const PTS = "lm-pts", SAL = "lm-salah";
-const CAP = {t:50, q:40, g:50};
-const calc = d => (d.s || 0) + Math.min(30, d.r || 0) + Math.min(30, d.w || 0) + Math.min(CAP.t, Math.floor((d.t || 0) / 10)) + 20 * (d.p ? 1 : 0) + 5 * (d.d || 0) + Math.min(CAP.q, 2 * (d.q || 0)) + Math.min(CAP.g, 5 * (d.g || 0)) + 10 * (d.l || 0);
+const CAP = {t:50, q:40, g:50, hr:20, qr:60, qh:120};
+const calc = d => (d.s || 0) + Math.min(30, d.r || 0) + Math.min(30, d.w || 0) + Math.min(CAP.t, Math.floor((d.t || 0) / 10)) + 20 * (d.p ? 1 : 0) + 5 * (d.d || 0) + Math.min(CAP.q, 2 * (d.q || 0)) + Math.min(CAP.g, 5 * (d.g || 0)) + 10 * (d.l || 0) + Math.min(CAP.hr, 2 * (d.hr || 0)) + 10 * (d.h || 0) + Math.min(CAP.qr, d.qr || 0) + Math.min(CAP.qh, d.qh || 0);
 let busy = false;
 function refresh(field, inc){
   if(busy) return 0; busy = true;
@@ -8146,15 +8150,37 @@ function gain(n, why){
   gainEl.classList.remove("show"); void gainEl.offsetWidth; gainEl.classList.add("show");
   clearTimeout(gainT); gainT = setTimeout(() => gainEl.classList.remove("show"), 1800);
 }
-/* Gelerntes nur einmal zählen */
+/* Gelerntes nur einmal zählen – Qur'an und Hadith getrennt */
 const SEEN = "lm-pts-seen";
-const LEARN_KEYS = ["hd-learned", "qr-learned"];
-(function initSeen(){ if(store.get(SEEN, null)) return; const s = {}; LEARN_KEYS.forEach(k => s[k] = (store.get(k, []) || []).map(String)); store.set(SEEN, s); })();
+const AYN = [7,286,200,176,120,165,206,75,129,109,123,111,43,52,99,128,111,110,98,135,112,78,118,64,77,227,93,88,69,60,34,30,73,54,45,83,182,88,75,85,54,53,89,59,37,35,38,29,18,45,60,49,62,55,78,96,29,22,24,13,14,11,11,18,12,12,30,52,52,44,28,28,20,56,40,31,50,40,46,42,29,19,36,25,22,17,19,26,30,20,15,21,11,8,8,19,5,8,8,11,11,8,3,9,5,4,7,3,6,3,5,4,5,6];
+/* Schlüssel → [Feld im Tagebuch, Punkte je Eintrag, Symbol] */
+const LEARN = {
+  "hd-read":    ["hr", () => 1, "📜"],
+  "hd-learned": ["h",  () => 1, "📜"],
+  "lm-q-read":  ["qr", n => 5 + Math.floor((AYN[n - 1] || 0) / 20), "📖"],
+  "lm-q-hifz":  ["qh", n => 10 + Math.floor((AYN[n - 1] || 0) / 5), "🧠"]
+};
+const LEARN_KEYS = Object.keys(LEARN);
+/* Bisher als gelernt markierte Lern-Suren übernehmen (zählten schon früher – keine neuen Punkte) */
+(function migrate(){
+  if(store.get("lm-q-mig", 0)) return;
+  try{
+    const sl = new Set(store.get("qr-learned", []) || []), h = new Set(store.get("lm-q-hifz", []) || []), r = new Set(store.get("lm-q-read", []) || []);
+    (typeof SURAS !== "undefined" ? SURAS : []).forEach(x => { if(!x.start && sl.has(x.slug)){ h.add(x.n); r.add(x.n); } });
+    store.set("lm-q-hifz", [...h]); store.set("lm-q-read", [...r]); store.set("lm-q-mig", 1);
+  }catch(e){}
+})();
+(function initSeen(){
+  const s = store.get(SEEN, null) || {}; let ch = false;
+  LEARN_KEYS.forEach(k => { if(!s[k]){ s[k] = (store.get(k, []) || []).map(String); ch = true; } });
+  if(ch) store.set(SEEN, s);
+})();
 function learnedNew(k){
   const s = store.get(SEEN, {}) || {}, have = new Set((s[k] || []).map(String));
   const now = (store.get(k, []) || []).map(String), fresh = now.filter(x => !have.has(x));
   if(!fresh.length) return 0;
-  s[k] = [...have, ...fresh]; store.set(SEEN, s); return fresh.length;
+  s[k] = [...have, ...fresh]; store.set(SEEN, s);
+  return fresh.reduce((a, x) => a + LEARN[k][1](+x), 0);
 }
 /* Speicher beobachten */
 const LS = (() => { try{ return localStorage; }catch(e){ return null; } })();
@@ -8168,7 +8194,12 @@ if(LS){
       if(k === "lm-tz-done") pendingWhy = "⭐"; else if(k === "lm-garden" && !pendingWhy) pendingWhy = "🌸";
       clearTimeout(watchT); watchT = setTimeout(() => { const d = refresh(); if(pendingWhy) gain(d, pendingWhy); pendingWhy = null; }, 350);
     } else if(LEARN_KEYS.includes(k)){
-      const n = learnedNew(k); if(n) setTimeout(() => gain(refresh("l", n), "📖"), 0);
+      const n = learnedNew(k); if(n) setTimeout(() => gain(refresh(LEARN[k][0], n), LEARN[k][2]), 0);
+    } else if(k === "qr-learned"){
+      /* „Als gelernt markiert“ (z. B. nach dem Vorlesen) → Sure gilt als auswendig */
+      setTimeout(() => { try{ const sl = new Set(store.get("qr-learned", []) || []), h = new Set(store.get("lm-q-hifz", []) || []), r = new Set(store.get("lm-q-read", []) || []); let ch = false;
+        (typeof SURAS !== "undefined" ? SURAS : []).forEach(x => { if(!x.start && sl.has(x.slug) && !h.has(x.n)){ h.add(x.n); r.add(x.n); ch = true; } });
+        if(ch){ store.set("lm-q-read", [...r]); store.set("lm-q-hifz", [...h]); } }catch(e){} }, 0);
     }
   };
 }
@@ -8273,7 +8304,7 @@ function range(r){
   return {from: dayKey(m), to: dayKey(s), wk: dayKey(m)};
 }
 function localSum(r){
-  const R = range(r), all = store.get(PTS, {}) || {}, o = {pt:0, s:0, sn:0, t:0, q:0, g:0, d:0, l:0, p:0};
+  const R = range(r), all = store.get(PTS, {}) || {}, o = {pt:0, s:0, sn:0, t:0, q:0, g:0, d:0, l:0, p:0, hr:0, h:0, qr:0, qh:0};
   for(const k in all) if(k >= R.from && k <= R.to) for(const f in o) o[f] += all[k][f] || 0;
   return o;
 }
@@ -8531,7 +8562,7 @@ const kidColor = (id, i) => F.KC[(i < 0 ? 0 : i) % F.KC.length];
 let colorIdx = {};
 function colorsFor(list){ colorIdx = {}; list.forEach((k, i) => colorIdx[k.id] = F.KC[i % F.KC.length]); }
 const kcol = id => colorIdx[id] || F.KC[0];
-const stats = s => [s.s ? `🕌 ${s.s}` : "", s.t ? `📿 ${fmt(s.t)}` : "", s.q ? `❓ ${s.q}` : "", s.g ? `🎮 ${s.g}` : "", s.d ? `🌸 ${s.d}` : "", s.p ? `⭐ ${s.p}` : "", s.l ? `📖 ${s.l}` : ""].filter(Boolean).join(" · ") || L("noch keine Punkte", "no points yet");
+const stats = s => [s.s ? `🕌 ${s.s}` : "", s.t ? `📿 ${fmt(s.t)}` : "", s.q ? `❓ ${s.q}` : "", s.g ? `🎮 ${s.g}` : "", s.d ? `🌸 ${s.d}` : "", s.p ? `⭐ ${s.p}` : "", s.qr ? `📖 ${s.qr}` : "", s.qh ? `🧠 ${s.qh}` : "", (s.h || s.hr) ? `📜 ${(s.h || 0) * 10 + Math.min(20, 2 * (s.hr || 0))}` : "", s.l ? `📚 ${s.l}` : ""].filter(Boolean).join(" · ") || L("noch keine Punkte", "no points yet");
 const famLbl = k => k.mine ? L("eure Familie", "your family") : (k.fam || L("Familie", "Family"));
 
 function rulesHTML(){
@@ -8541,7 +8572,10 @@ function rulesHTML(){
     ["❓", L("Richtige Quiz-Antwort", "Correct quiz answer"), L("2 Punkte", "2 points"), L(`bis ${CAP.q}/Tag`, `up to ${CAP.q}/day`)],
     ["🎮", L("Spiel geschafft", "Game finished"), L("5 Punkte", "5 points"), L(`bis ${CAP.g}/Tag`, `up to ${CAP.g}/day`)],
     ["🌸", L("Gute Tat im Garten", "Good deed in the garden"), L("5 Punkte", "5 points"), ""],
-    ["📖", L("Hadith oder Sure gelernt", "Hadith or sūra learned"), L("10 Punkte", "10 points"), ""],
+    ["📖", L("Qur'an: Sure gelesen", "Qur'an: sūra read"), L("5 Punkte + 1 je 20 Verse", "5 points + 1 per 20 verses"), L(`einmal pro Sure · bis ${CAP.qr}/Tag`, `once per sūra · up to ${CAP.qr}/day`)],
+    ["🧠", L("Qur'an: Sure auswendig", "Qur'an: sūra memorised"), L("10 Punkte + 1 je 5 Verse", "10 points + 1 per 5 verses"), L(`einmal pro Sure · bis ${CAP.qh}/Tag`, `once per sūra · up to ${CAP.qh}/day`)],
+    ["📜", L("Hadith gelesen", "Hadith read"), L("2 Punkte", "2 points"), L(`einmal pro Hadith · bis ${CAP.hr}/Tag`, `once per hadith · up to ${CAP.hr}/day`)],
+    ["📜", L("Hadith auswendig", "Hadith memorised"), L("10 Punkte", "10 points"), L("einmal pro Hadith", "once per hadith")],
     ["✍️", L("Sure geschrieben und geprüft", "Sūra written and checked"), L("bis 10 Punkte", "up to 10 points"), L("fehlerfrei 10 · fast fehlerfrei 5 · geübt 2 · bis 30/Tag", "flawless 10 · nearly 5 · practised 2 · up to 30/day")],
     ["🎙️", L("Sure vorgelesen und geprüft", "Sūra recited and checked"), L("bis 10 Punkte", "up to 10 points"), L("fehlerfrei 10 · fast fehlerfrei 5 · geübt 2 · bis 30/Tag", "flawless 10 · nearly 5 · practised 2 · up to 30/day")]];
   return `<div class="ch-card2"><h4>✨ ${L("So sammelst du Punkte", "How to earn points")}</h4><ul class="ch-rules">${R.map(r => `<li><span class="i">${r[0]}</span><span>${r[1]}${r[3] ? `<br><small style="color:var(--muted);font-weight:600">${r[3]}</small>` : ""}</span><b>${r[2]}</b></li>`).join("")}</ul>
@@ -8690,7 +8724,11 @@ function kidSheet(id){
     ["❓", L("Quiz-Fragen richtig", "Quiz answers right"), s.q, ""],
     ["🎮", L("Spiele geschafft", "Games won"), s.g, ""],
     ["🌸", L("Gute Taten im Garten", "Good deeds in the garden"), s.d, ""],
-    ["📖", L("Suren & Hadithe gelernt / gelesen", "Sūras & hadiths learned / read"), s.l, ""]
+    ["📖", L("Qur'an gelesen", "Qur'an read"), s.qr, L("Punkte", "points")],
+    ["🧠", L("Qur'an auswendig", "Qur'an memorised"), s.qh, L("Punkte", "points")],
+    ["📜", L("Hadithe gelesen", "Hadiths read"), s.hr, ""],
+    ["📜", L("Hadithe auswendig", "Hadiths memorised"), s.h, ""],
+    ["📚", L("Früher gelernt (Qur'an & Hadith)", "Learned earlier (Qur'an & hadith)"), s.l, ""]
   ].filter(r => r[2] > 0);
   const d = document.createElement("div"); d.className = "ch-sheet ch-kid";
   d.innerHTML = `<div role="dialog" aria-modal="true" aria-label="${esc(k.name)}">
@@ -12491,6 +12529,7 @@ function actSheet(v){
       <button data-act="one"><span class="i">🔊</span>${T2("Nur diesen Vers", "Only this verse")}</button>
       <button data-act="tf"><span class="i">📖</span>${T2("Tafsīr & Übersetzung", "Tafsīr & translation")}</button>
       <button data-act="cp"><span class="i">📋</span>${T2("Vers kopieren", "Copy verse")}</button>
+      ${window.lmProg ? `<button data-act="mk" style="grid-column:1/-1"><span class="i">${{h: "🧠", r: "✅"}[lmProg.state(s)] || "☑️"}</span>${T2(`Sure ${D.M.S[s - 1][4]}: gelesen / auswendig`, `Sūra ${D.M.S[s - 1][4]}: read / memorised`)}</button>` : ""}
     </div></div>`);
   sh.addEventListener("click", e => {
     const b = e.target.closest("[data-act]"); if(!b) return; e.stopPropagation(); const k = b.dataset.act;
@@ -12500,6 +12539,7 @@ function actSheet(v){
     if(k === "play") playFrom(v, false);
     else if(k === "one") playFrom(v, true);
     else if(k === "bm") bmSheet(v);
+    else if(k === "mk") lmProg.suraSheet(s, {ar: D.M.S[s - 1][0], t: D.M.S[s - 1][4]});
     else if(k === "tf"){ const was = ST.hide; ST.hide = false; verseTap(v); ST.hide = was; }
     else if(k === "rec"){ if(RC) recStop(); if(!ST.hide) setHide(true); for(let x = v; x < D.VW.length && D.VSU[x] === s; x++) ST.rv.delete(x); recStart(v); }
   });
@@ -12560,6 +12600,7 @@ function homeHTML(tab){
   let h = `<div class="qh-title"><h1>Qur'an</h1><span class="ar">القرآن الكريم</span></div>`;
   if(last != null){ const m = D.M.M[last]; h += `<button class="qh-cont" data-go="${last}"><span class="ic">📖</span><span><b>${T2("Weiterlesen", "Continue reading")}</b><span>${D.M.S[m[2] - 1][4]} · ${T2("Seite", "Page")} ${last + 1} · Juz ${m[0]}</span></span><span class="go">›</span></button>`; }
   else h += `<button class="qh-cont" data-go="0"><span class="ic">📖</span><span><b>${T2("Mit dem Lesen beginnen", "Start reading")}</b><span>al-Fātiḥa · ${T2("Seite", "Page")} 1</span></span><span class="go">›</span></button>`;
+  if(window.lmProg) h += lmProg.summary();
   h += `<div class="qh-seg qh-seg3" role="group">${ixTabs("data-qh", tab)}</div><div class="qh-list">`;
   if(tab === "b") h += `<div class="bm-sec">${bmSection()}</div>`;
   else if(tab === "s"){
@@ -12567,7 +12608,7 @@ function homeHTML(tab){
     D.M.S.forEach((x, i) => {
       const j = D.M.M[x[3] - 1][0], w = WIRD[i + 1];
       if(j !== lastJ){ h += `<p class="mp-jh">الجزء ${JUZ[j - 1]}</p>`; lastJ = j; }
-      h += `<button class="mp-row" data-go="${x[3] - 1}"><span class="n">${i + 1}</span><span class="x"><b>${x[0]}</b><span>الصفحة ${x[3]} - ${x[1]} ${x[1] <= 10 && x[1] >= 3 ? "آيات" : "آية"} - ${x[2] === "m" ? "مكية" : "مدنية"}</span></span><span class="lt">${x[4]}${w ? `<i>${w[lang === "en" ? "en" : "de"]}</i>` : ""}</span></button>`;
+      h += `<div class="mp-rw">${window.lmProg ? lmProg.mkBtn(i + 1) : ""}<button class="mp-row" data-go="${x[3] - 1}"><span class="n">${i + 1}</span><span class="x"><b>${x[0]}</b><span>الصفحة ${x[3]} - ${x[1]} ${x[1] <= 10 && x[1] >= 3 ? "آيات" : "آية"} - ${x[2] === "m" ? "مكية" : "مدنية"}</span></span><span class="lt">${x[4]}${w ? `<i>${w[lang === "en" ? "en" : "de"]}</i>` : ""}</span></button></div>`;
     });
   } else {
     for(let j = 1; j <= 30; j++){ const p = D.M.M.findIndex(m => m[0] === j), s = D.M.M[p][2];
@@ -12588,9 +12629,12 @@ renderQuran = function(){
 };
 document.getElementById("qrBody").addEventListener("click", e => {
   if(qr.sura || !D) return;
+  const mk = e.target.closest("[data-qpmk]"); if(mk && window.lmProg){ e.stopPropagation(); const n = +mk.dataset.qpmk, x = D.M.S[n - 1]; lmProg.suraSheet(n, {ar: x[0], t: x[4]}); return; }
   const t = e.target.closest("[data-qh]"); if(t){ lss("lm-mp-ix", t.dataset.qh); document.getElementById("qrBody").innerHTML = homeHTML(t.dataset.qh); return; }
   const g = e.target.closest("[data-go]"); if(g){ e.stopPropagation(); openReader(+g.dataset.go); }
 }, true);
+/* Markierung geändert → Übersicht neu zeichnen */
+document.addEventListener("lm-prog", () => { const b = document.getElementById("qrBody"); if(b && D && !qr.sura && b.querySelector(".qh-list")){ const y = window.scrollY; b.innerHTML = homeHTML(lsj("lm-mp-ix", "s")); window.scrollTo(0, y); } });
 function openAt(page){ loadFont(); return load().then(() => openReader(page)).catch(() => { if(typeof toast === "function") toast(T2("Der Mushaf braucht beim ersten Mal Internet.", "The Mushaf needs a connection the first time.")); }); }
 document.addEventListener("click", e => {
   if(PG.el && PG.el.contains(e.target)) return;
@@ -13806,6 +13850,119 @@ async function fill(box, s, a){
 window.lmAsbab = {fill, load};
 })();
 
+/* =================== p51: Qur'an & Hadith – gelesen / auswendig markieren (zählt für die Challenge) =================== */
+(function(){
+const T2 = (de, en) => lang === "en" ? en : de;
+/* Verszahl jeder Sure (für die Punkte) */
+const AY = [7,286,200,176,120,165,206,75,129,109,123,111,43,52,99,128,111,110,98,135,112,78,118,64,77,227,93,88,69,60,34,30,73,54,45,83,182,88,75,85,54,53,89,59,37,35,38,29,18,45,60,49,62,55,78,96,29,22,24,13,14,11,11,18,12,12,30,52,52,44,28,28,20,56,40,31,50,40,46,42,29,19,36,25,22,17,19,26,30,20,15,21,11,8,8,19,5,8,8,11,11,8,3,9,5,4,7,3,6,3,5,4,5,6];
+const ptsRead = n => 5 + Math.floor((AY[n - 1] || 0) / 20);
+const ptsHifz = n => 10 + Math.floor((AY[n - 1] || 0) / 5);
+const K = {qr:"lm-q-read", qh:"lm-q-hifz", hr:"hd-read", hh:"hd-learned"};
+const get = k => new Set((store.get(k, []) || []).map(Number));
+const put = (k, s) => store.set(k, [...s].sort((a, b) => a - b));
+const fullSlug = n => { try{ const x = (typeof SURAS !== "undefined" ? SURAS : []).find(y => y.n === n && !y.start); return x ? x.slug : null; }catch(e){ return null; } };
+
+/* Sure markieren. Auswendig schließt gelesen ein. */
+function setSura(n, kind, on){
+  const r = get(K.qr), h = get(K.qh);
+  if(kind === "read"){ on ? r.add(n) : (r.delete(n), h.delete(n)); }
+  else { if(on){ h.add(n); r.add(n); } else h.delete(n); }
+  put(K.qr, r); put(K.qh, h);
+  const slug = fullSlug(n);
+  if(slug){ try{ const L2 = new Set(store.get("qr-learned", []) || []); h.has(n) ? L2.add(slug) : L2.delete(slug); store.set("qr-learned", [...L2]); if(typeof learned !== "undefined"){ h.has(n) ? learned.add(slug) : learned.delete(slug); } }catch(e){} }
+  document.dispatchEvent(new CustomEvent("lm-prog", {detail:{n}}));
+}
+const state = n => get(K.qh).has(n) ? "h" : get(K.qr).has(n) ? "r" : "";
+const counts = () => ({r: get(K.qr).size, h: get(K.qh).size});
+
+const css = document.createElement("style");
+css.textContent = `
+.pg-sh{position:fixed;inset:0;z-index:2147483600;background:rgba(0,0,0,.42);display:flex;align-items:flex-end;justify-content:center;animation:pgIn .18s ease}
+@keyframes pgIn{from{opacity:0}}
+.pg-box{width:min(520px,100%);background:var(--bg,#fff);color:var(--ink);border-radius:26px 26px 0 0;padding:16px 16px calc(18px + env(safe-area-inset-bottom,0px));box-shadow:0 -10px 40px rgba(0,0,0,.25)}
+.pg-hd{display:flex;align-items:center;gap:10px;margin-bottom:4px}
+.pg-hd .tt{flex:1;min-width:0}
+.pg-hd .tt b{display:block;font-size:19px}
+.pg-hd .tt span{display:block;font-size:13px;color:var(--muted)}
+.pg-hd .ar{font-family:"Amiri","Scheherazade New",serif;font-size:26px;font-weight:700}
+.pg-x{flex:none;width:38px;height:38px;border-radius:50%;border:0;background:var(--gold-soft);color:var(--gold);font-size:17px;font-weight:800;cursor:pointer}
+.pg-kind{display:inline-flex;align-items:center;gap:6px;font-size:11.5px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;border-radius:999px;padding:3px 10px;margin:6px 0 12px}
+.pg-kind.q{background:color-mix(in srgb,#2EA57A 16%,transparent);color:#1f8a63}
+.pg-kind.h{background:color-mix(in srgb,#8a5cf6 16%,transparent);color:#7046d8}
+.pg-opts{display:grid;gap:10px}
+.pg-o{display:flex;align-items:center;gap:12px;width:100%;border:0;border-radius:18px;padding:14px;font:inherit;text-align:left;cursor:pointer;background:var(--fill);color:var(--ink);box-shadow:inset 0 0 0 1.5px transparent}
+.pg-o .i{flex:none;width:44px;height:44px;border-radius:14px;display:grid;place-items:center;font-size:24px;background:var(--surface,#fff)}
+.pg-o .t{flex:1;min-width:0}
+.pg-o .t b{display:block;font-size:16px}
+.pg-o .t span{display:block;font-size:13px;color:var(--muted)}
+.pg-o .ck{flex:none;width:28px;height:28px;border-radius:50%;display:grid;place-items:center;font-size:15px;font-weight:900;box-shadow:inset 0 0 0 2px var(--sep);color:transparent}
+.pg-o[aria-pressed="true"]{box-shadow:inset 0 0 0 2px var(--gold);background:var(--gold-soft)}
+.pg-o[aria-pressed="true"] .ck{background:var(--gold);color:#fff;box-shadow:none}
+.pg-o.hz[aria-pressed="true"]{box-shadow:inset 0 0 0 2px #2EA57A;background:color-mix(in srgb,#2EA57A 13%,transparent)}
+.pg-o.hz[aria-pressed="true"] .ck{background:#2EA57A}
+.pg-note{font-size:12.5px;color:var(--muted);margin:12px 2px 0;line-height:1.45}
+/* Qur'an-Übersicht */
+.qp-card{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:2px 0 12px}
+.qp-card div{border-radius:18px;padding:12px 14px;background:var(--surface,#fff);box-shadow:inset 0 0 0 1px var(--sep)}
+.qp-card b{display:block;font-size:22px;font-variant-numeric:tabular-nums}
+.qp-card span{display:block;font-size:12.5px;color:var(--muted)}
+.qp-card .r b{color:var(--gold)}
+.qp-card .h b{color:#1f8a63}
+.qp-tip{grid-column:1/-1;font-size:12.5px;color:var(--muted);margin:0 2px;line-height:1.4}
+.mp-rw{display:flex;align-items:center;gap:6px;border-bottom:1px solid color-mix(in srgb,var(--pb,#c9b48f) 45%,transparent)}
+.mp-rw .mp-row{flex:1;min-width:0;border-bottom:0}
+.qp-mk{flex:none;width:44px;height:44px;border-radius:50%;border:0;cursor:pointer;font:inherit;font-size:13px;font-weight:900;display:grid;place-items:center;background:none;box-shadow:inset 0 0 0 2px color-mix(in srgb,var(--muted) 45%,transparent);color:var(--muted)}
+.qp-mk.r{background:var(--gold-soft);box-shadow:inset 0 0 0 2px var(--gold);color:var(--gold)}
+.qp-mk.h{background:#2EA57A;box-shadow:none;color:#fff;font-size:18px}
+/* Hadith */
+.hd-mk{display:flex;gap:6px;margin-left:auto}
+.hd-mk button{border:0;border-radius:999px;padding:6px 11px;font:inherit;font-size:12.5px;font-weight:800;cursor:pointer;background:var(--fill);color:var(--muted)}
+.hd-mk button[aria-pressed="true"].r{background:var(--gold-soft);color:var(--gold)}
+.hd-mk button[aria-pressed="true"].h{background:#7046d8;color:#fff}
+`;
+document.head.appendChild(css);
+
+function suraSheet(n, names){
+  document.querySelectorAll(".pg-sh").forEach(x => x.remove());
+  const d = document.createElement("div"); d.className = "pg-sh";
+  const draw = () => {
+    const st = state(n);
+    d.innerHTML = `<div class="pg-box" role="dialog" aria-modal="true" aria-label="${T2("Sure markieren", "Mark sūra")}">
+      <div class="pg-hd"><div class="tt"><b>${n}. ${names.t || ""}</b><span>${AY[n - 1]} ${T2("Verse", "verses")}</span></div><span class="ar" lang="ar">${names.ar || ""}</span><button class="pg-x" data-pg="x" aria-label="${T2("Schließen", "Close")}">✕</button></div>
+      <span class="pg-kind q">📗 Qur'an</span>
+      <div class="pg-opts">
+        <button class="pg-o" data-pg="read" aria-pressed="${!!st}"><span class="i">📖</span><span class="t"><b>${T2("Gelesen", "Read")}</b><span>+${ptsRead(n)} ${T2("Qur'an-Punkte", "Qur'an points")}</span></span><span class="ck">✓</span></button>
+        <button class="pg-o hz" data-pg="hifz" aria-pressed="${st === "h"}"><span class="i">🧠</span><span class="t"><b>${T2("Auswendig gelernt", "Memorised")}</b><span>+${ptsHifz(n)} ${T2("Qur'an-Punkte", "Qur'an points")}</span></span><span class="ck">✓</span></button>
+      </div>
+      <p class="pg-note">${T2("Punkte gibt es pro Sure nur einmal – lange Suren zählen mehr. Sei ehrlich: Allah sieht es 🤍", "Points are given once per sūra – longer sūras count more. Be honest: Allah sees it 🤍")}</p></div>`;
+  };
+  draw();
+  d.addEventListener("click", e => {
+    if(e.target === d || e.target.closest('[data-pg="x"]')){ d.remove(); return; }
+    const b = e.target.closest("[data-pg]"); if(!b) return;
+    const on = b.getAttribute("aria-pressed") !== "true";
+    setSura(n, b.dataset.pg, on);
+    if(on && typeof toast === "function") toast(b.dataset.pg === "hifz" ? T2("Māschāʾallāh – auswendig! 🧠", "Māshāʾallāh – memorised! 🧠") : T2("Māschāʾallāh – gelesen! 📖", "Māshāʾallāh – read! 📖"));
+    draw();
+  });
+  document.body.appendChild(d);
+}
+function mkBtn(n){ const s = state(n); return `<button class="qp-mk ${s}" data-qpmk="${n}" aria-label="${T2("Sure markieren", "Mark sūra")}: ${s === "h" ? T2("auswendig", "memorised") : s === "r" ? T2("gelesen", "read") : T2("offen", "open")}">${s === "h" ? "🧠" : s === "r" ? "✓" : ""}</button>`; }
+function summary(){
+  const c = counts();
+  return `<div class="qp-card"><div class="r"><b>${c.r}<small style="font-size:13px;color:var(--muted)"> / 114</small></b><span>📖 ${T2("Suren gelesen", "sūras read")}</span></div><div class="h"><b>${c.h}<small style="font-size:13px;color:var(--muted)"> / 114</small></b><span>🧠 ${T2("Suren auswendig", "sūras memorised")}</span></div>
+    <p class="qp-tip">${T2("Tippe auf den Kreis neben einer Sure, um sie als gelesen oder auswendig zu markieren – das bringt Qur'an-Punkte für die Challenge.", "Tap the circle next to a sūra to mark it as read or memorised – that earns Qur'an points for the challenge.")}</p></div>`;
+}
+/* Hadith */
+function setHadith(i, kind, on){
+  const r = get(K.hr), h = get(K.hh);
+  if(kind === "read"){ on ? r.add(i) : (r.delete(i), h.delete(i)); }
+  else { if(on){ h.add(i); r.add(i); } else h.delete(i); }
+  put(K.hr, r); put(K.hh, h);
+}
+window.lmProg = {AY, ptsRead, ptsHifz, state, counts, setSura, suraSheet, mkBtn, summary, setHadith, hState: i => get(K.hh).has(i) ? "h" : get(K.hr).has(i) ? "r" : ""};
+})();
+
 /* ---------- init ---------- */
 localize(); applyTheme(); applyPrefs(); renderHome(); renderGebet(); renderQuran(); renderQuiz(); renderKids(); renderNames();
 document.querySelectorAll("[data-learn]").forEach(b => b.setAttribute("aria-pressed", b.dataset.learn === learnSub));
@@ -13815,6 +13972,6 @@ setTab("home");
 if(lang === "en") translateTree(document.body);
 </script>
 <script>if("serviceWorker" in navigator&&location.protocol==="https:"){addEventListener("load",()=>navigator.serviceWorker.register("sw.js").catch(()=>{}));}</script>
-<script>window.LM_BUILD="20261016173626";(function(){function chk(){fetch("version.json?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.json()}).then(function(v){if(!v||!v.b||v.b===window.LM_BUILD)return;try{if(sessionStorage.getItem("lm-upd")===v.b)return;sessionStorage.setItem("lm-upd",v.b)}catch(e){}location.reload()}).catch(function(){})}if(location.protocol==="https:"){addEventListener("load",function(){setTimeout(chk,1500)});document.addEventListener("visibilitychange",function(){if(document.visibilityState==="visible")chk()})}})();</script>
+<script>window.LM_BUILD="20261016191559";(function(){function chk(){fetch("version.json?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.json()}).then(function(v){if(!v||!v.b||v.b===window.LM_BUILD)return;try{if(sessionStorage.getItem("lm-upd")===v.b)return;sessionStorage.setItem("lm-upd",v.b)}catch(e){}location.reload()}).catch(function(){})}if(location.protocol==="https:"){addEventListener("load",function(){setTimeout(chk,1500)});document.addEventListener("visibilitychange",function(){if(document.visibilityState==="visible")chk()})}})();</script>
 </body>
 </html>
