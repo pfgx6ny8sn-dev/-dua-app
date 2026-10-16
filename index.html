@@ -5463,7 +5463,7 @@ const VIDEO_LIST = [
   sub:{de:"Vom Kästchen auf dem Nil über das Feuer am Berg Ṭūr bis zum geteilten Meer. 16 Szenen, ca. 9 Minuten. Propheten werden nicht gezeigt.", en:"From the basket on the Nile and the fire at Mount Ṭūr to the parted sea. 16 scenes, approx. 9 minutes. Prophets are not depicted."},
   s:"Qur'an 28:3–32, 79:24, 20:9–73, 26:18–67, 7:113–126, 10:90–92, 2:57, 2:60, 7:145"},
  {id:"abubakr", has169:true, ar:"أَبُو بَكْرٍ الصِّدِّيق", tag:{de:"Neu · Film · Sahaba", en:"New · Film · Companions"},
-  versions:{id:"abubakr", langs:[{k:"de", label:{de:"🎙️ Erzählstimme · Deutsch", en:"🎙️ Narrator · German"}}]},
+  versions:{id:"abubakr", langs:[{k:"de", label:{de:"🎙️ Erzählstimme · Deutsch", en:"🎙️ Narrator · German"}},{k:"ar", label:{de:"🎙️ Erzählstimme · Arabisch", en:"🎙️ Narrator · Arabic"}}]},
   title:{de:"Abū Bakr aṣ-Ṣiddīq – der erste Khalif", en:"Abū Bakr aṣ-Ṣiddīq – the first Caliph"},
   sub:{de:"Der beste Freund des Propheten ﷺ: vom ersten Glauben über die Höhle Thaur bis zum Sammeln des Qur'an. 16 Szenen, ca. 8 Minuten. Der Prophet ﷺ und die Ṣaḥāba werden nicht gezeigt.", en:"The Prophet's ﷺ best friend: from his first belief through the cave of Thawr to collecting the Qur'an. 16 scenes, approx. 8 minutes. The Prophet ﷺ and the Companions are not depicted."},
   s:"Qur'an 9:40, 3:144; Bukhārī 3653, 3661, 3668, 3905, 4986; Muslim 1028, 2352; Abū Dāwūd 1678"},
@@ -5971,7 +5971,7 @@ function lmSay(btn){
   const key = btn.dataset.speak, k = key[0], i = +key.slice(1), x = WISSEN[i]; if(!x) return;
   const only = btn.dataset.only;
   lmBtn = btn; btn.classList.add("playing");
-  const f = l => ({src: `audio/wissen/${k}${String(i).padStart(2, "0")}_${l}.mp3?v=3`});
+  const f = l => ({src: `audio/wissen/${k}${String(i).padStart(2, "0")}_${l}.mp3?v=4`});
   if(lang === "en" && typeof WISSEN_EN !== "undefined") lmQ = only === "ar" ? [f("ar")] : [f("ar"), {tts: (k === "q" ? WISSEN_EN[i][0] : WISSEN_EN[i][1]).replace(/ﷺ/g, "")}];
   else lmQ = only ? [f(only)] : [f("ar"), f("de")];
   lmNext(btn);
@@ -5980,7 +5980,7 @@ function lmSay(btn){
 function lmPreload(){
   const wv = document.getElementById("wiV"); if(!wv) return;
   wv.querySelectorAll("[data-flip]").forEach(c => { const i = String(c.dataset.flip).padStart(2, "0");
-    ["q", "a"].forEach(k => ["ar", "de"].forEach(l => { const h = `audio/wissen/${k}${i}_${l}.mp3?v=3`; if(!document.querySelector(`link[data-pre="${h}"]`)){ const ln = document.createElement("link"); ln.rel = "prefetch"; ln.as = "audio"; ln.href = h; ln.dataset.pre = h; document.head.appendChild(ln); } })); });
+    ["q", "a"].forEach(k => ["ar", "de"].forEach(l => { const h = `audio/wissen/${k}${i}_${l}.mp3?v=4`; if(!document.querySelector(`link[data-pre="${h}"]`)){ const ln = document.createElement("link"); ln.rel = "prefetch"; ln.as = "audio"; ln.href = h; ln.dataset.pre = h; document.head.appendChild(ln); } })); });
 }
 document.addEventListener("click", e => {
   const b = e.target.closest("[data-speak]"); if(!b) return;
@@ -13800,6 +13800,6 @@ setTab("home");
 if(lang === "en") translateTree(document.body);
 </script>
 <script>if("serviceWorker" in navigator&&location.protocol==="https:"){addEventListener("load",()=>navigator.serviceWorker.register("sw.js").catch(()=>{}));}</script>
-<script>window.LM_BUILD="20261016152648";(function(){function chk(){fetch("version.json?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.json()}).then(function(v){if(!v||!v.b||v.b===window.LM_BUILD)return;try{if(sessionStorage.getItem("lm-upd")===v.b)return;sessionStorage.setItem("lm-upd",v.b)}catch(e){}location.reload()}).catch(function(){})}if(location.protocol==="https:"){addEventListener("load",function(){setTimeout(chk,1500)});document.addEventListener("visibilitychange",function(){if(document.visibilityState==="visible")chk()})}})();</script>
+<script>window.LM_BUILD="20261016172107";(function(){function chk(){fetch("version.json?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.json()}).then(function(v){if(!v||!v.b||v.b===window.LM_BUILD)return;try{if(sessionStorage.getItem("lm-upd")===v.b)return;sessionStorage.setItem("lm-upd",v.b)}catch(e){}location.reload()}).catch(function(){})}if(location.protocol==="https:"){addEventListener("load",function(){setTimeout(chk,1500)});document.addEventListener("visibilitychange",function(){if(document.visibilityState==="visible")chk()})}})();</script>
 </body>
 </html>
