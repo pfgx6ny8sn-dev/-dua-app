@@ -5971,7 +5971,7 @@ function lmSay(btn){
   const key = btn.dataset.speak, k = key[0], i = +key.slice(1), x = WISSEN[i]; if(!x) return;
   const only = btn.dataset.only;
   lmBtn = btn; btn.classList.add("playing");
-  const f = l => ({src: `audio/wissen/${k}${String(i).padStart(2, "0")}_${l}.mp3?v=2`});
+  const f = l => ({src: `audio/wissen/${k}${String(i).padStart(2, "0")}_${l}.mp3?v=3`});
   if(lang === "en" && typeof WISSEN_EN !== "undefined") lmQ = only === "ar" ? [f("ar")] : [f("ar"), {tts: (k === "q" ? WISSEN_EN[i][0] : WISSEN_EN[i][1]).replace(/ﷺ/g, "")}];
   else lmQ = only ? [f(only)] : [f("ar"), f("de")];
   lmNext(btn);
@@ -5980,7 +5980,7 @@ function lmSay(btn){
 function lmPreload(){
   const wv = document.getElementById("wiV"); if(!wv) return;
   wv.querySelectorAll("[data-flip]").forEach(c => { const i = String(c.dataset.flip).padStart(2, "0");
-    ["q", "a"].forEach(k => ["ar", "de"].forEach(l => { const h = `audio/wissen/${k}${i}_${l}.mp3?v=2`; if(!document.querySelector(`link[data-pre="${h}"]`)){ const ln = document.createElement("link"); ln.rel = "prefetch"; ln.as = "audio"; ln.href = h; ln.dataset.pre = h; document.head.appendChild(ln); } })); });
+    ["q", "a"].forEach(k => ["ar", "de"].forEach(l => { const h = `audio/wissen/${k}${i}_${l}.mp3?v=3`; if(!document.querySelector(`link[data-pre="${h}"]`)){ const ln = document.createElement("link"); ln.rel = "prefetch"; ln.as = "audio"; ln.href = h; ln.dataset.pre = h; document.head.appendChild(ln); } })); });
 }
 document.addEventListener("click", e => {
   const b = e.target.closest("[data-speak]"); if(!b) return;
@@ -13800,6 +13800,6 @@ setTab("home");
 if(lang === "en") translateTree(document.body);
 </script>
 <script>if("serviceWorker" in navigator&&location.protocol==="https:"){addEventListener("load",()=>navigator.serviceWorker.register("sw.js").catch(()=>{}));}</script>
-<script>window.LM_BUILD="20261016150700";(function(){function chk(){fetch("version.json?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.json()}).then(function(v){if(!v||!v.b||v.b===window.LM_BUILD)return;try{if(sessionStorage.getItem("lm-upd")===v.b)return;sessionStorage.setItem("lm-upd",v.b)}catch(e){}location.reload()}).catch(function(){})}if(location.protocol==="https:"){addEventListener("load",function(){setTimeout(chk,1500)});document.addEventListener("visibilitychange",function(){if(document.visibilityState==="visible")chk()})}})();</script>
+<script>window.LM_BUILD="20261016152648";(function(){function chk(){fetch("version.json?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.json()}).then(function(v){if(!v||!v.b||v.b===window.LM_BUILD)return;try{if(sessionStorage.getItem("lm-upd")===v.b)return;sessionStorage.setItem("lm-upd",v.b)}catch(e){}location.reload()}).catch(function(){})}if(location.protocol==="https:"){addEventListener("load",function(){setTimeout(chk,1500)});document.addEventListener("visibilitychange",function(){if(document.visibilityState==="visible")chk()})}})();</script>
 </body>
 </html>
