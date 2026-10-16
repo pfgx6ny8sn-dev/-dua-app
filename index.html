@@ -12083,6 +12083,7 @@ const sRange = x => { const a0 = D.SV[x.n] + (x.start || 1) - 1; return [a0, a0 
 const appSuraOfVerse = v => appSuras().find(x => { const [a, b] = sRange(x); return v >= a && v <= b; });
 const pageSura = p => D.M.M[p][2];
 
+const QT = (f, ...a) => { try{ if(window.lmQT && window.lmQT[f]) window.lmQT[f](...a); }catch(e){} };
 /* ---------- Öffnen / Schließen ---------- */
 function openReader(page, mode){
   loadFont();
@@ -12099,12 +12100,12 @@ function openReader(page, mode){
   PG.el = el; PG.main = el.querySelector(".mr-main"); PG.cur = -1;
   el.addEventListener("click", onReaderClick);
   ST.sura = pageSura(page);
-  build(page);
+  build(page); QT("open");
 }
 function thCls(){ const t = lsj("lm-mr-theme", "app"); return t === "light" ? " th-light" : t === "dark" ? " th-dark" : ""; }
 function applyTh(){ document.querySelectorAll(".mr,.mr-s").forEach(x => { x.classList.remove("th-light", "th-dark"); const c = thCls().trim(); if(c) x.classList.add(c); }); }
 function closeReader(){
-  recStop(); auStop();
+  recStop(); auStop(); QT("close");
   if(PG.el){ PG.el.remove(); PG.el = null; } document.body.classList.remove("mr-on");
   qr.sura = null; qr.mp = null; qr.revealed = new Set();
   if(typeof renderQuran === "function"){ renderQuran(); scrollTo(0, 0); }
@@ -12134,7 +12135,7 @@ function setCur(i){
     for(let k = i - 2; k <= i + 2; k++) if(k >= 0 && k < D.M.P.length) fill(k);
     [...PG.sc.children].forEach((s, k) => { if(s.dataset.done && Math.abs(k - i) > 4){ s.innerHTML = ""; delete s.dataset.done; } });
   }
-  ST.sura = pageSura(i); head();
+  ST.sura = pageSura(i); head(); if(ST.mode === "page") QT("page", i);
 }
 function head(){
   if(!PG.el || PG.cur < 0) return;
@@ -12169,10 +12170,10 @@ async function buildList(s, scrollToV){
   }
   if(s < 114) html += `<button class="mr-next" data-r="nexts">${T2("Nächste Sure", "Next sura")}: ${D.M.S[s][4]} ›</button>`;
   const L = PG.main.querySelector(".mr-list"); L.innerHTML = html; ST.list = L; decorate(L);
-  L.addEventListener("scroll", () => { cancelAnimationFrame(PG.raf2); PG.raf2 = requestAnimationFrame(() => { const v = topVerse(); if(v != null){ const p = D.vpage[v]; if(p !== PG.cur){ PG.cur = p; qr.mp = p; lss("lm-mp-page", p); head(); } } }); }, {passive: true});
+  L.addEventListener("scroll", () => { cancelAnimationFrame(PG.raf2); PG.raf2 = requestAnimationFrame(() => { const v = topVerse(); if(v != null){ const p = D.vpage[v]; if(p !== PG.cur){ PG.cur = p; qr.mp = p; lss("lm-mp-page", p); head(); } QT("top", v); } }); }, {passive: true});
   const tv = scrollToV != null && D.VSU[scrollToV] === s ? scrollToV : v0;
   const el = L.querySelector(`[data-vv="${tv}"]`); if(el && tv !== v0) L.scrollTop = el.offsetTop - 8;
-  PG.cur = D.vpage[tv]; qr.mp = PG.cur; head();
+  PG.cur = D.vpage[tv]; qr.mp = PG.cur; head(); QT("top", tv, true);
 }
 function topVerse(){
   if(!ST.list) return null; const top = ST.list.getBoundingClientRect().top + 4;
@@ -12389,7 +12390,7 @@ function playFrom(v, single){
   auStep(v);
 }
 function auStep(v){
-  PG.playV = v; mark("ply", v);
+  PG.playV = v; mark("ply", v); QT("lis", v);
   if(!auSingle && PG.el){ if(ST.mode === "list" && D.VSU[v] !== ST.listS) buildList(D.VSU[v], v).then(() => { mark("ply", v); follow(v); }); else { showVerse(v); setTimeout(() => { mark("ply", v); follow(v); }, 120); } }
   AU.src = `https://everyayah.com/data/${rec().f}/${pad3(D.VSU[v])}${pad3(D.VAY[v])}.mp3`; AU.play().catch(() => {});
   const b = PG.el && PG.el.querySelector('[data-r="play"]'); if(b) b.textContent = "■";
@@ -12475,6 +12476,7 @@ function recUpdate(){
     ST.ws[key] = val; PG.el.querySelectorAll(`.mw[data-v="${x.v}"][data-k="${x.k}"]`).forEach(m => { m.classList.add("mrv"); m.classList.toggle("bad", val === "bad"); m.classList.toggle("okc", val === "ok" && !ST.hide); }); });
   if(fin.bad > RC.lastBad){ RC.errs += fin.bad - RC.lastBad; try{ window.lmRecite.tone("err"); }catch(_){} if(navigator.vibrate) navigator.vibrate([60, 40, 60]); }
   RC.lastBad = Math.max(RC.lastBad, fin.bad);
+  for(let i = RC.doneI || 0; i < fin.p; i++){ const x = RC.ex[i], n = RC.ex[i + 1]; if(!n || n.v !== x.v) QT("rec", x.v); } RC.doneI = Math.max(RC.doneI || 0, fin.p);
   PG.el.querySelectorAll(".mw.nx").forEach(m => m.classList.remove("nx"));
   const nx = RC.ex[live.p];
   if(nx){ PG.el.querySelectorAll(`.mw[data-v="${nx.v}"][data-k="${nx.k}"]`).forEach(m => m.classList.add("nx")); if(ST.mode === "page" ? D.vpage[nx.v] !== PG.cur : true) showVerse(nx.v); follow(nx.v, nx.k); }
@@ -12600,7 +12602,7 @@ function homeHTML(tab){
   let h = `<div class="qh-title"><h1>Qur'an</h1><span class="ar">القرآن الكريم</span></div>`;
   if(last != null){ const m = D.M.M[last]; h += `<button class="qh-cont" data-go="${last}"><span class="ic">📖</span><span><b>${T2("Weiterlesen", "Continue reading")}</b><span>${D.M.S[m[2] - 1][4]} · ${T2("Seite", "Page")} ${last + 1} · Juz ${m[0]}</span></span><span class="go">›</span></button>`; }
   else h += `<button class="qh-cont" data-go="0"><span class="ic">📖</span><span><b>${T2("Mit dem Lesen beginnen", "Start reading")}</b><span>al-Fātiḥa · ${T2("Seite", "Page")} 1</span></span><span class="go">›</span></button>`;
-  if(window.lmProg) h += lmProg.summary();
+  if(window.lmQD) h += lmQD.card(); else if(window.lmProg) h += lmProg.summary();
   h += `<div class="qh-seg qh-seg3" role="group">${ixTabs("data-qh", tab)}</div><div class="qh-list">`;
   if(tab === "b") h += `<div class="bm-sec">${bmSection()}</div>`;
   else if(tab === "s"){
@@ -12644,7 +12646,7 @@ document.addEventListener("click", e => {
   if(sl){ const x = appSuras().find(y => y.slug === sl); if(x){ e.preventDefault(); e.stopPropagation(); qr.sura = x.slug; renderQuran();
     load().then(() => openReader(D.vpage[D.SV[x.n] + (x.start || 1) - 1])).catch(() => {}); } }
 }, true);
-window.lmMushaf = {_feed: t => { if(!RC){ recStart.fake = true; if(!ST.hide) setHide(true); recStart(); recStart.fake = false; } RC.finals.push(t); RC.interim = ""; recUpdate(); }, open: p => openAt(p == null ? lsj("lm-mp-page", 0) : p), openSura: n => load().then(() => openReader(D.vpage[D.SV[n]]))};
+window.lmMushaf = {data: () => D, load: () => load(), openVerse: (v, list) => load().then(() => { if(list) lss("lm-mr-mode", "list"); openReader(D.vpage[v], list ? "list" : undefined); if(list) setTimeout(() => buildList(D.VSU[v], v), 50); }), _feed: t => { if(!RC){ recStart.fake = true; if(!ST.hide) setHide(true); recStart(); recStart.fake = false; } RC.finals.push(t); RC.interim = ""; recUpdate(); }, open: p => openAt(p == null ? lsj("lm-mp-page", 0) : p), openSura: n => load().then(() => openReader(D.vpage[D.SV[n]]))};
 /* Wenn eine Sure auf anderem Weg geöffnet wird (z. B. Abend-Wird): ebenfalls im Vollbild lesen */
 const _rq2 = renderQuran;
 renderQuran = function(){
@@ -13963,6 +13965,588 @@ function setHadith(i, kind, on){
 window.lmProg = {AY, ptsRead, ptsHifz, state, counts, setSura, suraSheet, mkBtn, summary, setHadith, hState: i => get(K.hh).has(i) ? "h" : get(K.hr).has(i) ? "r" : ""};
 })();
 
+/* =================== p52: Qur'an-Dashboard – Lesen, Auswendiglernen, Ziele, Statistiken (nach dem Vorbild von Tarteel) =================== */
+(function(){
+const T2 = (de, en) => lang === "en" ? en : de;
+const NV = 6236, VPP = NV / 604;
+const esc4 = s => String(s == null ? "" : s).replace(/[&<>"]/g, c => ({"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;"}[c]));
+const today = () => dayKey(new Date());
+const addDays = (k, n) => { const [y, m, d] = k.split("-").map(Number); return dayKey(new Date(y, m - 1, d + n)); };
+const diffDays = (a, b) => { const [y1, m1, d1] = a.split("-").map(Number), [y2, m2, d2] = b.split("-").map(Number); return Math.round((new Date(y2, m2 - 1, d2) - new Date(y1, m1 - 1, d1)) / 864e5); };
+const fmtN = n => Number(n || 0).toLocaleString(lang === "en" ? "en-GB" : "de-DE");
+const pct = x => (Math.round(x * 10000) / 100).toLocaleString(lang === "en" ? "en-GB" : "de-DE", {minimumFractionDigits: x > 0 && x < .1 ? 2 : 0, maximumFractionDigits: 2}) + " %";
+const hms = s => { s = Math.round(s || 0); const h = Math.floor(s / 3600), m = Math.floor(s % 3600 / 60); return h ? `${h} ${T2("Std.", "h")} ${m} ${T2("Min.", "min")}` : `${m} ${T2("Min.", "min")}`; };
+const MD = () => window.lmMushaf && window.lmMushaf.data ? window.lmMushaf.data() : null;
+
+/* ---------- Speicher (alles mit lm- → pro Profil, wird mit der Familie synchronisiert) ---------- */
+const K = {bits:"lm-q-bits", day:"lm-q-day", sess:"lm-q-sess", nsess:"lm-q-nsess", goals:"lm-q-goals", best:"lm-q-best"};
+const B64 = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+function bitsGet(){
+  const s = store.get(K.bits, "") || "", a = new Uint8Array(Math.ceil(NV / 6));
+  for(let i = 0; i < s.length && i < a.length; i++) a[i] = Math.max(0, B64.indexOf(s[i]));
+  return a;
+}
+const bitsPut = a => store.set(K.bits, Array.from(a, x => B64[x]).join(""));
+const bit = (a, v) => (a[(v / 6) | 0] >> (v % 6)) & 1;
+const bitSet = (a, v) => { a[(v / 6) | 0] |= 1 << (v % 6); };
+let BITS = bitsGet(), DAYS = store.get(K.day, {}) || {};
+const dayRec = k => DAYS[k] || (DAYS[k] = {s: 0, v: 0, rc: 0, ls: 0, r: []});
+function addRange(arr, a, b){
+  arr.push([a, b]); arr.sort((x, y) => x[0] - y[0]);
+  const out = []; for(const r of arr){ const l = out[out.length - 1]; if(l && r[0] <= l[1] + 1) l[1] = Math.max(l[1], r[1]); else out.push([r[0], r[1]]); }
+  arr.length = 0; out.forEach(r => arr.push(r));
+}
+/* immer frisch lesen → ändern → schreiben (die Familien-Synchronisierung kann den Speicher zwischendurch ersetzen) */
+function mutDay(fn){ DAYS = store.get(K.day, {}) || {}; fn(dayRec(today())); store.set(K.day, DAYS); }
+let pendSec = 0;
+function save(){ if(pendSec){ const n = pendSec; pendSec = 0; mutDay(d => { d.s += n; }); } }
+/* Profilwechsel / Sync: neu einlesen */
+const reload = () => { BITS = bitsGet(); DAYS = store.get(K.day, {}) || {}; if(pendSec){ dayRec(today()).s += pendSec; } };
+window.addEventListener("storage", reload);
+document.addEventListener("lmf-switch", reload);
+
+/* ---------- Mitzählen im Mushaf ---------- */
+const S = {open: false, sess: null, page: -1, pageT: 0, top: null, topT: 0, last: 0};
+function readRange(a, b){
+  if(a == null || b == null || b < a) return;
+  BITS = bitsGet(); let n = 0;
+  for(let v = a; v <= b; v++){ if(!bit(BITS, v)) bitSet(BITS, v); n++; }
+  bitsPut(BITS); mutDay(d => { addRange(d.r, a, b); d.v += n; });
+  if(S.sess){ S.sess.v += n; S.sess.a = S.sess.a == null ? a : Math.min(S.sess.a, a); S.sess.b = S.sess.b == null ? b : Math.max(S.sess.b, b); }
+}
+let PV = null;   /* Seite → [erster, letzter Vers, der auf der Seite beginnt] */
+function pageVerses(p){
+  const D = MD(); if(!D) return null;
+  if(!PV){ PV = []; D.vpage.forEach((pg, v) => { if(!PV[pg]) PV[pg] = [v, v]; else PV[pg][1] = v; }); }
+  return PV[p] || null;
+}
+function flushPage(){
+  if(S.page < 0) return;
+  const dt = Date.now() - S.pageT; const r = pageVerses(S.page);
+  if(r && dt >= 15000) readRange(r[0], r[1]);
+  S.page = -1;
+}
+function flushList(final){
+  if(S.top == null) return;
+  const allowed = Math.floor((Date.now() - S.topT) / 1200);
+  if(final && allowed > 0){ const D = MD(); const end = Math.min(S.top + Math.min(allowed, 6) - 1, D ? D.SV[D.VSU[S.top]] + D.M.S[D.VSU[S.top] - 1][1] - 1 : S.top); readRange(S.top, end); }
+  if(final) S.top = null;
+}
+const act = () => { S.last = Date.now(); };
+window.lmQT = {
+  open(){ S.open = true; S.sess = {t: Date.now(), sec: 0, a: null, b: null, v: 0, rc: 0, ls: 0}; act(); },
+  close(){
+    flushPage(); flushList(true);
+    if(S.sess && (S.sess.sec >= 20 || S.sess.v || S.sess.rc)){
+      const L = store.get(K.sess, []) || []; L.unshift({...S.sess, e: Date.now()}); store.set(K.sess, L.slice(0, 120));
+      store.set(K.nsess, (store.get(K.nsess, 0) || 0) + 1);
+    }
+    S.open = false; S.sess = null; save(); document.dispatchEvent(new CustomEvent("lm-qtrack"));
+  },
+  page(i){ if(i === S.page) return; flushPage(); flushList(true); S.page = i; S.pageT = Date.now(); act(); },
+  top(v, init){
+    flushPage();
+    if(init || S.top == null || v < S.top){ flushList(true); S.top = v; S.topT = Date.now(); act(); return; }
+    if(v > S.top){ const n = Math.min(v - S.top, Math.floor((Date.now() - S.topT) / 1200)); if(n > 0){ readRange(S.top, S.top + n - 1); S.top += n; S.topT = Date.now(); } }
+    act();
+  },
+  lis(v){ mutDay(d => { d.ls++; }); if(S.sess){ S.sess.ls++; if(S.sess.a == null) S.sess.a = v; S.sess.b = Math.max(S.sess.b || 0, v); } act(); },
+  rec(v){ mutDay(d => { d.rc++; }); if(S.sess) S.sess.rc++; readRange(v, v); act(); }
+};
+["pointerdown", "keydown", "wheel", "touchmove"].forEach(t => document.addEventListener(t, () => { if(S.open) act(); }, {passive: true, capture: true}));
+setInterval(() => {
+  if(!S.open || document.hidden) return;
+  if(Date.now() - S.last > 150000) return;            /* nichts getan → keine Zeit zählen */
+  pendSec += 5; if(S.sess) S.sess.sec += 5; if(pendSec >= 30) save();
+}, 5000);
+document.addEventListener("visibilitychange", () => { if(document.hidden) save(); });
+
+/* ---------- Auswertung ---------- */
+const active = d => d && ((d.v || 0) + (d.rc || 0) >= 5 || (d.s || 0) >= 120 || (d.ls || 0) >= 10);
+function streak(){
+  let cur = 0, k = today();
+  if(!active(DAYS[k])) k = addDays(k, -1);
+  while(active(DAYS[k])){ cur++; k = addDays(k, -1); }
+  let best = 0, run = 0, prev = null;
+  Object.keys(DAYS).sort().forEach(x => { if(!active(DAYS[x])){ return; } run = prev && diffDays(prev, x) === 1 ? run + 1 : 1; prev = x; best = Math.max(best, run); });
+  best = Math.max(best, cur, store.get(K.best, 0) || 0);
+  return {cur, best};
+}
+const countBits = () => { let n = 0; for(let v = 0; v < NV; v++) n += bit(BITS, v); return n; };
+const hifzSet = () => new Set((store.get("lm-q-hifz", []) || []).map(Number));
+const readSuras = () => new Set((store.get("lm-q-read", []) || []).map(Number));
+const AY = () => (window.lmProg && lmProg.AY) || [];
+function completion(){
+  /* gelesene Verse + als gelesen markierte Suren */
+  const D = MD(); let n = countBits();
+  if(D){ readSuras().forEach(s => { for(let v = D.SV[s]; v < D.SV[s] + D.M.S[s - 1][1]; v++) if(!bit(BITS, v)) n++; }); }
+  else readSuras().forEach(s => n += AY()[s - 1] || 0);
+  return Math.min(1, n / NV);
+}
+function hifzVerses(){
+  const H = hifzSet(); let n = 0; H.forEach(s => n += AY()[s - 1] || 0);
+  goals().forEach(g => { if(g.type === "hifz" && !H.has(g.s)) n += Math.min(g.done || 0, AY()[g.s - 1] || 0); });
+  return n;
+}
+const sum = f => Object.values(DAYS).reduce((a, d) => a + (d[f] || 0), 0);
+function pagesFull(){ const D = MD(); if(!D) return Math.floor(countBits() / VPP); let n = 0; for(let p = 0; p < 604; p++){ const r = pageVerses(p); if(!r) continue; let ok = true; for(let v = r[0]; v <= r[1]; v++) if(!bit(BITS, v)){ ok = false; break; } if(ok) n++; } return n; }
+function juzDone(){ const D = MD(); if(!D) return 0; let n = 0; for(let j = 1; j <= 30; j++){ let ok = true; for(let p = 0; p < 604 && ok; p++){ if(D.M.M[p][0] !== j) continue; const r = pageVerses(p); if(r) for(let v = r[0]; v <= r[1]; v++) if(!bit(BITS, v)){ ok = false; break; } } if(ok) n++; } return n; }
+function readOn(k){ const s = new Set(); ((DAYS[k] || {}).r || []).forEach(([a, b]) => { for(let v = a; v <= b; v++) s.add(v); }); return s; }
+function readSince(k0){ const s = new Set(); Object.keys(DAYS).forEach(k => { if(k >= k0) (DAYS[k].r || []).forEach(([a, b]) => { for(let v = a; v <= b; v++) s.add(v); }); }); return s; }
+function kahfFridays(){ const D = MD(); if(!D) return 0; const a = D.SV[18], n = D.M.S[17][1]; let c = 0;
+  Object.keys(DAYS).forEach(k => { const [y, m, d] = k.split("-").map(Number); if(new Date(y, m - 1, d).getDay() !== 5) return; const s = readOn(k); let h = 0; for(let v = a; v < a + n; v++) if(s.has(v)) h++; if(h >= n * .9) c++; }); return c; }
+
+/* ---------- Ziele ---------- */
+const goals = () => store.get(K.goals, []) || [];
+const putGoals = g => store.set(K.goals, g);
+const sName = s => { const D = MD(); return D ? D.M.S[s - 1][4] : "Sure " + s; };
+function rangeLabel(a, b){
+  const D = MD(); if(!D) return "";
+  const s1 = D.VSU[a], s2 = D.VSU[b];
+  return s1 === s2 ? `${sName(s1)} ${D.VAY[a]} – ${D.VAY[b]}` : `${sName(s1)} ${D.VAY[a]} – ${sName(s2)} ${D.VAY[b]}`;
+}
+function pageRange(p0, p1){ const a = pageVerses(p0), b = pageVerses(p1); return a && b ? [a[0], b[1]] : null; }
+/* heutiger Abschnitt eines Ziels: {a, b, prog (0..1), back (Rückstand-Anteil), label, done, note, off} */
+function goalToday(g){
+  const D = MD(); if(!D) return null; const t = today();
+  const frac = (a, b, set) => { let h = 0; for(let v = a; v <= b; v++) if(set.has(v)) h++; return (b - a + 1) ? h / (b - a + 1) : 0; };
+  if(g.type === "khatm"){
+    const i = diffDays(g.start, t), ppd = 604 / g.days;
+    if(i >= g.days) return {off: true, note: T2("Zeitraum vorbei", "Period over"), prog: 1};
+    const p0 = Math.min(603, Math.floor(ppd * i)), p1 = Math.min(603, Math.max(p0, Math.ceil(ppd * (i + 1)) - 1));
+    const R = pageRange(p0, p1), since = readSince(g.start);
+    let behind = 0; for(let p = 0; p < p0; p++){ const r = pageVerses(p); if(r && frac(r[0], r[1], since) < .9) behind++; }
+    return {a: R[0], b: R[1], prog: frac(R[0], R[1], since), back: Math.min(1, behind / Math.max(1, p1 - p0 + 1)), behind, label: rangeLabel(R[0], R[1]), sub: `${T2("Seite", "Page")} ${p0 + 1}–${p1 + 1}`};
+  }
+  if(g.type === "pages"){
+    if(g.day !== t){
+      if(g.day != null){ const R0 = pageRange(g.pos, Math.min(603, g.pos + g.n - 1)), s0 = readSince(g.day);
+        if(R0 && frac(R0[0], R0[1], s0) >= .9) g.pos = g.pos + g.n > 603 ? 0 : g.pos + g.n;
+        else if(R0){ for(let p = g.pos; p <= Math.min(603, g.pos + g.n - 1); p++){ const r = pageVerses(p); if(r && frac(r[0], r[1], s0) < .9){ g.pos = p; break; } } } }
+      g.day = t; const all = goals(); const x = all.find(y => y.id === g.id); if(x){ x.pos = g.pos; x.day = g.day; putGoals(all); }
+    }
+    const p1 = Math.min(603, g.pos + g.n - 1), R = pageRange(g.pos, p1);
+    return {a: R[0], b: R[1], prog: frac(R[0], R[1], readSince(g.day)), label: rangeLabel(R[0], R[1]), sub: `${T2("Seite", "Page")} ${g.pos + 1}–${p1 + 1}`};
+  }
+  if(g.type === "kahf"){
+    const a = D.SV[18], b = a + D.M.S[17][1] - 1, fri = new Date().getDay() === 5;
+    const nx = (5 - new Date().getDay() + 7) % 7;
+    return {a, b, prog: fri ? frac(a, b, readOn(t)) : 0, label: `al-Kahf 1 – ${D.M.S[17][1]}`, off: !fri, note: fri ? "" : T2(`Nächster Freitag in ${nx} ${nx === 1 ? "Tag" : "Tagen"}`, `Next Friday in ${nx} day${nx === 1 ? "" : "s"}`)};
+  }
+  if(g.type === "ayah"){
+    const v = ((g.v0 || 0) + Math.max(0, diffDays(g.start, t))) % NV, done = (g.seen || []).includes(t) || readOn(t).has(v);
+    return {a: v, b: v, prog: done ? 1 : 0, label: `${sName(D.VSU[v])} ${D.VAY[v]}`, ayah: v};
+  }
+  if(g.type === "hifz"){
+    const tot = D.M.S[g.s - 1][1], done = Math.min(tot, g.done || 0);
+    if(done >= tot) return {prog: 1, label: `${sName(g.s)} – ${T2("geschafft", "done")} 🎉`, off: true, note: T2("Sure auswendig ✓", "Sūra memorised ✓")};
+    const a = D.SV[g.s] + done, b = Math.min(D.SV[g.s] + tot - 1, a + g.k - 1), td = (g.log || {})[t] || 0;
+    return {a, b, prog: Math.min(1, td / g.k), total: done / tot, label: rangeLabel(a, b), sub: `${done} / ${tot} ${T2("Verse auswendig", "verses memorised")}`};
+  }
+  return null;
+}
+const GT = {
+  khatm: {ic: "📖", de: "Qur'an ganz lesen", en: "Complete the Qur'an"},
+  pages: {ic: "📄", de: "Tägliche Seiten", en: "Daily pages"},
+  kahf: {ic: "🕌", de: "Sunna: al-Kahf am Freitag", en: "Sunnah: al-Kahf on Fridays"},
+  ayah: {ic: "✨", de: "Ein Vers am Tag", en: "Ayah a day"},
+  hifz: {ic: "🧠", de: "Sure auswendig lernen", en: "Memorise a sūra"}
+};
+const gName = g => g.name || (g.type === "khatm" ? T2(`Khatm in ${g.days} Tagen`, `Khatm in ${g.days} days`) : g.type === "pages" ? T2(`${g.n} ${g.n === 1 ? "Seite" : "Seiten"} am Tag`, `${g.n} page${g.n === 1 ? "" : "s"} a day`) : g.type === "hifz" ? T2(`${sName(g.s)} auswendig`, `Memorise ${sName(g.s)}`) : T2(GT[g.type].de, GT[g.type].en));
+
+/* ---------- Erfolge ---------- */
+function stats(){
+  const st = streak();
+  return {streak: st.cur, best: st.best, pages: pagesFull(), comp: completion(), juz: juzDone(), rc: sum("rc"), sec: sum("s"), hifz: hifzSet().size,
+    amma: (() => { const H = hifzSet(); let c = 0; for(let s = 78; s <= 114; s++) if(H.has(s)) c++; return c; })(), kahf: kahfFridays(), sess: store.get(K.nsess, 0) || 0, hv: hifzVerses()};
+}
+const ACH = [
+  ["first", "🌱", ["Erste Seite", "First page"], ["Eine ganze Seite gelesen", "Read a full page"], s => s.pages, 1, "#2EA57A"],
+  ["st3", "🔥", ["3 Tage am Stück", "3-day streak"], ["3 Tage hintereinander gelesen", "Read 3 days in a row"], s => s.best, 3, "#F08A24"],
+  ["st7", "🔥", ["Eine Woche dabei", "One-week streak"], ["7 Tage hintereinander", "7 days in a row"], s => s.best, 7, "#E85D3A"],
+  ["st30", "🔥", ["Ein Monat dabei", "One-month streak"], ["30 Tage hintereinander", "30 days in a row"], s => s.best, 30, "#C2366B"],
+  ["p50", "📄", ["50 Seiten", "50 pages"], ["50 Seiten gelesen", "Read 50 pages"], s => s.pages, 50, "#3A7BD5"],
+  ["juz", "🧩", ["Ein ganzer Juz", "A whole juz"], ["Einen Juz vollständig gelesen", "Read a complete juz"], s => s.juz, 1, "#7046D8"],
+  ["p300", "📚", ["300 Seiten", "300 pages"], ["Die Hälfte des Mushaf", "Half of the Mushaf"], s => s.pages, 300, "#1F8A63"],
+  ["khatm", "🏆", ["Khatm al-Qur'ān", "Khatm al-Qur'ān"], ["Den ganzen Qur'an gelesen", "Read the whole Qur'an"], s => Math.floor(s.comp * 100), 100, "#C9971C"],
+  ["rc100", "🎙️", ["Rezitator", "Reciter"], ["100 Verse vorgelesen und geprüft", "Recited 100 verses"], s => s.rc, 100, "#D9485F"],
+  ["rc1000", "🎙️", ["Super-Rezitator", "Super reciter"], ["1.000 Verse vorgelesen", "Recited 1,000 verses"], s => s.rc, 1000, "#8E2D4C"],
+  ["h1", "🧠", ["Erste Sure auswendig", "First sūra by heart"], ["Eine Sure auswendig gelernt", "Memorised a sūra"], s => s.hifz, 1, "#2EA57A"],
+  ["h10", "🧠", ["10 Suren auswendig", "10 sūras by heart"], ["10 Suren auswendig gelernt", "Memorised 10 sūras"], s => s.hifz, 10, "#13795B"],
+  ["amma", "🌙", ["Juz ʿAmma", "Juz ʿAmma"], ["Alle 37 Suren von Juz 30 auswendig", "All 37 sūras of juz 30 by heart"], s => s.amma, 37, "#25408F"],
+  ["kahf4", "🕌", ["Freitags-Freund", "Friday friend"], ["al-Kahf an 4 Freitagen gelesen", "Read al-Kahf on 4 Fridays"], s => s.kahf, 4, "#0E8A9A"],
+  ["t5", "⏱️", ["5 Stunden", "5 hours"], ["5 Stunden mit dem Qur'an verbracht", "Spent 5 hours with the Qur'an"], s => Math.floor(s.sec / 3600), 5, "#B5651D"],
+  ["s50", "🗓️", ["50 Sitzungen", "50 sessions"], ["50-mal den Mushaf geöffnet und gelesen", "50 reading sessions"], s => s.sess, 50, "#5B6B7F"]
+];
+const achList = st => ACH.map(([id, ic, nm, ds, f, goal, col]) => { const v = f(st); return {id, ic, nm: T2(nm[0], nm[1]), ds: T2(ds[0], ds[1]), v, goal, col, ok: v >= goal}; });
+function badge(a, small){
+  return `<div class="qd-bdg${a.ok ? "" : " lk"}${small ? " sm" : ""}" style="--bc:${a.col}"><span class="ic">${a.ic}</span>${a.ok ? "" : `<i class="pr"><b style="width:${Math.min(100, a.v / a.goal * 100)}%"></b></i>`}</div><b class="bn">${esc4(a.nm)}</b>${small ? "" : `<small>${esc4(a.ds)}${a.ok ? "" : ` · ${fmtN(Math.min(a.v, a.goal))}/${fmtN(a.goal)}`}</small>`}`;
+}
+
+/* ---------- Oberfläche ---------- */
+const css = document.createElement("style");
+css.textContent = `
+.qd{position:fixed;inset:0;z-index:2147483000;background:var(--bg);color:var(--ink);display:flex;flex-direction:column}
+.qd-top{display:flex;align-items:center;gap:10px;padding:calc(10px + env(safe-area-inset-top,0px)) 16px 6px}
+.qd-top h2{flex:1;margin:0;font-size:20px;text-align:center}
+.qd-ib{flex:none;width:42px;height:42px;border-radius:50%;border:0;background:var(--gold-soft);color:var(--gold);font-size:18px;font-weight:900;cursor:pointer;display:grid;place-items:center}
+.qd-tabs{display:flex;gap:18px;overflow-x:auto;scrollbar-width:none;padding:4px 16px 0;border-bottom:1px solid var(--sep)}
+.qd-tabs::-webkit-scrollbar{display:none}
+.qd-tabs button{flex:none;border:0;background:none;font:inherit;font-size:17px;font-weight:700;color:var(--muted);padding:10px 2px 12px;cursor:pointer;border-bottom:3px solid transparent;margin-bottom:-1px}
+.qd-tabs button[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--ink)}
+.qd-bd{flex:1;overflow-y:auto;padding:14px 16px calc(28px + env(safe-area-inset-bottom,0px));-webkit-overflow-scrolling:touch}
+.qd-bd > * + *{margin-top:16px}
+.qd-h{display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin:22px 2px 8px!important}
+.qd-h h3{margin:0;font-size:19px}
+.qd-h button{border:0;background:none;font:inherit;font-size:14.5px;color:var(--muted);cursor:pointer;padding:4px 0}
+.qd-card{background:var(--surface);border-radius:20px;box-shadow:inset 0 0 0 1px var(--sep);padding:14px}
+/* Streak */
+.qd-st{display:flex;gap:12px;align-items:center}
+.qd-fl{flex:none;display:flex;flex-direction:column;align-items:center;gap:4px;width:84px}
+.qd-ring{position:relative;width:74px;height:74px}
+.qd-ring svg{position:absolute;inset:0;transform:rotate(-90deg)}
+.qd-ring span{position:absolute;inset:0;display:grid;place-items:center;font-size:30px}
+.qd-ring.off span{filter:grayscale(1);opacity:.55}
+.qd-fl b{font-size:18px;color:var(--muted)}
+.qd-fl.on b{color:#E8762B}
+.qd-wk{flex:1;min-width:0}
+.qd-days{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;background:color-mix(in srgb,var(--ok) 12%,transparent);border-radius:16px;padding:10px 4px 12px;text-align:center}
+.qd-days span{font-size:12.5px;font-weight:800;color:var(--ok);display:block;margin-bottom:6px}
+.qd-dm{width:28px;height:28px;margin:0 auto;transform:rotate(45deg);border-radius:7px;box-shadow:inset 0 0 0 2px color-mix(in srgb,var(--ok) 35%,transparent);display:grid;place-items:center}
+.qd-dm i{transform:rotate(-45deg);font-style:normal;font-size:14px;color:#fff;font-weight:900}
+.qd-dm.ok{background:var(--ok);box-shadow:none}
+.qd-dm.td{box-shadow:inset 0 0 0 2.5px var(--ok)}
+.qd-dm.miss i{color:color-mix(in srgb,var(--ok) 45%,transparent);font-size:12px}
+.qd-best{font-size:14px;color:var(--ok);margin:8px 2px 0;font-weight:600}
+/* Ziele */
+.qd-goal{display:flex;align-items:center;gap:12px;width:100%;border:0;background:var(--surface);border-radius:18px;box-shadow:inset 0 0 0 1px var(--sep);padding:14px 14px 18px;font:inherit;color:var(--ink);text-align:left;cursor:pointer;position:relative;overflow:hidden}
+.qd-goal + .qd-goal{margin-top:10px}
+.qd-goal .ic{flex:none;width:44px;height:44px;border-radius:12px;display:grid;place-items:center;font-size:24px;background:var(--gold-soft)}
+.qd-goal .tx{flex:1;min-width:0}
+.qd-goal .tx b{display:block;font-size:16.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.qd-goal .tx span{display:block;font-size:14px;color:var(--muted);margin-top:2px}
+.qd-goal .tx small{display:block;font-size:12.5px;color:var(--muted)}
+.qd-goal .go{flex:none;font-size:22px;color:var(--muted)}
+.qd-goal .bar{position:absolute;left:0;right:0;bottom:0;height:6px;background:var(--fill);display:flex}
+.qd-goal .bar .bk{background:var(--bad,#D9485F)}
+.qd-goal .bar .ok{background:var(--ok)}
+.qd-goal.off{opacity:.7}
+.qd-goal.done .ic{background:color-mix(in srgb,var(--ok) 18%,transparent)}
+.qd-empty{text-align:center;color:var(--muted);font-size:14.5px;padding:18px 10px}
+.qd-btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;border:0;border-radius:999px;padding:14px 18px;font:inherit;font-size:16px;font-weight:800;cursor:pointer;background:var(--ink);color:var(--bg)}
+.qd-btn.sec{background:none;color:var(--ink);box-shadow:inset 0 0 0 2px var(--ink)}
+.qd-btn + .qd-btn{margin-top:10px}
+/* Fortschritt */
+.qd-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.qd-tile{display:flex;align-items:center;gap:10px;padding:12px;border-radius:18px;background:var(--surface);box-shadow:inset 0 0 0 1px var(--sep);position:relative;overflow:hidden;min-width:0}
+.qd-tile .ic{flex:none;width:42px;height:42px;border-radius:50%;display:grid;place-items:center;font-size:20px;background:color-mix(in srgb,var(--ok) 14%,transparent)}
+.qd-tile .tx{min-width:0}
+.qd-tile .tx span{display:block;font-size:13px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.qd-tile .tx b{display:block;font-size:19px;font-variant-numeric:tabular-nums;white-space:nowrap}
+.qd-tile .bar{position:absolute;left:0;right:0;bottom:0;height:5px;background:var(--fill)}
+.qd-tile .bar i{display:block;height:100%;background:var(--ok)}
+/* Sitzungen */
+.qd-ses{display:flex;align-items:center;gap:12px}
+.qd-ses .ic{flex:none;width:46px;height:46px;border-radius:50%;display:grid;place-items:center;font-size:21px;background:color-mix(in srgb,var(--ok) 14%,transparent)}
+.qd-ses .tx{flex:1;min-width:0}
+.qd-ses .tx b{display:block;font-size:16.5px}
+.qd-ses .tx span{display:block;font-size:13.5px;color:var(--muted)}
+.qd-sesf{display:flex;justify-content:space-between;align-items:center;gap:8px;margin:12px -14px -14px;padding:10px 14px;background:var(--fill);border-radius:0 0 20px 20px;font-size:12.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.03em}
+.qd-sesf button{border:0;background:none;font:inherit;font-size:14px;color:var(--ink);text-transform:none;letter-spacing:0;cursor:pointer;font-weight:600}
+.qd-cnt{background:none;padding:0;display:flex;align-items:center;justify-content:space-between;width:100%;border:0;font:inherit;color:var(--ink);text-align:left;cursor:pointer}
+.qd-cnt b{display:block;font-size:30px;color:var(--ok);font-variant-numeric:tabular-nums}
+.qd-cnt span{font-size:17px}
+/* Erfolge */
+.qd-ach{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.qd-ach.all{grid-template-columns:repeat(3,1fr);gap:10px}
+.qd-ach > div{background:var(--surface);border-radius:16px;box-shadow:inset 0 0 0 1px var(--sep);padding:10px 6px 12px;text-align:center;min-width:0}
+.qd-bdg{position:relative;width:62px;height:62px;margin:0 auto 6px;border-radius:20px;transform:rotate(45deg);display:grid;place-items:center;background:linear-gradient(135deg,color-mix(in srgb,var(--bc) 65%,#fff),var(--bc));box-shadow:0 4px 0 color-mix(in srgb,var(--bc) 60%,#000),inset 0 0 0 3px rgba(255,255,255,.35)}
+.qd-bdg.sm{width:52px;height:52px;border-radius:16px}
+.qd-bdg .ic{transform:rotate(-45deg);font-size:28px;filter:drop-shadow(0 2px 2px rgba(0,0,0,.25))}
+.qd-bdg.sm .ic{font-size:23px}
+.qd-bdg.lk{background:var(--fill);box-shadow:inset 0 0 0 2px var(--sep)}
+.qd-bdg.lk .ic{filter:grayscale(1);opacity:.4}
+.qd-bdg .pr{position:absolute;left:8px;right:8px;bottom:-14px;height:5px;border-radius:9px;background:var(--sep);transform:rotate(-45deg) translate(9px,-9px);overflow:hidden;display:none}
+.qd-ach > div .bn{display:block;font-size:12.5px;line-height:1.25;margin-top:8px}
+.qd-ach > div small{display:block;font-size:11.5px;color:var(--muted);margin-top:3px;line-height:1.3}
+.qd-ach.row .bn{font-size:11.5px;color:var(--muted);font-weight:600}
+/* Diagramm + Kalender */
+.qd-sel{border:0;background:none;font:inherit;font-size:15px;color:var(--ink);cursor:pointer;font-weight:600}
+.qd-chart svg{display:block;width:100%;height:auto}
+.qd-chart text{font-size:11px;fill:var(--muted);font-family:inherit}
+.qd-cal-h{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+.qd-cal-h b{font-size:16px}
+.qd-cal-h button{width:34px;height:34px;border-radius:50%;border:0;background:var(--fill);color:var(--ink);font-size:16px;cursor:pointer}
+.qd-cal{display:grid;grid-template-columns:repeat(7,1fr);gap:5px;text-align:center}
+.qd-cal .wd{font-size:11.5px;color:var(--muted);font-weight:700}
+.qd-cal .c{aspect-ratio:1;border-radius:9px;display:grid;place-items:center;font-size:12.5px;font-variant-numeric:tabular-nums;background:var(--fill);color:var(--muted)}
+.qd-cal .c.l1{background:color-mix(in srgb,var(--ok) 25%,var(--fill));color:var(--ink)}
+.qd-cal .c.l2{background:color-mix(in srgb,var(--ok) 50%,var(--fill));color:var(--ink)}
+.qd-cal .c.l3{background:color-mix(in srgb,var(--ok) 78%,var(--fill));color:#fff}
+.qd-cal .c.l4{background:var(--ok);color:#fff;font-weight:800}
+.qd-cal .c.td{box-shadow:inset 0 0 0 2px var(--ink)}
+.qd-leg{display:flex;align-items:center;gap:5px;justify-content:flex-end;margin-top:10px;font-size:11.5px;color:var(--muted)}
+.qd-leg i{width:13px;height:13px;border-radius:4px;background:var(--fill)}
+/* Auswendig-Karte */
+.qd-hz{display:flex;align-items:center;gap:16px}
+.qd-big{position:relative;width:110px;height:110px;flex:none}
+.qd-big svg{position:absolute;inset:0;transform:rotate(-90deg)}
+.qd-big b{position:absolute;inset:0;display:grid;place-items:center;font-size:20px;font-variant-numeric:tabular-nums}
+.qd-hz p{margin:0;font-size:14.5px;color:var(--muted);line-height:1.45}
+.qd-hz p b{color:var(--ink)}
+.qd-juz{display:grid;grid-template-columns:repeat(10,1fr);gap:4px}
+.qd-juz button{aspect-ratio:1;border:0;border-radius:7px;font:inherit;font-size:11px;font-weight:700;cursor:pointer;background:var(--fill);color:var(--muted);padding:0;font-variant-numeric:tabular-nums}
+.qd-juz button.r{background:var(--gold-soft);color:var(--gold)}
+.qd-juz button.h{background:var(--ok);color:#fff}
+.qd-note{font-size:12.5px;color:var(--muted);line-height:1.45;margin:8px 2px 0}
+/* Ziel-Assistent */
+.qd-types{display:grid;gap:10px}
+.qd-type{display:flex;align-items:center;gap:12px;border:0;border-radius:18px;padding:14px;font:inherit;color:var(--ink);text-align:left;cursor:pointer;background:var(--surface);box-shadow:inset 0 0 0 1px var(--sep)}
+.qd-type .ic{flex:none;width:46px;height:46px;border-radius:14px;display:grid;place-items:center;font-size:25px;background:var(--gold-soft)}
+.qd-type b{display:block;font-size:16px}
+.qd-type span span{display:block;font-size:13px;color:var(--muted)}
+.qd-type[aria-pressed="true"]{box-shadow:inset 0 0 0 2.5px var(--gold);background:var(--gold-soft)}
+.qd-chips{display:flex;flex-wrap:wrap;gap:8px}
+.qd-chips button{border:0;border-radius:999px;padding:9px 15px;font:inherit;font-size:14.5px;font-weight:700;cursor:pointer;background:var(--fill);color:var(--ink)}
+.qd-chips button[aria-pressed="true"]{background:var(--ink);color:var(--bg)}
+.qd-lbl{display:block;font-size:13px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin:16px 2px 8px}
+.qd-in{width:100%;box-sizing:border-box;border:0;border-radius:14px;padding:12px 14px;font:inherit;font-size:16px;background:var(--fill);color:var(--ink)}
+.qd-ay{direction:rtl;text-align:center;font-family:"Amiri","Scheherazade New",serif;font-size:26px;line-height:2;margin:6px 0}
+.qd-ayt{font-size:15px;line-height:1.55;color:var(--ink);margin:0 0 4px}
+.qd-del{border:0;background:none;color:var(--bad,#D9485F);font:inherit;font-weight:700;cursor:pointer;padding:10px;width:100%}
+/* Einstieg auf der Qur'an-Seite */
+.qd-entry{display:block;width:100%;border:0;font:inherit;color:var(--ink);text-align:left;cursor:pointer;margin:2px 0 12px;padding:12px 12px 10px}
+.qd-entry .row{display:flex;align-items:center;gap:10px}
+.qd-entry .fl{flex:none;display:flex;align-items:center;gap:4px;font-weight:900;font-size:18px;color:#E8762B}
+.qd-entry .fl.off{color:var(--muted);filter:grayscale(1)}
+.qd-entry .qd-mini{flex:1;display:grid;grid-template-columns:repeat(7,1fr);gap:2px}
+.qd-entry .qd-mini .qd-dm{width:18px;height:18px;border-radius:5px}
+.qd-entry .qd-mini .qd-dm i{font-size:10px}
+.qd-entry .go{flex:none;font-size:20px;color:var(--muted)}
+.qd-entry .nums{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}
+.qd-entry .nums span{font-size:12.5px;font-weight:700;border-radius:999px;padding:4px 10px;background:var(--fill);color:var(--ink)}
+.qd-entry .g{margin-top:10px;font-size:13.5px;color:var(--muted)}
+.qd-entry .g i{display:block;height:5px;border-radius:9px;background:var(--fill);margin-top:5px;overflow:hidden;font-style:normal}
+.qd-entry .g i b{display:block;height:100%;background:var(--ok)}
+`;
+document.head.appendChild(css);
+
+const WD = () => lang === "en" ? ["Mo", "Tu", "We", "Th", "Fr", "Sa", "Su"] : ["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"];
+function weekStrip(mini){
+  const t = new Date(), mon = new Date(t.getFullYear(), t.getMonth(), t.getDate() - ((t.getDay() + 6) % 7)), tk = today();
+  return WD().map((n, i) => { const k = dayKey(new Date(mon.getFullYear(), mon.getMonth(), mon.getDate() + i)), ok = active(DAYS[k]), td = k === tk, past = k < tk;
+    return `<div>${mini ? "" : `<span>${n}</span>`}<div class="qd-dm${ok ? " ok" : ""}${td && !ok ? " td" : ""}${past && !ok ? " miss" : ""}"><i>${ok ? "✓" : past ? "·" : ""}</i></div></div>`; }).join("");
+}
+function streakCard(){
+  const st = streak(), on = active(DAYS[today()]), C = 2 * Math.PI * 32, fr = Math.min(1, st.cur / 7);
+  return `<div class="qd-card qd-st"><div class="qd-fl${st.cur ? " on" : ""}"><div class="qd-ring${on ? "" : " off"}"><svg viewBox="0 0 74 74"><circle cx="37" cy="37" r="32" fill="none" stroke="var(--fill)" stroke-width="7"/><circle cx="37" cy="37" r="32" fill="none" stroke="#F08A24" stroke-width="7" stroke-linecap="round" stroke-dasharray="${C}" stroke-dashoffset="${C * (1 - fr)}"/></svg><span>🔥</span></div><b>${st.cur} ${st.cur === 1 ? T2("Tag", "day") : T2("Tage", "days")}</b></div>
+    <div class="qd-wk"><div class="qd-days">${weekStrip()}</div><p class="qd-best">${T2("Längster Streak", "Longest streak")} <b>${st.best} ${st.best === 1 ? T2("Tag", "day") : T2("Tage", "days")}</b></p></div></div>`;
+}
+function goalRow(g){
+  const r = goalToday(g); if(!r) return "";
+  const ic = GT[g.type].ic, done = r.prog >= .999;
+  return `<button class="qd-goal${r.off ? " off" : ""}${done ? " done" : ""}" data-qd-g="${g.id}"><span class="ic">${done ? "✅" : ic}</span><span class="tx"><b>${esc4(gName(g))}</b><span>${esc4(r.off && r.note ? r.note : r.label)}</span>${r.sub || (r.behind ? 1 : 0) ? `<small>${esc4(r.sub || "")}${r.behind ? ` · ${T2(`${r.behind} Seiten im Rückstand`, `${r.behind} pages behind`)}` : ""}</small>` : ""}</span><span class="go">›</span>
+    <span class="bar">${r.back ? `<i class="bk" style="width:${Math.min(30, r.back * 30)}%"></i>` : ""}<i class="ok" style="width:${(r.total != null ? r.total : r.prog) * 100}%"></i></span></button>`;
+}
+function goalsHTML(max){
+  const G = goals(); if(!G.length) return `<div class="qd-card qd-empty">${T2("Noch keine Ziele. Setz dir ein Ziel – z. B. jeden Tag 2 Seiten oder al-Kahf am Freitag.", "No goals yet. Set one – e.g. 2 pages a day or al-Kahf on Fridays.")}</div><button class="qd-btn" data-qd="add" style="margin-top:10px">＋ ${T2("Ziel hinzufügen", "Add goal")}</button>`;
+  const L = G.slice().sort((a, b) => { const ra = goalToday(a) || {}, rb = goalToday(b) || {}; return (ra.off ? 1 : 0) - (rb.off ? 1 : 0); });
+  return (max ? L.slice(0, max) : L).map(goalRow).join("");
+}
+function tiles(st){
+  const hv = st.hv;
+  return `<div class="qd-grid">
+    <div class="qd-tile"><span class="ic">📖</span><span class="tx"><span>${T2("Gelesen", "Read")}</span><b>${pct(st.comp)}</b></span><span class="bar"><i style="width:${st.comp * 100}%"></i></span></div>
+    <div class="qd-tile"><span class="ic">🧠</span><span class="tx"><span>${T2("Auswendig", "Memorised")}</span><b>${pct(hv / NV)}</b></span><span class="bar"><i style="width:${hv / NV * 100}%"></i></span></div>
+    <div class="qd-tile"><span class="ic">⏱️</span><span class="tx"><span>${T2("Lesezeit", "Time")}</span><b>${Math.floor(st.sec / 3600)}:${String(Math.floor(st.sec % 3600 / 60)).padStart(2, "0")} h</b></span></div>
+    <div class="qd-tile"><span class="ic">🎙️</span><span class="tx"><span>${T2("Rezitiert", "Recited")}</span><b>${fmtN(st.rc)}</b></span></div></div>`;
+}
+function sessCard(x){
+  const D = MD(), d = new Date(x.t), e = new Date(x.e || x.t);
+  const ttl = x.a != null && D ? rangeLabel(x.a, x.b != null ? x.b : x.a) : T2("Mushaf geöffnet", "Opened the Mushaf");
+  const kind = x.rc ? T2("Vorlesen", "Reciting") : x.v ? T2("Lesen", "Reading") : x.ls ? T2("Anhören", "Listening") : T2("Lesen", "Reading");
+  const tm = dt => dt.toLocaleTimeString(lang === "en" ? "en-GB" : "de-DE", {hour: "2-digit", minute: "2-digit"});
+  return `<div class="qd-card"><p style="margin:0 0 10px;font-size:16px;font-weight:600">${kind}</p><div class="qd-ses"><span class="ic">${x.rc ? "🎙️" : x.ls && !x.v ? "🎧" : "📗"}</span><span class="tx"><b>${esc4(ttl)}</b><span>${Math.round((x.sec || 0) / 60)} ${T2("Min.", "min")} · ${fmtN(x.v || 0)} ${T2("Verse", "verses")}${x.rc ? ` · ${x.rc} ${T2("rezitiert", "recited")}` : ""}${x.ls ? ` · ${x.ls} ${T2("gehört", "heard")}` : ""}</span></span></div>
+    <div class="qd-sesf"><span>${d.toLocaleDateString(lang === "en" ? "en-GB" : "de-DE", {day: "numeric", month: "long", year: "numeric"})} ${tm(d)} – ${tm(e)}</span>${x.a != null ? `<button data-qd-open="${x.b != null ? x.b : x.a}">${T2("Weiterlesen", "Continue")} ›</button>` : ""}</div></div>`;
+}
+function achRow(st){
+  const L = achList(st), got = L.filter(a => a.ok), show = (got.length ? got.slice(-4).reverse() : []).concat(L.filter(a => !a.ok)).slice(0, 4);
+  return `<div class="qd-ach row">${show.map(a => `<div>${badge(a, true)}</div>`).join("")}</div>`;
+}
+let CH = store.get("lm-qd-ch", 7), CAL = null;
+function chart(){
+  const n = CH, t = new Date(), pts = [];
+  for(let i = n - 1; i >= 0; i--){ const d = new Date(t.getFullYear(), t.getMonth(), t.getDate() - i), k = dayKey(d); pts.push({k, d, v: Math.round(((DAYS[k] || {}).v || 0) / VPP * 10) / 10}); }
+  const mx = Math.max(2, Math.ceil(Math.max(...pts.map(p => p.v)))), W = 340, H = 170, l = 30, b = 24, cw = (W - l - 6) / n;
+  const ticks = [0, Math.round(mx / 2), mx].filter((x, i, a) => a.indexOf(x) === i);
+  let g = ticks.map(tk => { const y = H - b - (H - b - 10) * tk / mx; return `<line x1="${l}" x2="${W - 4}" y1="${y}" y2="${y}" stroke="var(--sep)" stroke-dasharray="4 4"/><text x="${l - 6}" y="${y + 4}" text-anchor="end">${tk}</text>`; }).join("");
+  pts.forEach((p, i) => { const h = (H - b - 10) * p.v / mx, x = l + i * cw + cw * .18, w = cw * .64, y = H - b - h;
+    if(p.v > 0) g += `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="${Math.min(6, w / 3)}" fill="var(--ok)" opacity="${p.k === today() ? 1 : .75}"><title>${p.v} ${T2("Seiten", "pages")}</title></rect>`;
+    if(n <= 7 || i % 5 === 0 || i === n - 1) g += `<text x="${l + i * cw + cw / 2}" y="${H - 6}" text-anchor="middle">${n <= 7 ? WD()[(p.d.getDay() + 6) % 7] : p.d.getDate() + "."}</text>`; });
+  return `<div class="qd-card qd-chart"><svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${T2("Seiten pro Tag", "Pages per day")}"><line x1="${l}" x2="${l}" y1="8" y2="${H - b}" stroke="var(--ok)"/>${g}</svg></div>`;
+}
+function calendar(){
+  const t = new Date(); if(!CAL) CAL = {y: t.getFullYear(), m: t.getMonth()};
+  const first = new Date(CAL.y, CAL.m, 1), off = (first.getDay() + 6) % 7, nd = new Date(CAL.y, CAL.m + 1, 0).getDate(), tk = today();
+  let c = WD().map(x => `<span class="wd">${x}</span>`).join("") + "<span></span>".repeat(off);
+  for(let d = 1; d <= nd; d++){ const k = dayKey(new Date(CAL.y, CAL.m, d)), r = DAYS[k] || {}, m = (r.s || 0) / 60, lv = !active(r) && !m ? 0 : m >= 30 ? 4 : m >= 15 ? 3 : m >= 5 ? 2 : 1;
+    c += `<span class="c${lv ? " l" + lv : ""}${k === tk ? " td" : ""}" title="${Math.round(m)} ${T2("Min.", "min")}">${d}</span>`; }
+  const mn = first.toLocaleDateString(lang === "en" ? "en-GB" : "de-DE", {month: "long", year: "numeric"});
+  return `<div class="qd-card"><div class="qd-cal-h"><button data-qd-cal="-1" aria-label="${T2("Vorheriger Monat", "Previous month")}">‹</button><b>${mn}</b><button data-qd-cal="1" aria-label="${T2("Nächster Monat", "Next month")}">›</button></div><div class="qd-cal">${c}</div>
+    <div class="qd-leg">${T2("wenig", "less")} <i></i><i style="background:color-mix(in srgb,var(--ok) 25%,var(--fill))"></i><i style="background:color-mix(in srgb,var(--ok) 50%,var(--fill))"></i><i style="background:color-mix(in srgb,var(--ok) 78%,var(--fill))"></i><i style="background:var(--ok)"></i> ${T2("viel", "more")}</div></div>`;
+}
+function hifzTab(st){
+  const C = 2 * Math.PI * 46, fr = st.hv / NV, H = hifzSet(), R = readSuras();
+  const hg = goals().filter(g => g.type === "hifz");
+  let cells = ""; for(let s = 1; s <= 114; s++) cells += `<button class="${H.has(s) ? "h" : R.has(s) ? "r" : ""}" data-qd-s="${s}" aria-label="${sName(s)}">${s}</button>`;
+  return `<div class="qd-card qd-hz"><div class="qd-big"><svg viewBox="0 0 110 110"><circle cx="55" cy="55" r="46" fill="none" stroke="var(--fill)" stroke-width="10"/><circle cx="55" cy="55" r="46" fill="none" stroke="var(--ok)" stroke-width="10" stroke-linecap="round" stroke-dasharray="${C}" stroke-dashoffset="${C * (1 - fr)}"/></svg><b>${pct(fr)}</b></div>
+      <p><b>${st.hifz}</b> ${T2("von 114 Suren auswendig", "of 114 sūras memorised")}<br><b>${fmtN(st.hv)}</b> ${T2("von 6.236 Versen", "of 6,236 verses")}<br>Juz ʿAmma: <b>${st.amma}/37</b></p></div>
+    <div class="qd-h"><h3>${T2("Lernpläne", "Memorisation plans")}</h3><button data-qd="add-hifz">＋ ${T2("Neu", "New")}</button></div>
+    ${hg.length ? hg.map(goalRow).join("") : `<div class="qd-card qd-empty">${T2("Lerne eine Sure Schritt für Schritt – z. B. 3 Verse am Tag.", "Learn a sūra step by step – e.g. 3 verses a day.")}</div>`}
+    <div class="qd-h"><h3>${T2("Alle Suren", "All sūras")}</h3></div>
+    <div class="qd-card"><div class="qd-juz">${cells}</div><p class="qd-note">🟩 ${T2("auswendig", "memorised")} · 🟨 ${T2("gelesen", "read")} · ${T2("Tippe eine Sure an, um sie zu markieren.", "Tap a sūra to mark it.")}</p></div>`;
+}
+let TAB = "dash", EL = null;
+function body(){
+  reload();
+  const st = stats(), sess = store.get(K.sess, []) || [];
+  if(TAB === "dash") return `${streakCard()}
+    <div class="qd-h"><h3>${T2("Heutige Ziele", "Today's goals")}</h3><button data-qd-tab="goals">${T2("Alle ansehen", "See all")}</button></div>${goalsHTML(4)}
+    <div class="qd-h"><h3>${T2("Fortschritt", "Progress")}</h3></div>${tiles(st)}
+    <div class="qd-h"><h3>${T2("Aktivität", "Activity")}</h3><button data-qd-tab="act">${T2("Alle ansehen", "See all")}</button></div>${sess.length ? sessCard(sess[0]) : `<div class="qd-card qd-empty">${T2("Öffne den Mushaf und lies – hier erscheint dann deine letzte Sitzung.", "Open the Mushaf and read – your last session will show here.")}</div>`}
+    <div class="qd-h"><h3>${T2("Erfolge", "Achievements")}</h3><button data-qd-tab="ach">${T2("Alle ansehen", "See all")}</button></div>${achRow(st)}
+    <div class="qd-h"><h3>${T2("Meine Gruppen", "My groups")}</h3></div><div class="qd-card" style="text-align:center"><p style="margin:0 0 4px;font-family:Amiri,serif;font-size:21px;direction:rtl">وَفِي ذَٰلِكَ فَلْيَتَنَافَسِ الْمُتَنَافِسُونَ</p><p style="margin:0 0 12px;font-size:14px;color:var(--muted)">„${T2("Und darum sollen die Wetteifernden wetteifern.“ (al-Muṭaffifīn 83:26)", "So let the competitors compete for that.” (al-Muṭaffifīn 83:26)")}</p><button class="qd-btn sec" data-qd="challenge">🏆 ${T2("Zur Challenge mit Familie & Freunden", "To the challenge with family & friends")}</button></div>`;
+  if(TAB === "goals") return goalsHTML() + (goals().length ? `<button class="qd-btn" data-qd="add" style="margin-top:14px">＋ ${T2("Ziel hinzufügen", "Add goal")}</button>` : "") + `<p class="qd-note">${T2("Ein Abschnitt zählt als gelesen, wenn du die Seite mindestens 15 Sekunden offen hattest, in der Versliste darüber gescrollt hast oder die Verse vorgelesen hast.", "A section counts as read once a page was open for at least 15 seconds, you scrolled past it in the verse list, or you recited it.")}</p>`;
+  if(TAB === "hifz") return hifzTab(st);
+  if(TAB === "act") return `${streakCard()}
+    <div class="qd-card"><button class="qd-cnt" data-qd-tab="hist"><span><span>${T2("Sitzungsverlauf", "Session history")}</span><b>${fmtN(st.sess)}</b></span><span style="font-size:24px;color:var(--muted)">›</span></button></div>
+    <div class="qd-h"><h3>${T2("Erfolge", "Achievements")}</h3><button data-qd-tab="ach">${T2("Alle ansehen", "See all")}</button></div>${achRow(st)}
+    <div class="qd-h"><h3>${T2("Aktivitäts-Kalender", "Activity calendar")}</h3></div>${calendar()}
+    <div class="qd-h"><h3>${T2("Seiten", "Pages")}</h3><button class="qd-sel" data-qd="ch">${CH === 7 ? T2("Letzte 7 Tage", "Last 7 days") : T2("Letzte 30 Tage", "Last 30 days")} ▾</button></div>${chart()}
+    <div class="qd-grid" style="margin-top:12px"><div class="qd-tile"><span class="ic">📄</span><span class="tx"><span>${T2("Ganze Seiten", "Full pages")}</span><b>${fmtN(st.pages)} / 604</b></span></div><div class="qd-tile"><span class="ic">🧩</span><span class="tx"><span>${T2("Ganze Juz", "Full juz")}</span><b>${st.juz} / 30</b></span></div></div>`;
+  if(TAB === "hist") return `<button class="qd-btn sec" data-qd-tab="act">‹ ${T2("Zurück", "Back")}</button>` + (sess.length ? sess.slice(0, 60).map(sessCard).join("") : `<div class="qd-card qd-empty">${T2("Noch keine Sitzungen.", "No sessions yet.")}</div>`);
+  if(TAB === "ach"){ const L = achList(st); return `<p class="qd-note" style="margin-top:0">${L.filter(a => a.ok).length} / ${L.length} ${T2("Erfolge freigeschaltet", "achievements unlocked")}</p><div class="qd-ach all">${L.map(a => `<div>${badge(a)}</div>`).join("")}</div>`; }
+  return "";
+}
+const TABS = () => [["dash", T2("Dashboard", "Dashboard")], ["goals", T2("Ziele", "Goals")], ["hifz", T2("Auswendiglernen", "Memorising")], ["act", T2("Aktivität", "Activity")]];
+function draw(keep){
+  if(!EL) return; const bd = EL.querySelector(".qd-bd"), y = keep ? bd.scrollTop : 0;
+  const tb = TAB === "hist" || TAB === "ach" ? "act" : TAB;
+  EL.querySelector(".qd-tabs").innerHTML = TABS().map(([k, n]) => `<button role="tab" data-qd-tab="${k}" aria-selected="${k === tb}">${n}</button>`).join("");
+  bd.innerHTML = body(); bd.scrollTop = y;
+  const sel = EL.querySelector('.qd-tabs [aria-selected="true"]'); if(sel) sel.scrollIntoView({inline: "nearest", block: "nearest"});
+}
+async function open(tab){
+  try{ await window.lmMushaf.load(); }catch(e){}
+  reload(); if(tab) TAB = tab;
+  if(EL) EL.remove();
+  EL = document.createElement("div"); EL.className = "qd"; EL.setAttribute("role", "dialog"); EL.setAttribute("aria-label", T2("Mein Qur'an", "My Qur'an"));
+  EL.innerHTML = `<header class="qd-top"><button class="qd-ib" data-qd="x" aria-label="${T2("Zurück", "Back")}">‹</button><h2>${T2("Mein Qur'an", "My Qur'an")}</h2><span style="width:42px"></span></header><nav class="qd-tabs" role="tablist"></nav><div class="qd-bd"></div>`;
+  document.body.appendChild(EL); document.body.classList.add("mr-on");
+  EL.addEventListener("click", onClick); draw();
+}
+function close(){ if(EL){ EL.remove(); EL = null; } if(!document.querySelector(".mr")) document.body.classList.remove("mr-on"); if(typeof renderQuran === "function" && document.querySelector("#v-quran.active")) renderQuran(); }
+
+/* ---------- Ziel-Sheets ---------- */
+function sheet(html){
+  document.querySelectorAll(".pg-sh").forEach(x => x.remove());
+  const d = document.createElement("div"); d.className = "pg-sh"; d.innerHTML = `<div class="pg-box" role="dialog" aria-modal="true" style="max-height:88vh;overflow-y:auto">${html}</div>`;
+  d.addEventListener("click", e => { if(e.target === d || e.target.closest('[data-pg="x"]')) d.remove(); });
+  document.body.appendChild(d); return d;
+}
+const shHead = t => `<div class="pg-hd"><div class="tt"><b>${t}</b></div><button class="pg-x" data-pg="x" aria-label="${T2("Schließen", "Close")}">✕</button></div>`;
+function addSheet(pre){
+  const D = MD(); const W = {type: pre || "pages", days: 30, n: 2, s: 67, k: 3};
+  const opts = (arr, cur, key, f) => `<div class="qd-chips">${arr.map(x => `<button data-qd-set="${key}" data-val="${x}" aria-pressed="${x === cur}">${f ? f(x) : x}</button>`).join("")}</div>`;
+  const sh = sheet(""); const box = sh.querySelector(".pg-box");
+  const drawW = () => {
+    let p = "";
+    if(W.type === "khatm") p = `<span class="qd-lbl">${T2("In wie vielen Tagen?", "In how many days?")}</span>${opts([7, 14, 30, 60, 90, 180, 365], W.days, "days")}<p class="qd-note">≈ ${Math.ceil(604 / W.days * 10) / 10} ${T2("Seiten pro Tag", "pages a day")}</p>`;
+    if(W.type === "pages") p = `<span class="qd-lbl">${T2("Seiten pro Tag", "Pages per day")}</span>${opts([1, 2, 3, 4, 5, 10, 20], W.n, "n")}<p class="qd-note">${T2("Startet dort, wo du zuletzt gelesen hast", "Starts where you last read")}: ${T2("Seite", "page")} ${(store.get("lm-mp-page", 0) || 0) + 1}</p>`;
+    if(W.type === "hifz") p = `<span class="qd-lbl">${T2("Welche Sure?", "Which sūra?")}</span><select class="qd-in" data-qd-sura>${D ? D.M.S.map((x, i) => `<option value="${i + 1}"${i + 1 === W.s ? " selected" : ""}>${i + 1}. ${x[4]} – ${x[0]} (${x[1]})</option>`).join("") : ""}</select>
+      <span class="qd-lbl">${T2("Verse pro Tag", "Verses per day")}</span>${opts([1, 2, 3, 5, 7, 10], W.k, "k")}<p class="qd-note">≈ ${D ? Math.ceil(D.M.S[W.s - 1][1] / W.k) : "?"} ${T2("Tage", "days")}</p>`;
+    if(W.type === "kahf") p = `<p class="qd-note">${T2("Jeden Freitag erinnert dich das Ziel an Sūrat al-Kahf (110 Verse). „Wer am Freitag al-Kahf liest, dem leuchtet ein Licht bis zum nächsten Freitag.“ (al-Ḥākim, ṣaḥīḥ nach al-Albānī)", "Every Friday this goal reminds you of Sūrat al-Kahf (110 verses).")}</p>`;
+    if(W.type === "ayah") p = `<p class="qd-note">${T2("Jeden Tag ein neuer Vers mit Übersetzung – der Reihe nach, beginnend bei al-Fātiḥa.", "A new verse with translation every day – in order, starting with al-Fātiḥa.")}</p>`;
+    box.innerHTML = shHead(T2("Neues Ziel", "New goal")) + `<div class="qd-types">${Object.entries(GT).map(([k, t]) => `<button class="qd-type" data-qd-type="${k}" aria-pressed="${W.type === k}"><span class="ic">${t.ic}</span><span><b>${T2(t.de, t.en)}</b></span></button>`).join("")}</div>${p}
+      <span class="qd-lbl">${T2("Name (freiwillig)", "Name (optional)")}</span><input class="qd-in" data-qd-name maxlength="40" placeholder="${esc4(gName({...W, name: ""}))}" value="${esc4(W.name || "")}">
+      <button class="qd-btn" data-qd-save style="margin-top:16px">${T2("Ziel speichern", "Save goal")}</button>`;
+  };
+  drawW();
+  box.addEventListener("input", e => { if(e.target.matches("[data-qd-name]")) W.name = e.target.value; });
+  box.addEventListener("change", e => { if(e.target.matches("[data-qd-sura]")){ W.s = +e.target.value; drawW(); } });
+  box.addEventListener("click", e => {
+    const t = e.target.closest("[data-qd-type]"); if(t){ W.type = t.dataset.qdType; drawW(); return; }
+    const s = e.target.closest("[data-qd-set]"); if(s){ W[s.dataset.qdSet] = +s.dataset.val; drawW(); return; }
+    if(e.target.closest("[data-qd-save]")){
+      const g = {id: Date.now().toString(36), type: W.type, start: today()}; if(W.name && W.name.trim()) g.name = W.name.trim().slice(0, 40);
+      if(W.type === "khatm") g.days = W.days;
+      if(W.type === "pages"){ g.n = W.n; g.pos = store.get("lm-mp-page", 0) || 0; g.day = today(); }
+      if(W.type === "hifz"){ g.s = W.s; g.k = W.k; g.done = 0; g.log = {}; }
+      if(W.type === "ayah"){ g.v0 = 0; g.seen = []; }
+      putGoals(goals().concat(g)); sh.remove(); if(typeof toast === "function") toast(T2("Ziel gespeichert ✓", "Goal saved ✓"));
+      if(TAB !== "hifz") TAB = W.type === "hifz" ? "hifz" : "goals"; draw();
+    }
+  });
+}
+async function goalSheet(id){
+  const g = goals().find(x => x.id === id); if(!g) return; const r = goalToday(g) || {}, D = MD();
+  let mid = "";
+  if(g.type === "ayah" && r.ayah != null){
+    if(!(lang === "en" ? window.MUSHAF_EN : window.MUSHAF_DE)) try{ await new Promise((res, rej) => { const s = document.createElement("script"); s.src = lang === "en" ? "mushaf_en.js?v=1" : "mushaf_de.js?v=1"; s.onload = res; s.onerror = rej; document.head.appendChild(s); }); }catch(e){}
+    const TR = lang === "en" ? window.MUSHAF_EN : window.MUSHAF_DE, v = r.ayah;
+    mid = `<p class="qd-ay" lang="ar">${D.VW[v].map(w => w.replace(/\{[sgq2456]/g, "").replace(/\}/g, "")).join(" ")} ﴿${D.VAY[v]}﴾</p><p class="qd-ayt">${TR ? esc4(TR[v]) : ""}</p><p class="qd-note" style="margin-bottom:12px">${sName(D.VSU[v])} ${D.VSU[v]}:${D.VAY[v]}</p>
+      <button class="qd-btn" data-qd-gs="seen">${r.prog >= 1 ? "✓ " + T2("Heute gelesen", "Read today") : T2("✓ Gelesen", "✓ Mark as read")}</button><button class="qd-btn sec" data-qd-gs="open">${T2("Im Mushaf öffnen", "Open in the Mushaf")}</button>`;
+  } else if(g.type === "hifz" && !r.off){
+    mid = `<p class="qd-note" style="margin-top:0">${T2("Heute", "Today")}: <b style="color:var(--ink)">${esc4(r.label)}</b> · ${esc4(r.sub)}</p>
+      <button class="qd-btn sec" data-qd-gs="learn">🙈 ${T2("Öffnen & mit Verdecken üben", "Open & practise hidden")}</button><button class="qd-btn" data-qd-gs="hdone">✓ ${T2("Heute auswendig gelernt", "Memorised today")}</button>`;
+  } else {
+    mid = r.off ? `<p class="qd-note" style="margin-top:0">${esc4(r.note || "")}</p>` : `<p class="qd-note" style="margin-top:0">${T2("Heute", "Today")}: <b style="color:var(--ink)">${esc4(r.label || "")}</b>${r.sub ? ` · ${esc4(r.sub)}` : ""} · ${Math.round((r.prog || 0) * 100)} %</p>`;
+    if(r.a != null) mid += `<button class="qd-btn" data-qd-gs="open">📖 ${T2("Jetzt lesen", "Read now")}</button>`;
+  }
+  const sh = sheet(shHead(`${GT[g.type].ic} ${esc4(gName(g))}`) + mid + `<button class="qd-del" data-qd-gs="del">${T2("Ziel löschen", "Delete goal")}</button>`);
+  sh.addEventListener("click", e => {
+    const b = e.target.closest("[data-qd-gs]"); if(!b) return; const k = b.dataset.qdGs, all = goals(), x = all.find(y => y.id === id);
+    if(k === "del"){ if(b.dataset.sure){ putGoals(all.filter(y => y.id !== id)); sh.remove(); draw(true); } else { b.dataset.sure = 1; b.textContent = T2("Wirklich löschen? Nochmal tippen", "Really delete? Tap again"); } return; }
+    if(k === "seen"){ x.seen = (x.seen || []).concat(today()).slice(-60); putGoals(all); readRange(r.ayah, r.ayah); save(); sh.remove(); draw(true); if(typeof toast === "function") toast("✨ " + T2("Bārak Allāhu fīk!", "Bārak Allāhu fīk!")); return; }
+    if(k === "open"){ const D2 = MD(); let v = r.a; if(D2 && r.b != null){ const since = g.type === "khatm" ? readSince(g.start) : g.type === "pages" ? readSince(g.day) : readOn(today()); for(let q = r.a; q <= r.b; q++) if(!since.has(q)){ v = q; break; } } sh.remove(); close(); window.lmMushaf.openVerse(v); return; }
+    if(k === "learn"){ sh.remove(); close(); try{ store.set("lm-mr-mode", "list"); }catch(_){} window.lmMushaf.openVerse(r.a, true); return; }
+    if(k === "hdone"){ const D2 = MD(), tot = D2.M.S[x.s - 1][1]; x.done = Math.min(tot, (x.done || 0) + (r.b - r.a + 1)); x.log = x.log || {}; x.log[today()] = (x.log[today()] || 0) + (r.b - r.a + 1); putGoals(all);
+      if(x.done >= tot && window.lmProg){ lmProg.setSura(x.s, "hifz", true); if(typeof toast === "function") toast(T2(`🎉 ${sName(x.s)} auswendig – Māschāʾallāh!`, `🎉 ${sName(x.s)} memorised – Māshāʾallāh!`)); }
+      else if(typeof toast === "function") toast(T2("Māschāʾallāh – weiter so! 🧠", "Māshāʾallāh – keep going! 🧠"));
+      sh.remove(); draw(true); }
+  });
+}
+function onClick(e){
+  const t = e.target.closest("[data-qd-tab]"); if(t){ TAB = t.dataset.qdTab; draw(); return; }
+  const g = e.target.closest("[data-qd-g]"); if(g){ goalSheet(g.dataset.qdG); return; }
+  const o = e.target.closest("[data-qd-open]"); if(o){ close(); window.lmMushaf.openVerse(+o.dataset.qdOpen); return; }
+  const c = e.target.closest("[data-qd-cal]"); if(c){ const n = +c.dataset.qdCal; CAL.m += n; if(CAL.m < 0){ CAL.m = 11; CAL.y--; } if(CAL.m > 11){ CAL.m = 0; CAL.y++; } draw(true); return; }
+  const s = e.target.closest("[data-qd-s]"); if(s && window.lmProg){ const n = +s.dataset.qdS, D = MD(); lmProg.suraSheet(n, {ar: D ? D.M.S[n - 1][0] : "", t: sName(n)}); return; }
+  const b = e.target.closest("[data-qd]"); if(!b) return; const k = b.dataset.qd;
+  if(k === "x") close();
+  else if(k === "add") addSheet();
+  else if(k === "add-hifz") addSheet("hifz");
+  else if(k === "ch"){ CH = CH === 7 ? 30 : 7; store.set("lm-qd-ch", CH); draw(true); }
+  else if(k === "challenge"){ close(); setTab("challenge"); }
+}
+document.addEventListener("lm-prog", () => { if(EL) draw(true); });
+
+/* Einstieg oben auf der Qur'an-Seite */
+function card(){
+  reload();
+  const st = streak(), G = goals(), D = MD(); let g1 = "";
+  const g = G.map(x => ({x, r: D ? goalToday(x) : null})).find(y => y.r && !y.r.off && y.r.prog < 1);
+  if(g) g1 = `<div class="g">🎯 ${esc4(gName(g.x))}: ${esc4(g.r.label)}<i><b style="width:${(g.r.total != null ? g.r.total : g.r.prog) * 100}%"></b></i></div>`;
+  else if(!G.length) g1 = `<div class="g">🎯 ${T2("Setz dir ein Ziel – tippe hier", "Set yourself a goal – tap here")}</div>`;
+  const c = window.lmProg ? lmProg.counts() : {r: 0, h: 0};
+  return `<button class="qd-card qd-entry" data-qd-home><span class="row"><span class="fl${st.cur ? "" : " off"}">🔥 ${st.cur}</span><span class="qd-mini">${weekStrip(true)}</span><span class="go">›</span></span>
+    <span class="nums"><span>📊 ${T2("Mein Qur'an", "My Qur'an")}</span><span>📖 ${pct(completion())}</span><span>🧠 ${c.h}/114</span><span>✓ ${c.r}/114 ${T2("gelesen", "read")}</span></span>${g1}</button>`;
+}
+window.lmQD = {open, close, card, stats, streak, goalToday, _readRange: readRange, _save: save};
+document.addEventListener("click", e => { const h = e.target.closest("[data-qd-home]"); if(h){ e.preventDefault(); e.stopPropagation(); open(); } }, true);
+document.addEventListener("lm-qtrack", () => { const b = document.getElementById("qrBody"); if(b && b.querySelector(".qd-entry")){ const x = b.querySelector(".qd-entry"); x.outerHTML = card(); } });
+})();
+
 /* ---------- init ---------- */
 localize(); applyTheme(); applyPrefs(); renderHome(); renderGebet(); renderQuran(); renderQuiz(); renderKids(); renderNames();
 document.querySelectorAll("[data-learn]").forEach(b => b.setAttribute("aria-pressed", b.dataset.learn === learnSub));
@@ -13972,6 +14556,6 @@ setTab("home");
 if(lang === "en") translateTree(document.body);
 </script>
 <script>if("serviceWorker" in navigator&&location.protocol==="https:"){addEventListener("load",()=>navigator.serviceWorker.register("sw.js").catch(()=>{}));}</script>
-<script>window.LM_BUILD="20261016191559";(function(){function chk(){fetch("version.json?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.json()}).then(function(v){if(!v||!v.b||v.b===window.LM_BUILD)return;try{if(sessionStorage.getItem("lm-upd")===v.b)return;sessionStorage.setItem("lm-upd",v.b)}catch(e){}location.reload()}).catch(function(){})}if(location.protocol==="https:"){addEventListener("load",function(){setTimeout(chk,1500)});document.addEventListener("visibilitychange",function(){if(document.visibilityState==="visible")chk()})}})();</script>
+<script>window.LM_BUILD="20261016194516";(function(){function chk(){fetch("version.json?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.json()}).then(function(v){if(!v||!v.b||v.b===window.LM_BUILD)return;try{if(sessionStorage.getItem("lm-upd")===v.b)return;sessionStorage.setItem("lm-upd",v.b)}catch(e){}location.reload()}).catch(function(){})}if(location.protocol==="https:"){addEventListener("load",function(){setTimeout(chk,1500)});document.addEventListener("visibilitychange",function(){if(document.visibilityState==="visible")chk()})}})();</script>
 </body>
 </html>
