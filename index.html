@@ -5813,6 +5813,9 @@ setLang = function(l){
   .lm-say{border:0;border-radius:999px;background:var(--gold);color:#1d1606;font:inherit;font-size:14px;font-weight:700;padding:8px 14px 8px 12px;display:inline-flex;align-items:center;gap:6px;cursor:pointer;margin-top:10px;position:relative;z-index:3}
   .lm-say svg{width:18px;height:18px;fill:currentColor}
   .lm-say.playing{background:var(--c-mint);color:#062b26}
+  .lm-says{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;position:relative;z-index:3}
+  .lm-says .lm-say.sm{padding:8px 12px;min-width:40px;justify-content:center;background:var(--gold-soft);color:var(--gold);font-weight:800}
+  .lm-says .lm-say.sm.playing{background:var(--c-mint);color:#062b26}
   .lm-say.playing svg{animation:lm-pulse .9s ease-in-out infinite}
   @keyframes lm-pulse{50%{transform:scale(1.18)}}
   @media (prefers-reduced-motion:reduce){.lm-say.playing svg{animation:none}}
@@ -5948,35 +5951,57 @@ renderStories = function(){
 
 /* ---------- Grundwissen: Fragen und Antworten anhören ---------- */
 const LM_SPEAK = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9v6h4l5 4V5L8 9H4z"/><path d="M16 8.5a5 5 0 0 1 0 7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M18.5 6a8.5 8.5 0 0 1 0 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>';
-let lmAudio = null, lmBtn = null;
-function lmStop(){ if(lmAudio){ lmAudio.pause(); lmAudio = null; } if("speechSynthesis" in window) speechSynthesis.cancel(); if(lmBtn){ lmBtn.classList.remove("playing"); lmBtn = null; } }
+let lmAudio = null, lmBtn = null, lmQ = [];
+/* Arabische Fassung jeder Frage und Antwort (für Anzeige und Audio) */
+const WIS_AR = [["مَنْ رَبُّكَ؟", "رَبِّيَ اللَّهُ، الَّذِي خَلَقَنِي وَخَلَقَ كُلَّ شَيْءٍ، وَهُوَ يَرْزُقُنِي."], ["مَا دِينُكَ؟", "دِينِيَ الْإِسْلَامُ: الِاسْتِسْلَامُ لِلَّهِ وَطَاعَتُهُ."], ["مَنْ نَبِيُّكَ؟", "نَبِيِّي مُحَمَّدٌ صَلَّى اللَّهُ عَلَيْهِ وَسَلَّمَ، رَسُولُ اللَّهِ."], ["مَنْ هُوَ اللَّهُ؟", "اللَّهُ هُوَ الْوَاحِدُ الْأَحَدُ، لَمْ يَلِدْ وَلَمْ يُولَدْ، وَلَيْسَ كَمِثْلِهِ شَيْءٌ، وَهُوَ السَّمِيعُ الْبَصِيرُ."], ["أَيْنَ اللَّهُ؟", "اللَّهُ فِي السَّمَاءِ، مُسْتَوٍ عَلَى عَرْشِهِ، وَهُوَ مَعَنَا بِعِلْمِهِ وَسَمْعِهِ وَبَصَرِهِ."], ["لِمَاذَا خَلَقَنَا اللَّهُ؟", "لِنَعْبُدَهُ وَحْدَهُ: بِالصَّلَاةِ وَالدُّعَاءِ وَالْأَعْمَالِ الصَّالِحَةِ وَحُسْنِ الْخُلُقِ."], ["بِمَاذَا نُؤْمِنُ؟", "نُؤْمِنُ بِأَرْكَانِ الْإِيمَانِ السِّتَّةِ: بِاللَّهِ، وَمَلَائِكَتِهِ، وَكُتُبِهِ، وَرُسُلِهِ، وَالْيَوْمِ الْآخِرِ، وَالْقَدَرِ خَيْرِهِ وَشَرِّهِ."], ["مَا أَرْكَانُ الْإِسْلَامِ الْخَمْسَةُ؟", "الشَّهَادَتَانِ، وَإِقَامُ الصَّلَاةِ، وَإِيتَاءُ الزَّكَاةِ، وَصَوْمُ رَمَضَانَ، وَحَجُّ الْبَيْتِ لِمَنِ اسْتَطَاعَ إِلَيْهِ سَبِيلًا."], ["مَا مَعْنَى لَا إِلَٰهَ إِلَّا اللَّهُ؟", "لَا مَعْبُودَ بِحَقٍّ إِلَّا اللَّهُ، فَلَا نَعْبُدُ أَحَدًا سِوَاهُ."], ["مَا أَعْظَمُ الذُّنُوبِ؟", "الشِّرْكُ بِاللَّهِ: أَنْ تَعْبُدَ مَعَ اللَّهِ غَيْرَهُ، أَوْ تَجْعَلَ لَهُ نِدًّا."], ["مَا الْإِحْسَانُ؟", "أَنْ تَعْبُدَ اللَّهَ كَأَنَّكَ تَرَاهُ، فَإِنْ لَمْ تَكُنْ تَرَاهُ فَإِنَّهُ يَرَاكَ."], ["مَنْ هُمُ الْمَلَائِكَةُ؟", "الْمَلَائِكَةُ خُلِقُوا مِنْ نُورٍ، يُطِيعُونَ اللَّهَ دَائِمًا، وَجِبْرِيلُ نَزَلَ بِالْوَحْيِ."], ["مَا هُوَ الْقُرْآنُ؟", "الْقُرْآنُ كَلَامُ اللَّهِ، نَزَلَ بِهِ جِبْرِيلُ عَلَى مُحَمَّدٍ صَلَّى اللَّهُ عَلَيْهِ وَسَلَّمَ."], ["مَنْ هُوَ آخِرُ الْأَنْبِيَاءِ؟", "مُحَمَّدٌ صَلَّى اللَّهُ عَلَيْهِ وَسَلَّمَ، وَلَا نَبِيَّ بَعْدَهُ."], ["مَاذَا يَحْدُثُ بَعْدَ الْمَوْتِ؟", "فِي الْقَبْرِ يُسْأَلُ الْإِنْسَانُ الْأَسْئِلَةَ الثَّلَاثَةَ، وَيَوْمَ الْقِيَامَةِ يُبْعَثُ النَّاسُ، وَتُوزَنُ الْأَعْمَالُ، ثُمَّ إِلَى الْجَنَّةِ أَوْ إِلَى النَّارِ."], ["مَنْ نُحِبُّ أَكْثَرَ بَعْدَ اللَّهِ؟", "النَّبِيَّ صَلَّى اللَّهُ عَلَيْهِ وَسَلَّمَ، أَكْثَرَ مِنَ الْوَالِدَيْنِ وَالْأَوْلَادِ وَالنَّاسِ أَجْمَعِينَ."], ["كَيْفَ نُعَامِلُ وَالِدَيْنَا؟", "بِالْإِحْسَانِ وَالِاحْتِرَامِ، فَلَا نَقُولُ لَهُمَا أُفٍّ، وَنَدْعُو لَهُمَا."], ["عَنْ أَيِّ شَيْءٍ يُسْأَلُ الْعَبْدُ أَوَّلًا؟", "أَوَّلُ مَا يُحَاسَبُ عَلَيْهِ الْعَبْدُ يَوْمَ الْقِيَامَةِ صَلَاتُهُ."], ["هَلْ يَسْمَعُ اللَّهُ دُعَائِي؟", "نَعَمْ! اللَّهُ قَرِيبٌ، يُجِيبُ دَعْوَةَ مَنْ دَعَاهُ."], ["مَا أَنْوَاعُ التَّوْحِيدِ؟", "تَوْحِيدُ الرُّبُوبِيَّةِ، وَتَوْحِيدُ الْأُلُوهِيَّةِ، وَتَوْحِيدُ الْأَسْمَاءِ وَالصِّفَاتِ."]];
+WISSEN.forEach((x, i) => { if(WIS_AR[i]){ x.qa = WIS_AR[i][0]; x.aa = WIS_AR[i][1]; } });
+function lmStop(){ lmQ = []; if(lmAudio){ lmAudio.pause(); lmAudio.onended = null; } if("speechSynthesis" in window) speechSynthesis.cancel(); if(lmBtn){ lmBtn.classList.remove("playing"); lmBtn = null; } }
+/* Ein Audio-Element wiederverwenden – so spielt iOS auch die zweite Datei (Arabisch → Deutsch) nach dem Antippen ab */
+function lmNext(btn){
+  if(lmBtn !== btn) return;
+  const f = lmQ.shift(); if(!f){ lmStop(); return; }
+  if(f.tts){ if(!("speechSynthesis" in window)){ lmNext(btn); return; } const u = new SpeechSynthesisUtterance(f.tts); u.lang = "en-GB"; u.rate = .92; u.onend = () => lmNext(btn); speechSynthesis.speak(u); return; }
+  lmAudio = lmAudio || new Audio(); lmAudio.preload = "auto";
+  lmAudio.onended = () => setTimeout(() => lmNext(btn), 350);
+  lmAudio.onerror = () => lmNext(btn);
+  lmAudio.src = f.src; const pr = lmAudio.play(); if(pr) pr.catch(() => lmNext(btn));
+}
 function lmSay(btn){
   const same = lmBtn === btn; lmStop(); if(same) return;
-  const key = btn.dataset.speak, i = +key.slice(1), x = WISSEN[i]; if(!x) return;
-  const text = key[0] === "q" ? (lang === "en" && typeof WISSEN_EN !== "undefined" ? WISSEN_EN[i][0] : x.q) : (lang === "en" && typeof WISSEN_EN !== "undefined" ? WISSEN_EN[i][1] : x.a);
+  const key = btn.dataset.speak, k = key[0], i = +key.slice(1), x = WISSEN[i]; if(!x) return;
+  const only = btn.dataset.only;
   lmBtn = btn; btn.classList.add("playing");
-  const tts = () => { if(!("speechSynthesis" in window)){ lmStop(); return; }
-    const u = new SpeechSynthesisUtterance(text.replace(/ﷺ/g, "")); u.lang = lang === "en" ? "en-GB" : "de-DE"; u.rate = .92;
-    u.onend = () => { if(lmBtn === btn) lmStop(); }; speechSynthesis.speak(u); };
-  if(lang === "en"){ tts(); return; }
-  const a = new Audio(`audio/wissen/${key}.mp3`); lmAudio = a;
-  a.onended = () => { if(lmBtn === btn) lmStop(); };
-  a.onerror = () => { if(lmAudio === a){ lmAudio = null; tts(); } };
-  a.play().catch(() => { if(lmAudio === a){ lmAudio = null; tts(); } });
+  const f = l => ({src: `audio/wissen/${k}${String(i).padStart(2, "0")}_${l}.mp3?v=2`});
+  if(lang === "en" && typeof WISSEN_EN !== "undefined") lmQ = only === "ar" ? [f("ar")] : [f("ar"), {tts: (k === "q" ? WISSEN_EN[i][0] : WISSEN_EN[i][1]).replace(/ﷺ/g, "")}];
+  else lmQ = only ? [f(only)] : [f("ar"), f("de")];
+  lmNext(btn);
+}
+/* Dateien der sichtbaren Karten schon vorladen */
+function lmPreload(){
+  const wv = document.getElementById("wiV"); if(!wv) return;
+  wv.querySelectorAll("[data-flip]").forEach(c => { const i = String(c.dataset.flip).padStart(2, "0");
+    ["q", "a"].forEach(k => ["ar", "de"].forEach(l => { const h = `audio/wissen/${k}${i}_${l}.mp3?v=2`; if(!document.querySelector(`link[data-pre="${h}"]`)){ const ln = document.createElement("link"); ln.rel = "prefetch"; ln.as = "audio"; ln.href = h; ln.dataset.pre = h; document.head.appendChild(ln); } })); });
 }
 document.addEventListener("click", e => {
   const b = e.target.closest("[data-speak]"); if(!b) return;
   e.stopPropagation(); e.preventDefault(); lmSay(b);
 }, true);
+/* Karte umdrehen → Antwort wird vorgelesen (Arabisch, dann Deutsch) */
+document.addEventListener("click", e => {
+  const card = e.target.closest("#wiV [data-flip]"); if(!card || e.target.closest("a,[data-speak]")) return;
+  setTimeout(() => { if(card.classList.contains("on")){ const b = card.querySelector('.f-back [data-speak^="a"]'); if(b && lmBtn !== b) lmSay(b); } else if(lmBtn && card.contains(lmBtn)) lmStop(); }, 0);
+});
 const _lmRenderWissen = renderWissen;
 renderWissen = function(){
   lmStop(); _lmRenderWissen();
   $("#wiV").querySelectorAll("[data-flip]").forEach(card => {
     const i = card.dataset.flip;
     const f = card.querySelector(".f-front"), bk = card.querySelector(".f-back .f-a");
-    if(f) f.insertAdjacentHTML("beforeend", `<button type="button" class="lm-say" data-speak="q${String(i).padStart(2,"0")}" aria-label="${L("Frage anhören", "Listen to the question")}">${LM_SPEAK}${L("Anhören", "Listen")}</button>`);
-    if(bk) bk.insertAdjacentHTML("afterend", `<button type="button" class="lm-say" data-speak="a${String(i).padStart(2,"0")}" aria-label="${L("Antwort anhören", "Listen to the answer")}">${LM_SPEAK}${L("Antwort anhören", "Listen to the answer")}</button>`);
+    const n = String(i).padStart(2, "0");
+    if(f) f.insertAdjacentHTML("beforeend", `<div class="lm-says"><button type="button" class="lm-say" data-speak="q${n}" aria-label="${L("Frage anhören", "Listen to the question")}">${LM_SPEAK}${L("Anhören", "Listen")}</button><button type="button" class="lm-say sm" data-speak="q${n}" data-only="ar" aria-label="Arabisch">ع</button><button type="button" class="lm-say sm" data-speak="q${n}" data-only="de" aria-label="Deutsch">DE</button></div>`);
+    if(bk) bk.insertAdjacentHTML("afterend", `<div class="lm-says"><button type="button" class="lm-say" data-speak="a${n}" aria-label="${L("Antwort anhören", "Listen to the answer")}">${LM_SPEAK}${L("Antwort anhören", "Listen to the answer")}</button><button type="button" class="lm-say sm" data-speak="a${n}" data-only="ar" aria-label="Arabisch">ع</button><button type="button" class="lm-say sm" data-speak="a${n}" data-only="de" aria-label="Deutsch">DE</button></div>`);
   });
+  lmPreload();
 };
 
 /* =================== p27: Gebet – animierter Schritt-Player =================== */
@@ -10312,7 +10337,7 @@ const css = `
 .tf-hd .t{flex:1;min-width:0}
 .tf-hd b{display:block;font-size:17px}
 .tf-hd span{display:block;font-size:12.5px;color:var(--muted);font-weight:700}
-.tf-x{border:0;background:var(--fill);color:var(--ink);width:36px;height:36px;border-radius:50%;font-size:17px;cursor:pointer;flex:none}
+.tf-x{border:0;background:var(--gold-soft);color:var(--gold);width:40px;height:40px;border-radius:50%;font-size:19px;font-weight:900;cursor:pointer;flex:none;box-shadow:inset 0 0 0 1.5px color-mix(in srgb,var(--gold) 45%,transparent)}
 .tf-bd{overflow:auto;padding:14px 16px 6px;-webkit-overflow-scrolling:touch}
 .tf-ar{font-family:"Scheherazade New","Amiri",serif;direction:rtl;text-align:right;font-size:28px;line-height:2;margin:0 0 4px}
 .tf-tr{margin:0 0 10px;font-size:15px;color:var(--muted);font-style:italic}
@@ -10377,19 +10402,20 @@ function open(s, i){
   if(!ov){ ov = document.createElement("div"); ov.className = "tf-ov"; document.body.appendChild(ov); ov.addEventListener("click", onClick); document.addEventListener("keydown", onKey); }
   document.documentElement.style.overflow = "hidden";
   ov.innerHTML = `<div class="tf-sh" role="dialog" aria-modal="true" aria-label="Tafsīr">
-    <div class="tf-hd"><div class="t"><b>📖 ${L("Bedeutung & Tafsīr", "Meaning & Tafsīr")} · ${esc2(s.t)} ${n}</b><span>${esc2(s.de)}</span></div><button class="tf-x" data-tf="x" aria-label="${L("Schließen", "Close")}">✕</button></div>
+    <div class="tf-hd"><div class="t"><b>📖 ${L("Tafsīr & Übersetzung", "Tafsīr & translation")} · ${esc2(s.t)} ${n}</b><span>${esc2(s.de)}</span></div><button class="tf-x" data-tf="x" aria-label="${L("Schließen", "Close")}">✕</button></div>
     <div class="tf-bd">
       <p class="tf-ar" lang="ar">${v[0]} <span style="color:var(--gold);font-size:.7em">﴿${n.toLocaleString("ar-EG")}﴾</span></p>
       <p class="tf-tl">${esc2(v[1])}</p>
-      <div class="tf-mean"><span>${L("Bedeutung", "Meaning")}</span><p>${esc2(v[2])}</p></div>
+      <div class="tf-mean"><span>${L("Deutsche Übersetzung", "Translation")}</span><p>${esc2(v[2])}</p></div>
       <div class="tf-chips">${chips}</div>
-      <div class="tf-h">📖 ${L("Erklärung", "Explanation")}</div>${tfHTML}
-      <div class="tf-h">📜 ${L("Anlass der Offenbarung", "Occasion of revelation")}</div>${asHTML}
+      <div class="tf-h">📖 Tafsīr</div>${tfHTML}
+      <div class="tf-h">📜 ${L("Anlass der Offenbarung", "Occasion of revelation")}</div><div class="mp-as">${asHTML}</div>
       <p class="tf-note">${L("Tafsīr: „al-Mukhtaṣar fī Tafsīr al-Qur'ān al-Karīm“ (Markaz Tafsīr li-d-Dirāsāt al-Qur'āniyya) – Arabisch und Englisch im Wortlaut, Deutsch als sinngemäße Übertragung. Anlässe nur aus authentischen Überlieferungen.", "Tafsīr: “al-Mukhtaṣar fī Tafsīr al-Qur'ān al-Karīm” (Tafsir Center for Quranic Studies) – Arabic and English verbatim, German as a rendering. Occasions only from authentic reports.")}</p>
     </div>
     <div class="tf-ft"><button data-tf="prev" ${i === 0 ? "disabled" : ""}>‹ ${L("Vers", "Verse")} ${i > 0 ? ayahNo(s, i - 1) : ""}</button><button class="pl" data-tf="play">▶ ${L("Anhören", "Listen")}</button><button data-tf="next" ${i >= s.a.length - 1 ? "disabled" : ""}>${L("Vers", "Verse")} ${i < s.a.length - 1 ? ayahNo(s, i + 1) : ""} ›</button></div>
   </div>`;
   ov.querySelector(".tf-bd").scrollTop = 0;
+  if(!asb.length && window.lmAsbab) window.lmAsbab.fill(ov.querySelector(".mp-as"), s.n, n);
 }
 function close(){ if(ov){ ov.remove(); ov = null; document.removeEventListener("keydown", onKey); } document.documentElement.style.overflow = ""; cur = null; }
 function onKey(e){ if(!cur) return; if(e.key === "Escape") close(); if(e.key === "ArrowRight" || e.key === "ArrowLeft"){ const d = (e.key === "ArrowRight") === EN() ? 1 : -1; const j = cur.i + d; if(j >= 0 && j < cur.s.a.length) open(cur.s, j); } }
@@ -11743,7 +11769,7 @@ css.textContent = `
 .mp-top .t{flex:1;min-width:0;text-align:center;color:var(--pi)}
 .mp-top .t b{display:block;font-size:16px}
 .mp-top .t span{display:block;font-size:12.5px;color:var(--pm)}
-.mp-ic{border:0;width:38px;height:38px;border-radius:50%;background:color-mix(in srgb,var(--pb) 30%,transparent);color:var(--pi);font-size:17px;cursor:pointer;display:grid;place-items:center;flex:none}
+.mp-ic{border:0;width:40px;height:40px;border-radius:50%;background:var(--gold-soft,rgba(242,176,74,.15));color:var(--gold,#F2B04A);font-size:19px;font-weight:900;cursor:pointer;display:grid;place-items:center;flex:none;box-shadow:inset 0 0 0 1.5px color-mix(in srgb,var(--gold,#F2B04A) 45%,transparent)}
 .mp-bot button{border:0;background:none;color:var(--pm);font:inherit;font-size:11px;font-weight:600;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;min-width:58px;padding:4px 2px}
 .mp-bot button .i{font-size:21px;line-height:1}
 .mp-bot button.on{color:#2f7d4f}
@@ -11861,14 +11887,33 @@ const MEDAL2 = `url("data:image/svg+xml,${encodeURIComponent('<svg xmlns="http:/
 const ROSE2 = `url("data:image/svg+xml,${encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 60 60"><g fill="none" stroke="' + GOLD + '" stroke-width="1.6">' + Array.from({length:8}, (_, i) => `<ellipse cx="30" cy="15" rx="6" ry="12" transform="rotate(${i * 45} 30 30)"/>`).join("") + '<circle cx="30" cy="30" r="8"/><circle cx="30" cy="30" r="3" fill="' + GOLD + '"/></g></svg>')}")`;
 const css2 = document.createElement("style");
 css2.textContent = `
-.mr,.mr-s{--pp:var(--bg);--pi:var(--ink);--pm:var(--muted);--pb:color-mix(in srgb,${GOLD} 60%,transparent);--pf:var(--surface);--sel:color-mix(in srgb,var(--gold) 22%,transparent);--ply:rgba(51,179,138,.22)}
+.mr,.mr-s{--pp:var(--bg);--pi:var(--ink);--pm:var(--muted);--pb:color-mix(in srgb,${GOLD} 60%,transparent);--pf:var(--surface);--sel:color-mix(in srgb,var(--gold) 26%,transparent);--ply:color-mix(in srgb,var(--gold) 34%,transparent)}
+.mr .mw.ply{background:var(--ply);box-shadow:inset 0 -3px 0 var(--gold);border-radius:6px}
+.mr .mw{-webkit-touch-callout:none;-webkit-user-select:none;user-select:none}
+.mr .mw.lp{background:color-mix(in srgb,var(--gold) 40%,transparent);transition:background .4s}
+/* Darstellung Hell / Dunkel */
+.mr.th-light,.mr-s.th-light{--bg:#FBF7EE;--bg2:#F6F0E2;--surface:#FFFFFF;--surface2:#F3EBD8;--ink:#1E1A12;--muted:rgba(30,26,18,.62);--sep:rgba(60,45,20,.13);--line:rgba(60,45,20,.2);--fill:rgba(60,45,20,.07);--gold:#A8741E;--gold-soft:#F3E3C2;--on-acc:#fff;
+  --tj-s:#9aa3ab;--tj-g:#169b4e;--tj-q:#1e6fd0;--tj-m2:#c9871a;--tj-m4:#e2711d;--tj-m5:#d62828;--tj-m6:#9b0d1f;--tj-wq:#b07d10;color-scheme:light}
+.mr.th-dark,.mr-s.th-dark{--bg:#0A2426;--bg2:#0E2F31;--surface:#123638;--surface2:#1A4446;--ink:#ECF6F3;--muted:rgba(236,246,243,.62);--sep:rgba(255,255,255,.08);--line:rgba(255,255,255,.16);--fill:rgba(255,255,255,.08);--gold:#F2B04A;--gold-soft:rgba(242,176,74,.13);--on-acc:#14302F;
+  --tj-s:#8696a2;--tj-g:#4fd483;--tj-q:#6cb6ff;--tj-m2:#ffc56b;--tj-m4:#ff9f4a;--tj-m5:#ff6f61;--tj-m6:#ff4d6d;--tj-wq:#e9b949;color-scheme:dark}
+.mr.th-light .mr-bot .sb{box-shadow:0 2px 8px rgba(60,45,20,.15),inset 0 0 0 1px var(--sep)}
+.mr-thm{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.mr-thm button{border:0;border-radius:14px;padding:12px 6px;font:inherit;font-size:14px;font-weight:700;cursor:pointer;background:var(--fill);color:var(--ink);display:flex;flex-direction:column;align-items:center;gap:6px}
+.mr-thm button i{width:44px;height:30px;border-radius:8px;box-shadow:inset 0 0 0 1px var(--line)}
+.mr-thm button[aria-pressed="true"]{box-shadow:inset 0 0 0 2px var(--gold)}
+.mr-act{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:6px}
+.mr-act button{display:flex;align-items:center;gap:10px;border:0;border-radius:16px;padding:14px 12px;font:inherit;font-size:15px;font-weight:700;text-align:left;cursor:pointer;background:var(--fill);color:var(--ink)}
+.mr-act button .i{font-size:22px;flex:none}
+.mr-act button.pr{background:var(--grad);color:var(--on-acc,#1b1300)}
+.mr-act button.wide{grid-column:1/-1}
 .mr{position:fixed;inset:0;z-index:90;display:flex;flex-direction:column;background:var(--bg);color:var(--ink);animation:mrIn .22s ease}
 @keyframes mrIn{from{opacity:0}}
 body.mr-on{overflow:hidden}
 body.mr-on .tabbar,body.mr-on .mx-bar,body.mr-on .mini{display:none!important}
 .mr-top{flex:none;display:flex;align-items:center;gap:8px;padding:calc(8px + env(safe-area-inset-top,0px)) 10px 8px;border-bottom:1px solid var(--sep);background:var(--bg)}
-.mr-ib{flex:none;width:52px;height:52px;border:0;border-radius:14px;background:var(--fill);color:var(--ink);font-size:22px;cursor:pointer;display:grid;place-items:center}
-.mr-ib:active{background:var(--fill)}
+.mr-ib{flex:none;width:52px;height:52px;border:0;border-radius:14px;background:var(--gold-soft);color:var(--gold);font-size:22px;cursor:pointer;display:grid;place-items:center}
+.mr-ib svg{width:30px;height:30px}
+.mr-ib:active{transform:scale(.95)}
 .mr-pill{flex:1;min-width:0;min-height:52px;box-sizing:border-box;display:flex;align-items:center;gap:8px;border:0;border-radius:14px;padding:6px 12px;background:var(--fill);color:var(--ink);font:inherit;text-align:left;cursor:pointer}
 .mr-pill .x{flex:1;min-width:0}
 .mr-pill b{display:block;font-size:16px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -11990,10 +12035,10 @@ function openReader(page, mode){
   loadFont();
   if(PG.el) PG.el.remove();
   ST.mode = mode || lsj("lm-mr-mode", "page"); ST.hide = false; ST.rv.clear(); ST.ws = {};
-  const el = document.createElement("div"); el.className = "mp mr" + (lsj("lm-qx-tj", true) ? "" : " notj") + (lsj("lm-mr-fw", false) ? " fw" : "");
+  const el = document.createElement("div"); el.className = "mp mr" + (lsj("lm-qx-tj", true) ? "" : " notj") + (lsj("lm-mr-fw", false) ? " fw" : "") + thCls();
   el.innerHTML = `<header class="mr-top"><button class="mr-back" data-r="back" aria-label="${T2("Zurück zur Übersicht", "Back to overview")}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg>${T2("Suren", "Suras")}</button>
       <button class="mr-pill" data-r="ix"><span class="x"><b></b><small></small></span><span class="bm" data-r="bm" role="button" aria-label="${T2("Lesezeichen", "Bookmark")}">🔖</span></button>
-      <button class="mr-ib" data-r="ix" aria-label="Fihris">☰</button><button class="mr-ib" data-r="set" aria-label="${T2("Einstellungen", "Settings")}">⚙︎</button></header>
+      <button class="mr-ib" data-r="ix" aria-label="${T2("Inhalt", "Contents")}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M4 6h16M4 12h16M4 18h16"/></svg></button><button class="mr-ib" data-r="set" aria-label="${T2("Einstellungen", "Settings")}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.2"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg></button></header>
     <div class="mr-main"></div>
     <footer class="mr-bot"><button class="sb" data-r="tr" aria-label="${T2("Übersetzung", "Translation")}">文A</button><button class="sb" data-r="eye" aria-label="${T2("Verse ausblenden", "Hide verses")}">👁</button><button class="sb" data-r="wr" aria-label="${T2("Schreiben", "Write")}">✍️</button><button class="sb" data-r="fs" aria-label="${T2("Schriftgröße", "Text size")}">Aa</button>
       <span class="sp"></span><button class="fab mic" data-r="mic" aria-label="${T2("Vorlesen & prüfen", "Recite & check")}">🎙️</button><button class="fab play" data-r="play" aria-label="${T2("Anhören", "Listen")}">▶︎</button></footer>`;
@@ -12003,6 +12048,8 @@ function openReader(page, mode){
   ST.sura = pageSura(page);
   build(page);
 }
+function thCls(){ const t = lsj("lm-mr-theme", "app"); return t === "light" ? " th-light" : t === "dark" ? " th-dark" : ""; }
+function applyTh(){ document.querySelectorAll(".mr,.mr-s").forEach(x => { x.classList.remove("th-light", "th-dark"); const c = thCls().trim(); if(c) x.classList.add(c); }); }
 function closeReader(){
   recStop(); auStop();
   if(PG.el){ PG.el.remove(); PG.el = null; } document.body.classList.remove("mr-on");
@@ -12084,6 +12131,20 @@ function showVerse(v){
   if(ST.mode === "list"){ if(D.VSU[v] !== ST.listS) return; const el = ST.list && ST.list.querySelector(`[data-vv="${v}"]`); if(el){ const r = el.getBoundingClientRect(), L = ST.list.getBoundingClientRect(); if(r.top < L.top || r.bottom > L.bottom) ST.list.scrollTo({top: el.offsetTop - 60, behavior: "smooth"}); } }
   else { const p = D.vpage[v]; if(p !== PG.cur) go(p); }
 }
+/* mitlaufen: aktuelles Wort/Vers in den sichtbaren Bereich holen (auch bei großer Schrift auf der Seite) */
+function follow(v, k){
+  if(!PG.el) return;
+  const sel = k != null ? `.mw[data-v="${v}"][data-k="${k}"]` : `.mw[data-v="${v}"]`;
+  const doIt = () => {
+    let box = null, el = null;
+    if(ST.mode === "list"){ box = ST.list; el = box && box.querySelector(sel); }
+    else if(PG.sc){ const slot = PG.sc.children[D.vpage[v]]; box = slot && slot.querySelector(".mp-lines.flow"); el = slot && slot.querySelector(sel); }
+    if(!box || !el) return;
+    const r = el.getBoundingClientRect(), b = box.getBoundingClientRect();
+    if(r.top < b.top + 30 || r.bottom > b.bottom - 50) box.scrollTo({top: box.scrollTop + (r.top - b.top) - b.height * .3, behavior: "smooth"});
+  };
+  requestAnimationFrame(() => setTimeout(doIt, 60));
+}
 function mark(cls, v){
   if(!PG.el) return; PG.el.querySelectorAll(`.mw.${cls}`).forEach(x => x.classList.remove(cls));
   if(v != null) PG.el.querySelectorAll(`.mw[data-v="${v}"]`).forEach(x => x.classList.add(cls));
@@ -12105,7 +12166,7 @@ function verseTap(v){
 }
 function sheet(html, full){
   document.querySelectorAll(".mp.mp-sheet").forEach(x => x.remove());
-  const sh = document.createElement("div"); sh.className = "mp mp-sheet mr-s";
+  const sh = document.createElement("div"); sh.className = "mp mp-sheet mr-s" + thCls();
   sh.innerHTML = `<div class="mp-sh2${full ? " full" : ""}">${html}</div>`;
   sh.addEventListener("click", e => {
     if(e.target === sh || e.target.closest('[data-mp="x"]')){ sh.remove(); return; }
@@ -12122,11 +12183,13 @@ function sheet(html, full){
 async function verseSheet(v){
   const s = D.VSU[v], a = D.VAY[v], name = D.M.S[s - 1];
   const sh = sheet(`<div class="hd"><b>${name[4]} · ${T2("Vers", "Verse")} ${a}</b><button class="mp-ic" data-mp="x">✕</button></div>
-    <div class="bd"><p class="mp-va${lsj("lm-qx-tj", true) ? "" : " notj"}">${verseHTML(v)}</p><p class="mp-vt">…</p><p class="mp-vs"></p>
+    <div class="bd"><p class="mp-va${lsj("lm-qx-tj", true) ? "" : " notj"}">${verseHTML(v)}</p><div class="tf-mean"><span>${T2("Deutsche Übersetzung", "Translation")}</span><p class="mp-vt">…</p></div><p class="mp-vs"></p>
     <div class="mp-acts"><button class="pr" data-mp="pv" data-v="${v}">▶︎ ${T2("Anhören", "Listen")}</button><button data-mp="pf" data-v="${v}">⏯ ${T2("Ab hier abspielen", "Play from here")}</button>
     <button data-mp="bmv" data-v="${v}">🔖 ${T2("Lesezeichen", "Bookmark")}</button></div>
-    <div class="tf-h" style="margin-top:16px">📖 ${T2("Erklärung (Tafsīr)", "Explanation (tafsīr)")}</div><div class="mp-tf" data-v="${v}"><p class="mp-vs">…</p></div></div>`);
+    <div class="tf-h" style="margin-top:16px">📖 Tafsīr</div><div class="mp-tf" data-v="${v}"><p class="mp-vs">…</p></div>
+    <div class="tf-h">📜 ${T2("Anlass der Offenbarung", "Occasion of revelation")}</div><div class="mp-as"><p class="mp-vs">…</p></div></div>`);
   tafsirFill(sh.querySelector(".mp-tf"), v);
+  if(window.lmAsbab) window.lmAsbab.fill(sh.querySelector(".mp-as"), D.VSU[v], D.VAY[v]); else sh.querySelector(".mp-as").innerHTML = "";
   try{ await loadTr(); sh.querySelector(".mp-vt").textContent = (lang === "en" ? window.MUSHAF_EN : window.MUSHAF_DE)[v];
     sh.querySelector(".mp-vs").textContent = lang === "en" ? "Saheeh International (Noor International Center) · QuranEnc.com v1.1.2" : "Übers.: Frank Bubenheim & Nadeem Elyas · QuranEnc.com v1.1.4";
   }catch(e){ sh.querySelector(".mp-vt").textContent = T2("Übersetzung braucht Internet.", "Translation needs a connection."); }
@@ -12177,10 +12240,12 @@ function settingsSheet(){
   const r = (typeof reciter === "function" ? reciter() : RECITERS[0]);
   const sw = (k, on, t, d) => `<label class="qx-sw"><span>${t}<small>${d}</small></span><input type="checkbox" data-sw="${k}" ${on ? "checked" : ""}></label>`;
   const sh = sheet(`<div class="hd"><b>⚙︎ ${T2("Einstellungen", "Settings")}</b><button class="mp-ic" data-mp="x">✕</button></div><div class="bd mr-set">
+    <h4>${T2("Darstellung", "Appearance")}</h4><div class="mr-thm">${[["app", T2("Wie die App", "Like the app"), "linear-gradient(135deg,var(--bg) 50%,var(--surface) 50%)"], ["light", T2("Hell", "Light"), "#FBF7EE"], ["dark", T2("Dunkel", "Dark"), "#0A2426"]].map(([k, t, c]) => `<button data-thm="${k}" aria-pressed="${lsj("lm-mr-theme", "app") === k}"><i style="background:${c}"></i>${t}</button>`).join("")}</div>
     <h4>${T2("Rezitator", "Reciter")}</h4><div class="mr-rcs">${RECITERS.map(x => `<button data-rcx="${x.id}" aria-pressed="${x.id === r.id}"><b>${x.n}</b><span>${x.d}</span></button>`).join("")}</div>
     ${sw("tj", lsj("lm-qx-tj", true), T2("Tajwīd-Farben", "Tajwīd colours"), T2("Farbige Buchstaben zeigen die Tajwīd-Regeln", "Coloured letters show the tajwīd rules"))}
     ${sw("fw", lsj("lm-mr-fw", false), T2("Beim Ausblenden erstes Wort zeigen", "Show first word when hidden"), T2("Hilfe beim Auswendiglernen", "A hint for memorising"))}
     <div class="mr-slot-app"></div></div>`, true);
+  sh.querySelectorAll("[data-thm]").forEach(b => b.addEventListener("click", ev => { ev.stopPropagation(); lss("lm-mr-theme", b.dataset.thm); sh.querySelectorAll("[data-thm]").forEach(x => x.setAttribute("aria-pressed", x === b)); applyTh(); }));
   sh.querySelectorAll("[data-sw]").forEach(i => i.addEventListener("change", () => {
     if(i.dataset.sw === "tj"){ lss("lm-qx-tj", i.checked); PG.el.classList.toggle("notj", !i.checked); }
     if(i.dataset.sw === "fw"){ lss("lm-mr-fw", i.checked); PG.el.classList.toggle("fw", i.checked); }
@@ -12272,7 +12337,7 @@ function playFrom(v, single){
 }
 function auStep(v){
   PG.playV = v; mark("ply", v);
-  if(!auSingle && PG.el){ if(ST.mode === "list" && D.VSU[v] !== ST.listS) buildList(D.VSU[v], v).then(() => mark("ply", v)); else showVerse(v); }
+  if(!auSingle && PG.el){ if(ST.mode === "list" && D.VSU[v] !== ST.listS) buildList(D.VSU[v], v).then(() => { mark("ply", v); follow(v); }); else { showVerse(v); setTimeout(() => { mark("ply", v); follow(v); }, 120); } }
   AU.src = `https://everyayah.com/data/${rec().f}/${pad3(D.VSU[v])}${pad3(D.VAY[v])}.mp3`; AU.play().catch(() => {});
   const b = PG.el && PG.el.querySelector('[data-r="play"]'); if(b) b.textContent = "■";
 }
@@ -12282,11 +12347,11 @@ function auStop(){ auOn = false; if(AU) AU.pause(); PG.playV = null; mark("ply",
 const SRc = window.SpeechRecognition || window.webkitSpeechRecognition;
 let RC = null;
 const plain = w => w.replace(/\{[sgq2456]/g, "").replace(/\}/g, "").replace(/[‍۞۩]/g, "").replace(/ٰ/g, "ا");
-function recStart(){
+function recStart(vStart){
   if(!window.lmRecite || (!SRc && !recStart.fake)){ if(typeof toast === "function") toast(T2("Vorlesen geht hier nicht – bitte Safari oder Chrome nutzen.", "Reciting is not available here – please use Safari or Chrome.")); return; }
   auStop(); recStop();
-  const N = window.lmRecite.norm, v0 = firstVerse(), s = D.VSU[v0], vEnd = D.SV[s] + D.M.S[s - 1][1];
-  const k0 = ST.mode === "page" && D.PS[PG.cur][0] === v0 ? D.PS[PG.cur][1] : 0;
+  const N = window.lmRecite.norm, v0 = vStart != null ? vStart : firstVerse(), s = D.VSU[v0], vEnd = D.SV[s] + D.M.S[s - 1][1];
+  const k0 = vStart == null && ST.mode === "page" && D.PS[PG.cur][0] === v0 ? D.PS[PG.cur][1] : 0;
   const ex = []; for(let v = v0; v < vEnd && ex.length < 400; v++) D.VW[v].forEach((w, k) => { if(v === v0 && k < k0) return; const n = N(plain(w)); if(n) ex.push({v, k, n}); });
   RC = {ex, finals: [], interim: "", errs: 0, lastBad: 0, st: [], stopped: false, s};
   if(recStart.fake){ PG.el.querySelector('[data-r="mic"]').classList.add("on"); return; }
@@ -12359,7 +12424,7 @@ function recUpdate(){
   RC.lastBad = Math.max(RC.lastBad, fin.bad);
   PG.el.querySelectorAll(".mw.nx").forEach(m => m.classList.remove("nx"));
   const nx = RC.ex[live.p];
-  if(nx){ PG.el.querySelectorAll(`.mw[data-v="${nx.v}"][data-k="${nx.k}"]`).forEach(m => m.classList.add("nx")); if(ST.mode === "page" ? D.vpage[nx.v] !== PG.cur : true) showVerse(nx.v); }
+  if(nx){ PG.el.querySelectorAll(`.mw[data-v="${nx.v}"][data-k="${nx.k}"]`).forEach(m => m.classList.add("nx")); if(ST.mode === "page" ? D.vpage[nx.v] !== PG.cur : true) showVerse(nx.v); follow(nx.v, nx.k); }
   const t = PG.el.querySelector(".mr-st .t");
   if(t) t.textContent = `${T2("Ich höre zu", "Listening")} · ${T2("Fehler", "Mistakes")}: ${RC.errs}`;
   if(fin.p >= RC.ex.length){ const ok = RC.errs === 0; recStop(); if(typeof toast === "function") toast(ok ? "🌟 Mā shāʾ Allāh – fehlerfrei!" : T2("👏 Geschafft!", "👏 Done!")); }
@@ -12388,8 +12453,45 @@ function fsSheet(){
     if(k === "lm-mr-fa" && PG.sc){ [...PG.sc.children].forEach(s => { if(s.dataset.done){ s.innerHTML = ""; delete s.dataset.done; } }); const i = PG.cur; PG.cur = -1; setCur(i); }
   });
 }
+/* ---------- Lange drücken auf einen Vers: Lesezeichen, ab hier anhören / vorlesen ---------- */
+const LP = {t: null, x: 0, y: 0, fired: false, w: null};
+function lpStart(e){
+  const w = e.target.closest && e.target.closest(".mr .mw"); if(!w || (e.pointerType === "mouse" && e.button !== 0)) return;
+  lpCancel(); LP.fired = 0; LP.x = e.clientX; LP.y = e.clientY; LP.w = w;
+  LP.t = setTimeout(() => { LP.t = null; LP.fired = Date.now(); const v = +w.dataset.v; mark("lp", v); if(navigator.vibrate) navigator.vibrate(18); actSheet(v); setTimeout(() => mark("lp", null), 600); }, 480);
+}
+function lpCancel(){ if(LP.t){ clearTimeout(LP.t); LP.t = null; } }
+document.addEventListener("pointerdown", lpStart, true);
+document.addEventListener("pointermove", e => { if(LP.t && (Math.abs(e.clientX - LP.x) > 10 || Math.abs(e.clientY - LP.y) > 10)) lpCancel(); }, true);
+["pointerup", "pointercancel", "scroll"].forEach(t => document.addEventListener(t, lpCancel, true));
+document.addEventListener("contextmenu", e => { if(e.target.closest && e.target.closest(".mr .mw")) e.preventDefault(); }, true);
+function actSheet(v){
+  const s = D.VSU[v], a = D.VAY[v];
+  const sh = sheet(`<div class="hd"><b>${D.M.S[s - 1][4]} · ${T2("Vers", "Verse")} ${a}</b><button class="mp-ic" data-mp="x" aria-label="${T2("Schließen", "Close")}">✕</button></div>
+    <div class="bd"><p class="mp-va${lsj("lm-qx-tj", true) ? "" : " notj"}" style="font-size:24px">${verseHTML(v)}</p>
+    <div class="mr-act">
+      <button class="pr" data-act="play"><span class="i">▶︎</span>${T2("Ab hier anhören", "Listen from here")}</button>
+      <button data-act="rec"><span class="i">🎙️</span>${T2("Ab hier selbst lesen", "Recite from here")}</button>
+      <button data-act="bm"><span class="i">🔖</span>${T2("Lesezeichen setzen", "Set bookmark")}</button>
+      <button data-act="one"><span class="i">🔊</span>${T2("Nur diesen Vers", "Only this verse")}</button>
+      <button data-act="tf"><span class="i">📖</span>${T2("Tafsīr & Übersetzung", "Tafsīr & translation")}</button>
+      <button data-act="cp"><span class="i">📋</span>${T2("Vers kopieren", "Copy verse")}</button>
+    </div></div>`);
+  sh.addEventListener("click", e => {
+    const b = e.target.closest("[data-act]"); if(!b) return; e.stopPropagation(); const k = b.dataset.act;
+    if(k === "cp"){ const txt = D.VW[v].map(w => w.replace(/\{[sgq2456]/g, "").replace(/\}/g, "").replace(/‍/g, "")).join(" ") + ` ﴿${AD(a)}﴾\n(${D.M.S[s - 1][4]} ${s}:${a})`;
+      (navigator.clipboard ? navigator.clipboard.writeText(txt) : Promise.reject()).then(() => { if(typeof toast === "function") toast(T2("Vers kopiert", "Verse copied")); }).catch(() => {}); sh.remove(); return; }
+    sh.remove();
+    if(k === "play") playFrom(v, false);
+    else if(k === "one") playFrom(v, true);
+    else if(k === "bm") bmSheet(v);
+    else if(k === "tf"){ const was = ST.hide; ST.hide = false; verseTap(v); ST.hide = was; }
+    else if(k === "rec"){ if(RC) recStop(); if(!ST.hide) setHide(true); for(let x = v; x < D.VW.length && D.VSU[x] === s; x++) ST.rv.delete(x); recStart(v); }
+  });
+}
 /* ---------- Klicks ---------- */
 function onReaderClick(e){
+  if(LP.fired && Date.now() - LP.fired < 900 && e.target.closest(".mw")){ LP.fired = 0; e.stopPropagation(); return; }
   const vm = e.target.closest("[data-vmenu]"); if(vm){ const v = +vm.dataset.vmenu; const was = ST.hide; ST.hide = false; verseTap(v); ST.hide = was; return; }
   const b = e.target.closest("[data-r]");
   if(b){
@@ -13633,6 +13735,62 @@ window.lmQuizShow = {start, duel: () => { overlay(); duelScreen(); }, board: () 
 renderQuiz();
 })();
 
+/* =================== p50: Anlass der Offenbarung (Asbāb an-Nuzūl) für den ganzen Qur'an =================== */
+(function(){
+const T2 = (de, en) => lang === "en" ? en : de;
+const esc3 = s => String(s == null ? "" : s).replace(/[&<>"]/g, c => ({"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;"}[c]));
+const css = document.createElement("style");
+css.textContent = `
+.as-card{background:var(--surface);border-radius:18px;padding:12px 14px;box-shadow:inset 0 0 0 1px var(--sep);margin-bottom:8px}
+.as-card.ok{box-shadow:inset 0 0 0 2px color-mix(in srgb,var(--ok,#2EA57A) 70%,transparent)}
+.as-card .lb{display:flex;align-items:center;flex-wrap:wrap;gap:6px;font-size:11.5px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;color:var(--muted);margin-bottom:6px}
+.as-card .bdg{letter-spacing:0;text-transform:none;font-size:12px;border-radius:999px;padding:2px 9px;background:var(--fill)}
+.as-card .bdg.ok{background:color-mix(in srgb,var(--ok,#2EA57A) 18%,transparent);color:var(--ok,#2EA57A)}
+.as-card .bdg.w{background:var(--gold-soft);color:var(--gold)}
+.as-card p{margin:0;font-size:15.5px;line-height:1.6}
+.as-card .src{margin-top:8px;font-size:12.5px;color:var(--muted)}
+.as-card .src a{color:var(--gold)}
+.as-more{margin-top:8px;border:0;background:none;color:var(--gold);font:inherit;font-size:13.5px;font-weight:700;cursor:pointer;padding:4px 0}
+.as-en{margin-top:8px;padding:10px 12px;border-radius:12px;background:var(--fill);font-size:13.5px!important;line-height:1.55;color:var(--muted)}
+.as-note{font-size:12px;color:var(--muted);margin:6px 2px 4px;line-height:1.45}
+.as-none{font-size:14px;color:var(--muted);margin:0 2px}
+`;
+document.head.appendChild(css);
+let loading = null;
+const loadS = src => new Promise((res, rej) => { const s = document.createElement("script"); s.src = src; s.onload = res; s.onerror = rej; document.head.appendChild(s); });
+const load = () => window.ASBAB ? Promise.resolve() : (loading = loading || loadS("asbab.js?v=1"));
+const loadEn = () => window.ASBAB_EN ? Promise.resolve() : loadS("asbab_en.js?v=1");
+const links = s => typeof srcLinks === "function" ? srcLinks(s) : esc3(s);
+
+function card(x){
+  const rng = x.a === x.b ? `${x.s}:${x.a}` : `${x.s}:${x.a}–${x.b}`;
+  const ok = x.g === "s";
+  return `<div class="as-card${ok ? " ok" : ""}"><div class="lb">${T2("Vers", "Verse")} ${rng}
+      <span class="bdg ${ok ? "ok" : "w"}">${ok ? T2("✓ in authentischen Hadith-Sammlungen", "✓ in authentic hadith collections") : x.w != null ? T2("nach al-Wāḥidī", "after al-Wāḥidī") : T2("Überlieferung", "Report")}</span></div>
+    <p class="tf-keep" lang="de">${esc3(x.de)}</p>
+    ${x.src ? `<p class="src">${T2("Quelle", "Source")}: ${links(x.src)}${x.w != null ? " · al-Wāḥidī, Asbāb an-Nuzūl" : ""}</p>` : `<p class="src">${T2("Quelle", "Source")}: al-Wāḥidī, Asbāb an-Nuzūl</p>`}
+    ${x.w != null ? `<button class="as-more" data-asen="${x.w}">${T2("Originalbericht (Englisch) anzeigen", "Show the full report (English)")} ›</button><div class="as-en" hidden></div>` : ""}</div>`;
+}
+async function fill(box, s, a){
+  if(!box) return;
+  box.innerHTML = `<p class="as-none">…</p>`;
+  try{ await load(); }catch(e){ box.innerHTML = `<p class="as-none">${T2("Der Anlass der Offenbarung braucht beim ersten Mal Internet.", "Needs a connection the first time.")}</p>`; return; }
+  const list = (window.ASBAB || []).filter(x => x.s === s && a >= x.a && a <= x.b).sort((p, q) => (p.g === "s" ? 0 : 1) - (q.g === "s" ? 0 : 1));
+  if(!list.length){
+    box.innerHTML = `<p class="as-none">${T2("Für diesen Vers ist kein besonderer Anlass überliefert. Viele Verse wurden ohne bestimmten Anlass offenbart – als allgemeine Rechtleitung.", "No specific occasion is reported for this verse. Many verses were revealed without a particular occasion – as general guidance.")}</p>`;
+    return;
+  }
+  box.innerHTML = list.map(card).join("") + (list.some(x => x.g !== "s" && x.w != null) ? `<p class="as-note">ℹ️ ${T2("Berichte „nach al-Wāḥidī“ stammen aus seinem Buch über die Offenbarungsanlässe (gest. 468 n. H.). Nicht alle seiner Überlieferungsketten gelten als gesichert – die grün markierten stehen in authentischen Hadith-Sammlungen.", "Reports “after al-Wāḥidī” come from his book on the occasions of revelation (d. 468 AH). Not all of his chains are considered sound – the green ones are in authentic hadith collections.")}</p>` : "");
+  box.querySelectorAll("[data-asen]").forEach(b => b.addEventListener("click", async ev => {
+    ev.stopPropagation(); const d = b.nextElementSibling;
+    if(!d.hidden){ d.hidden = true; return; }
+    d.hidden = false; d.textContent = "…";
+    try{ await loadEn(); d.textContent = (window.ASBAB_EN || {})[b.dataset.asen] || "–"; }catch(e){ d.textContent = T2("Braucht Internet.", "Needs a connection."); }
+  }));
+}
+window.lmAsbab = {fill, load};
+})();
+
 /* ---------- init ---------- */
 localize(); applyTheme(); applyPrefs(); renderHome(); renderGebet(); renderQuran(); renderQuiz(); renderKids(); renderNames();
 document.querySelectorAll("[data-learn]").forEach(b => b.setAttribute("aria-pressed", b.dataset.learn === learnSub));
@@ -13642,6 +13800,6 @@ setTab("home");
 if(lang === "en") translateTree(document.body);
 </script>
 <script>if("serviceWorker" in navigator&&location.protocol==="https:"){addEventListener("load",()=>navigator.serviceWorker.register("sw.js").catch(()=>{}));}</script>
-<script>window.LM_BUILD="20261016065644";(function(){function chk(){fetch("version.json?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.json()}).then(function(v){if(!v||!v.b||v.b===window.LM_BUILD)return;try{if(sessionStorage.getItem("lm-upd")===v.b)return;sessionStorage.setItem("lm-upd",v.b)}catch(e){}location.reload()}).catch(function(){})}if(location.protocol==="https:"){addEventListener("load",function(){setTimeout(chk,1500)});document.addEventListener("visibilitychange",function(){if(document.visibilityState==="visible")chk()})}})();</script>
+<script>window.LM_BUILD="20261016150700";(function(){function chk(){fetch("version.json?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.json()}).then(function(v){if(!v||!v.b||v.b===window.LM_BUILD)return;try{if(sessionStorage.getItem("lm-upd")===v.b)return;sessionStorage.setItem("lm-upd",v.b)}catch(e){}location.reload()}).catch(function(){})}if(location.protocol==="https:"){addEventListener("load",function(){setTimeout(chk,1500)});document.addEventListener("visibilitychange",function(){if(document.visibilityState==="visible")chk()})}})();</script>
 </body>
 </html>
