@@ -8123,8 +8123,9 @@ const today = () => dayKey(new Date());
 
 /* ---------- 1. Punkte-Tagebuch (lm-pts) ---------- */
 const PTS = "lm-pts", SAL = "lm-salah";
-const CAP = {t:50, q:40, g:50, hr:20, qr:60, qh:120};
-const calc = d => (d.s || 0) + Math.min(30, d.r || 0) + Math.min(30, d.w || 0) + Math.min(CAP.t, Math.floor((d.t || 0) / 10)) + 20 * (d.p ? 1 : 0) + 5 * (d.d || 0) + Math.min(CAP.q, 2 * (d.q || 0)) + Math.min(CAP.g, 5 * (d.g || 0)) + 10 * (d.l || 0) + Math.min(CAP.hr, 2 * (d.hr || 0)) + 10 * (d.h || 0) + Math.min(CAP.qr, d.qr || 0) + Math.min(CAP.qh, d.qh || 0);
+const CAP = {t:50, q:40, g:50, hr:20, qr:60, qh:120, qp:30, qg:20, f:15, du:10, wi:10, st:15, nm:10};
+const calc = d => (d.s || 0) + Math.min(30, d.r || 0) + Math.min(30, d.w || 0) + Math.min(CAP.t, Math.floor((d.t || 0) / 10)) + 20 * (d.p ? 1 : 0) + 5 * (d.d || 0) + Math.min(CAP.q, 2 * (d.q || 0)) + Math.min(CAP.g, 5 * (d.g || 0)) + 10 * (d.l || 0) + Math.min(CAP.hr, 2 * (d.hr || 0)) + 10 * (d.h || 0) + Math.min(CAP.qr, d.qr || 0) + Math.min(CAP.qh, d.qh || 0)
+  + 10 * (d.a || 0) + 10 * (d.wd || 0) + Math.min(CAP.qp, Math.floor((d.qp || 0) / 10)) + Math.min(CAP.qg, 5 * (d.qg || 0)) + Math.min(CAP.f, 5 * (d.f || 0)) + Math.min(CAP.du, d.du || 0) + Math.min(CAP.wi, d.wi || 0) + Math.min(CAP.st, 3 * (d.st || 0)) + Math.min(CAP.nm, d.nm || 0);
 let busy = false;
 function refresh(field, inc){
   if(busy) return 0; busy = true;
@@ -8304,7 +8305,7 @@ function range(r){
   return {from: dayKey(m), to: dayKey(s), wk: dayKey(m)};
 }
 function localSum(r){
-  const R = range(r), all = store.get(PTS, {}) || {}, o = {pt:0, s:0, sn:0, t:0, q:0, g:0, d:0, l:0, p:0, hr:0, h:0, qr:0, qh:0};
+  const R = range(r), all = store.get(PTS, {}) || {}, o = {pt:0, s:0, sn:0, t:0, q:0, g:0, d:0, l:0, p:0, hr:0, h:0, qr:0, qh:0, a:0, wd:0, qp:0, qg:0, f:0, du:0, wi:0, st:0, nm:0};
   for(const k in all) if(k >= R.from && k <= R.to) for(const f in o) o[f] += all[k][f] || 0;
   return o;
 }
@@ -8562,13 +8563,22 @@ const kidColor = (id, i) => F.KC[(i < 0 ? 0 : i) % F.KC.length];
 let colorIdx = {};
 function colorsFor(list){ colorIdx = {}; list.forEach((k, i) => colorIdx[k.id] = F.KC[i % F.KC.length]); }
 const kcol = id => colorIdx[id] || F.KC[0];
-const stats = s => [s.s ? `🕌 ${s.s}` : "", s.t ? `📿 ${fmt(s.t)}` : "", s.q ? `❓ ${s.q}` : "", s.g ? `🎮 ${s.g}` : "", s.d ? `🌸 ${s.d}` : "", s.p ? `⭐ ${s.p}` : "", s.qr ? `📖 ${s.qr}` : "", s.qh ? `🧠 ${s.qh}` : "", (s.h || s.hr) ? `📜 ${(s.h || 0) * 10 + Math.min(20, 2 * (s.hr || 0))}` : "", s.l ? `📚 ${s.l}` : ""].filter(Boolean).join(" · ") || L("noch keine Punkte", "no points yet");
+const stats = s => [s.s ? `🕌 ${s.s}` : "", s.t ? `📿 ${fmt(s.t)}` : "", s.q ? `❓ ${s.q}` : "", s.g ? `🎮 ${s.g}` : "", s.d ? `🌸 ${s.d}` : "", s.p ? `⭐ ${s.p}` : "", s.qr ? `📖 ${s.qr}` : "", s.qh ? `🧠 ${s.qh}` : "", (s.h || s.hr) ? `📜 ${(s.h || 0) * 10 + Math.min(20, 2 * (s.hr || 0))}` : "", s.a ? `🤲 ${s.a}` : "", s.wd ? `🌙 ${s.wd}` : "", s.qp ? `📗 ${Math.floor(s.qp / 10)}` : "", s.f ? `🎬 ${s.f}` : "", s.l ? `📚 ${s.l}` : ""].filter(Boolean).join(" · ") || L("noch keine Punkte", "no points yet");
 const famLbl = k => k.mine ? L("eure Familie", "your family") : (k.fam || L("Familie", "Family"));
 
 function rulesHTML(){
   const R = [["🕌", L("Gebet pünktlich (erste 30 Min.)", "Prayer on time (first 30 min)"), L("10 Punkte", "10 points"), L("später, aber noch in der Zeit: 9 bis 3 · nachgeholt: 1", "later but within its time: 9 to 3 · made up: 1")],
     ["📿", L("10× Tasbīḥ", "10× tasbīḥ"), L("1 Punkt", "1 point"), L(`bis ${CAP.t}/Tag`, `up to ${CAP.t}/day`)],
     ["⭐", L("Tagesprogramm geschafft", "Daily programme done"), L("20 Punkte", "20 points"), ""],
+    ["🤲", L("Morgen- oder Abend-Athkar gesprochen", "Morning or evening adhkār"), L("10 Punkte", "10 points"), L("je einmal am Tag", "once each per day")],
+    ["🌙", L("Wird: al-Mulk am Abend / al-Kahf am Freitag", "Wird: al-Mulk at night / al-Kahf on Friday"), L("10 Punkte", "10 points"), ""],
+    ["📖", L("Qur'an im Mushaf gelesen", "Read Qur'an in the Mushaf"), L("1 Punkt je Seite", "1 point per page"), L(`bis ${CAP.qp}/Tag`, `up to ${CAP.qp}/day`)],
+    ["🎯", L("Qur'an-Tagesziel erfüllt", "Qur'an daily goal reached"), L("5 Punkte", "5 points"), L(`bis ${CAP.qg}/Tag`, `up to ${CAP.qg}/day`)],
+    ["🤲", L("Dua mit Zähler fertig gesprochen", "Dua with counter completed"), L("1 Punkt", "1 point"), L(`bis ${CAP.du}/Tag`, `up to ${CAP.du}/day`)],
+    ["🎬", L("Film bis zum Ende geschaut", "Film watched to the end"), L("5 Punkte", "5 points"), L(`bis ${CAP.f}/Tag`, `up to ${CAP.f}/day`)],
+    ["📚", L("Geschichte gelesen", "Story read"), L("3 Punkte", "3 points"), L(`bis ${CAP.st}/Tag`, `up to ${CAP.st}/day`)],
+    ["💡", L("Wissenskarte aufgedeckt", "Knowledge card revealed"), L("1 Punkt", "1 point"), L(`bis ${CAP.wi}/Tag`, `up to ${CAP.wi}/day`)],
+    ["✨", L("Einen der 99 Namen gelernt", "Learned one of the 99 names"), L("1 Punkt", "1 point"), L(`bis ${CAP.nm}/Tag`, `up to ${CAP.nm}/day`)],
     ["❓", L("Richtige Quiz-Antwort", "Correct quiz answer"), L("2 Punkte", "2 points"), L(`bis ${CAP.q}/Tag`, `up to ${CAP.q}/day`)],
     ["🎮", L("Spiel geschafft", "Game finished"), L("5 Punkte", "5 points"), L(`bis ${CAP.g}/Tag`, `up to ${CAP.g}/day`)],
     ["🌸", L("Gute Tat im Garten", "Good deed in the garden"), L("5 Punkte", "5 points"), ""],
@@ -8728,7 +8738,16 @@ function kidSheet(id){
     ["🧠", L("Qur'an auswendig", "Qur'an memorised"), s.qh, L("Punkte", "points")],
     ["📜", L("Hadithe gelesen", "Hadiths read"), s.hr, ""],
     ["📜", L("Hadithe auswendig", "Hadiths memorised"), s.h, ""],
-    ["📚", L("Früher gelernt (Qur'an & Hadith)", "Learned earlier (Qur'an & hadith)"), s.l, ""]
+    ["🤲", L("Athkar gesprochen", "Adhkār said"), s.a, ""],
+    ["🌙", L("Wird (al-Mulk / al-Kahf)", "Wird (al-Mulk / al-Kahf)"), s.wd, ""],
+    ["📗", L("Seiten im Mushaf gelesen", "Mushaf pages read"), Math.floor((s.qp || 0) / 10), ""],
+    ["🎯", L("Qur'an-Tagesziele erfüllt", "Qur'an daily goals reached"), s.qg, ""],
+    ["🤲", L("Duas fertig gesprochen", "Duas completed"), s.du, ""],
+    ["🎬", L("Filme geschaut", "Films watched"), s.f, ""],
+    ["📚", L("Geschichten gelesen", "Stories read"), s.st, ""],
+    ["💡", L("Wissenskarten", "Knowledge cards"), s.wi, ""],
+    ["✨", L("99 Namen", "99 names"), s.nm, ""],
+    ["📦", L("Früher: Athkar, Wird & Gelerntes", "Earlier: adhkār, wird & learning"), s.l, ""]
   ].filter(r => r[2] > 0);
   const d = document.createElement("div"); d.className = "ch-sheet ch-kid";
   d.innerHTML = `<div role="dialog" aria-modal="true" aria-label="${esc(k.name)}">
@@ -8860,7 +8879,8 @@ async function startup(){
 }
 setTimeout(startup, 2500);
 document.addEventListener("visibilitychange", () => { if(document.visibilityState === "visible" && ready()) setTimeout(() => { if(document.getElementById("v-challenge").classList.contains("active")) load(); else startup(); }, 1500); });
-window.lmChallenge = {refresh, open: () => setTab("challenge"), add: (f, n) => { const d = refresh(f, n); gain(d, f === "r" ? "🎙️" : f === "w" ? "✍️" : "⭐"); return d; }};
+const ICN = {r:"🎙️", w:"✍️", a:"🤲", wd:"🌙", qp:"📖", qg:"🎯", f:"🎬", du:"🤲", wi:"💡", st:"📚", nm:"✨", q:"❓"};
+window.lmChallenge = {refresh, open: () => setTab("challenge"), add: (f, n, ic) => { const d = refresh(f, n); gain(d, ic || ICN[f] || "⭐"); return d; }};
 })();
 
 /* =================== p34: Qur'an – letzter Ḥizb komplett (al-Aʿlā bis an-Nās) =================== */
@@ -10808,7 +10828,7 @@ function markRead(k){
   if(w[k] === key) return false;
   w[k] = key; lss(WK, w);
   const log = lsj("lm-wird-log", {}) || {}; (log[k] = log[k] || []).push(key); log[k] = log[k].slice(-120); lss("lm-wird-log", log);
-  if(window.lmChallenge && lmChallenge.add) try{ lmChallenge.add("l", 1); }catch(e){}
+  if(window.lmChallenge && lmChallenge.add) try{ lmChallenge.add("wd", 1); }catch(e){}
   return true;
 }
 function streak(k){
@@ -11193,7 +11213,7 @@ function markDone(t){
   if(st[k] === key) return false;
   st[k] = key; lss(KEY, st);
   const log = lsj("lm-athkar-log", {}) || {}; (log[k] = log[k] || []).push(key); log[k] = log[k].slice(-120); lss("lm-athkar-log", log);
-  if(window.lmChallenge && lmChallenge.add) try{ lmChallenge.add("l", 1); }catch(e){}
+  if(window.lmChallenge && lmChallenge.add) try{ lmChallenge.add("a", 1); }catch(e){}
   return true;
 }
 function streak(k){
@@ -12776,7 +12796,7 @@ async function pushOn(){
     if(perm !== "granted"){ if(st) st.innerHTML = `<p class="pr-warn">${T2("Mitteilungen wurden nicht erlaubt. Du kannst sie in den iPhone-Einstellungen → Mitteilungen → Little Muslim einschalten.", "Notifications were not allowed. You can enable them in Settings → Notifications → Little Muslim.")}</p>`; return; }
     const reg = await navigator.serviceWorker.ready;
     const sub = await reg.pushManager.getSubscription() || await reg.pushManager.subscribe({userVisibleOnly: true, applicationServerKey: u8(VAPID)});
-    await pushSync(sub); lss("lm-push-on", true);
+    await pushSync(sub); lss("lm-push-on", true); document.dispatchEvent(new CustomEvent("lm-push-on"));
     if(typeof toast === "function") toast(T2("🔔 Push-Nachrichten sind an", "🔔 Push notifications are on"));
   }catch(e){ if(st) st.innerHTML = `<p class="pr-warn">${T2("Das hat nicht geklappt – bitte Internet prüfen und nochmal versuchen.", "That didn’t work – please check your connection and try again.")}</p>`; return; }
   const c = document.getElementById("prCard"); if(c) c.outerHTML = cardHTML();
@@ -14012,6 +14032,8 @@ function readRange(a, b){
   BITS = bitsGet(); let n = 0;
   for(let v = a; v <= b; v++){ if(!bit(BITS, v)) bitSet(BITS, v); n++; }
   bitsPut(BITS); mutDay(d => { addRange(d.r, a, b); d.v += n; });
+  try{ if(window.lmChallenge) lmChallenge.add("qp", n); }catch(e){}
+  setTimeout(checkGoals, 0);
   if(S.sess){ S.sess.v += n; S.sess.a = S.sess.a == null ? a : Math.min(S.sess.a, a); S.sess.b = S.sess.b == null ? b : Math.max(S.sess.b, b); }
 }
 let PV = null;   /* Seite → [erster, letzter Vers, der auf der Seite beginnt] */
@@ -14153,6 +14175,17 @@ const GT = {
   hifz: {ic: "🧠", de: "Sure auswendig lernen", en: "Memorise a sūra"}
 };
 const gName = g => g.name || (g.type === "khatm" ? T2(`Khatm in ${g.days} Tagen`, `Khatm in ${g.days} days`) : g.type === "pages" ? T2(`${g.n} ${g.n === 1 ? "Seite" : "Seiten"} am Tag`, `${g.n} page${g.n === 1 ? "" : "s"} a day`) : g.type === "hifz" ? T2(`${sName(g.s)} auswendig`, `Memorise ${sName(g.s)}`) : T2(GT[g.type].de, GT[g.type].en));
+
+/* Tagesziel erfüllt → Challenge-Punkte (einmal pro Ziel und Tag) */
+function checkGoals(){
+  if(!MD() || !window.lmChallenge) return;
+  const t = today(), dn = store.get("lm-q-gdone", {}) || {}, have = new Set(dn[t] || []); let n = 0;
+  goals().forEach(g => { if(have.has(g.id)) return; const r = goalToday(g); if(r && !r.off && r.prog >= .999){ have.add(g.id); n++; } });
+  if(!n) return;
+  store.set("lm-q-gdone", {[t]: [...have]});
+  try{ lmChallenge.add("qg", n); }catch(e){}
+  if(typeof toast === "function") toast(T2("🎯 Tagesziel geschafft – Māschāʾallāh!", "🎯 Daily goal reached – Māshāʾallāh!"));
+}
 
 /* ---------- Erfolge ---------- */
 function stats(){
@@ -14507,13 +14540,13 @@ async function goalSheet(id){
   sh.addEventListener("click", e => {
     const b = e.target.closest("[data-qd-gs]"); if(!b) return; const k = b.dataset.qdGs, all = goals(), x = all.find(y => y.id === id);
     if(k === "del"){ if(b.dataset.sure){ putGoals(all.filter(y => y.id !== id)); sh.remove(); draw(true); } else { b.dataset.sure = 1; b.textContent = T2("Wirklich löschen? Nochmal tippen", "Really delete? Tap again"); } return; }
-    if(k === "seen"){ x.seen = (x.seen || []).concat(today()).slice(-60); putGoals(all); readRange(r.ayah, r.ayah); save(); sh.remove(); draw(true); if(typeof toast === "function") toast("✨ " + T2("Bārak Allāhu fīk!", "Bārak Allāhu fīk!")); return; }
+    if(k === "seen"){ x.seen = (x.seen || []).concat(today()).slice(-60); putGoals(all); readRange(r.ayah, r.ayah); save(); checkGoals(); sh.remove(); draw(true); if(typeof toast === "function") toast("✨ " + T2("Bārak Allāhu fīk!", "Bārak Allāhu fīk!")); return; }
     if(k === "open"){ const D2 = MD(); let v = r.a; if(D2 && r.b != null){ const since = g.type === "khatm" ? readSince(g.start) : g.type === "pages" ? readSince(g.day) : readOn(today()); for(let q = r.a; q <= r.b; q++) if(!since.has(q)){ v = q; break; } } sh.remove(); close(); window.lmMushaf.openVerse(v); return; }
     if(k === "learn"){ sh.remove(); close(); try{ store.set("lm-mr-mode", "list"); }catch(_){} window.lmMushaf.openVerse(r.a, true); return; }
     if(k === "hdone"){ const D2 = MD(), tot = D2.M.S[x.s - 1][1]; x.done = Math.min(tot, (x.done || 0) + (r.b - r.a + 1)); x.log = x.log || {}; x.log[today()] = (x.log[today()] || 0) + (r.b - r.a + 1); putGoals(all);
       if(x.done >= tot && window.lmProg){ lmProg.setSura(x.s, "hifz", true); if(typeof toast === "function") toast(T2(`🎉 ${sName(x.s)} auswendig – Māschāʾallāh!`, `🎉 ${sName(x.s)} memorised – Māshāʾallāh!`)); }
       else if(typeof toast === "function") toast(T2("Māschāʾallāh – weiter so! 🧠", "Māshāʾallāh – keep going! 🧠"));
-      sh.remove(); draw(true); }
+      checkGoals(); sh.remove(); draw(true); }
   });
 }
 function onClick(e){
@@ -14547,6 +14580,119 @@ document.addEventListener("click", e => { const h = e.target.closest("[data-qd-h
 document.addEventListener("lm-qtrack", () => { const b = document.getElementById("qrBody"); if(b && b.querySelector(".qd-entry")){ const x = b.querySelector(".qd-entry"); x.outerHTML = card(); } });
 })();
 
+/* =================== p53: Punkte für alle Aktivitäten + Push-Erinnerungen wie auf dem Home-Bildschirm =================== */
+(function(){
+const lsj = (k, d) => { try{ const v = localStorage.getItem(k); return v == null ? d : JSON.parse(v); }catch(e){ return d; } };
+const lss = (k, v) => { try{ localStorage.setItem(k, JSON.stringify(v)); }catch(e){} };
+const today = () => dayKey(new Date());
+
+/* ---------- 1. einmal pro Tag und Ding Punkte geben ---------- */
+function once(field, id){
+  const t = today(), all = lsj("lm-pts-once", {}) || {}, day = all[t] || {}, k = field + ":" + id;
+  if(day[k]) return false;
+  day[k] = 1; lss("lm-pts-once", {[t]: day});
+  try{ if(window.lmChallenge) lmChallenge.add(field, 1); }catch(e){}
+  return true;
+}
+window.lmOnce = once;
+
+/* Duas mit Zähler: fertig gezählt */
+const vd = document.getElementById("v-dua");
+if(vd) vd.addEventListener("click", e => {
+  const b = e.target.closest('[data-act="count"]'); if(!b) return;
+  const id = b.closest(".dua") && b.closest(".dua").dataset.id;
+  setTimeout(() => { try{ const d = DUAS.find(x => x.id === id); if(d && d.rep && counts[id] === d.rep) once("du", id); }catch(_){} }, 0);
+}, true);
+
+/* Wissenskarten: Antwort aufgedeckt */
+const wv = document.getElementById("wiV");
+if(wv) wv.addEventListener("click", e => {
+  const c = e.target.closest("[data-flip]"); if(!c || e.target.closest("a,[data-speak]")) return;
+  setTimeout(() => { if(c.classList.contains("on")) once("wi", c.dataset.flip); }, 0);
+});
+
+/* 99 Namen: Name geöffnet */
+if(typeof openName === "function"){ const _on = openName; openName = function(i){ const r = _on.apply(this, arguments); setTimeout(() => once("nm", i), 4000); return r; }; }
+
+/* Geschichten: mindestens 40 Sekunden gelesen */
+let stT = 0;
+if(typeof renderStories === "function"){ const _rs = renderStories; renderStories = function(){ const r = _rs.apply(this, arguments); clearTimeout(stT);
+  try{ if(stOpen){ const id = stOpen; stT = setTimeout(() => { if(stOpen === id) once("st", id); }, 40000); } }catch(_){} return r; }; }
+
+/* Animierte Filme: letzte Szene erreicht */
+if(typeof fpScene === "function"){ const _fs = fpScene; fpScene = function(i){ const r = _fs.apply(this, arguments); try{ if(FP && i === FP.film.scenes.length - 1) once("f", FP.id); }catch(_){} return r; }; }
+/* Videos (Erzählfilme): zu 85 % geschaut */
+document.addEventListener("timeupdate", e => {
+  const v = e.target; if(!(v instanceof HTMLVideoElement) || !v.duration || v.currentTime / v.duration < .85) return;
+  const box = v.closest(".st-video"), id = (box && box.dataset.vid) || (v.currentSrc || "").split("/").pop().split("_")[0];
+  if(id && !v.__pts){ v.__pts = 1; once("f", id); }
+}, true);
+document.addEventListener("loadstart", e => { if(e.target instanceof HTMLVideoElement) e.target.__pts = 0; }, true);
+
+/* ---------- 2. Push: Athkar, Wird, Hadith des Tages – wie die Karten auf dem Home-Bildschirm ---------- */
+const RPC = "https://imdyfrmtrotcyhyajwkr.supabase.co/rest/v1/rpc/", KEY = "sb_publishable_6fbssHB71hNV7EgWGWNGBA_FJMlnYar";
+const rpc = (fn, body) => fetch(RPC + fn, {method: "POST", headers: {"apikey": KEY, "Content-Type": "application/json"}, body: JSON.stringify(body)}).then(r => { if(!r.ok) throw new Error("http " + r.status); });
+const XS = () => lsj("lm-push-x", ["athkar", "wird", "hadith"]);
+async function endpoint(){
+  if(!lsj("lm-push-on", false) || !("serviceWorker" in navigator) || location.protocol !== "https:") return null;
+  try{ const reg = await navigator.serviceWorker.ready, sub = await reg.pushManager.getSubscription(); return sub ? sub.endpoint : null; }catch(e){ return null; }
+}
+/* was heute schon erledigt ist → keine Erinnerung mehr */
+function doneTags(){
+  const a = lsj("lm-athkar", {}) || {}, w = lsj("lm-wird", {}) || {}, t = [];
+  if(a.sabah) t.push(a.sabah + ":sabah"); if(a.masa) t.push(a.masa + ":masa");
+  if(w.mulk) t.push(w.mulk + ":mulk"); if(w.kahf) t.push(w.kahf + ":kahf");
+  return t;
+}
+let doneT = 0;
+async function sendDone(){ const ep = await endpoint(); if(!ep) return; try{ await rpc("push_done", {p_endpoint: ep, p_tags: doneTags()}); }catch(e){} }
+async function sendExtras(){ const ep = await endpoint(); if(!ep) return; try{ await rpc("push_extras", {p_endpoint: ep, p_extras: XS()}); }catch(e){} }
+const LS = (() => { try{ return localStorage; }catch(e){ return null; } })();
+if(LS){
+  const prev = Storage.prototype.setItem;
+  Storage.prototype.setItem = function(k, v){ prev.call(this, k, v); if(this === LS && (k === "lm-athkar" || k === "lm-wird")){ clearTimeout(doneT); doneT = setTimeout(sendDone, 800); } };
+}
+/* beim Start und nach dem Einschalten abgleichen */
+setTimeout(() => { sendExtras(); sendDone(); }, 4000);
+document.addEventListener("lm-push-on", () => setTimeout(() => { sendExtras(); sendDone(); }, 500));
+
+/* Auswahl in der Push-Karte auf der Gebetszeiten-Seite */
+const X = [["athkar", "🤲", ["Morgen- & Abend-Athkar", "Morning & evening adhkār"]], ["wird", "🌙", ["al-Mulk am Abend · al-Kahf am Freitag", "al-Mulk at night · al-Kahf on Friday"]], ["hadith", "📜", ["Hadith des Tages", "Hadith of the day"]]];
+function xHTML(){
+  const on = XS();
+  return `<div class="px-box"><span class="pr-lbl">${L("Außerdem erinnern an", "Also remind me of")}</span><div class="pr-chips">${X.map(([k, ic, nm]) => `<button data-prx="${k}" aria-pressed="${on.includes(k)}">${ic} ${L(nm[0], nm[1])}</button>`).join("")}</div>
+    <p class="hint" style="margin:6px 2px 0">${L("Wie die Karten auf dem Home-Bildschirm: Athkar nach dem Fadschr und nach dem ʿAṣr, al-Mulk nach dem ʿIschāʾ, al-Kahf am Freitagvormittag, Hadith des Tages um 7:30 Uhr. Schon erledigt? Dann kommt keine Erinnerung.", "Like the cards on the home screen: adhkār after Fajr and after ʿAsr, al-Mulk after ʿIshāʾ, al-Kahf on Friday morning, hadith of the day at 7:30. Already done? Then no reminder.")}</p></div>`;
+}
+function decorate(){
+  const st = document.getElementById("prPushSt"); if(!st || !lsj("lm-push-on", false)) return;
+  const old = st.parentElement.querySelector(".px-box"); if(old) old.remove();
+  st.insertAdjacentHTML("beforebegin", xHTML());
+}
+new MutationObserver(() => { const c = document.getElementById("prCard"); if(c && !c.querySelector(".px-box")) decorate(); }).observe(document.body, {childList: true, subtree: true});
+document.addEventListener("click", e => {
+  const b = e.target.closest("[data-prx]"); if(!b) return;
+  const k = b.dataset.prx, x = XS(), on = !x.includes(k);
+  const nx = on ? x.concat(k) : x.filter(y => y !== k); lss("lm-push-x", nx); b.setAttribute("aria-pressed", on); sendExtras();
+});
+
+/* ---------- 3. Tippen auf eine Push-Mitteilung → direkt an die richtige Stelle ---------- */
+function goTo(k){
+  if(!k || !/^go-/.test(k)) return false;
+  try{ history.replaceState(null, "", location.pathname + location.search); }catch(e){}
+  setTimeout(() => {
+    try{
+      if(k === "go-ak-s" || k === "go-ak-m"){ setTab("home"); window.lmAthkar && lmAthkar.open(k.slice(-1)); }
+      else if(k === "go-mulk" || k === "go-kahf"){ setTab("quran"); window.lmMushaf && lmMushaf.openSura(k === "go-mulk" ? 67 : 18); }
+      else if(k === "go-hadith") setTab("hadith");
+      else if(/^go-(fajr|sunrise|dhuhr|asr|maghrib|isha)$/.test(k)) setTab("times");
+    }catch(e){}
+  }, 600);
+  return true;
+}
+if(location.hash) goTo(location.hash.slice(1));
+if("serviceWorker" in navigator) navigator.serviceWorker.addEventListener("message", e => { if(e.data && e.data.lmGo) goTo(e.data.lmGo); });
+})();
+
 /* ---------- init ---------- */
 localize(); applyTheme(); applyPrefs(); renderHome(); renderGebet(); renderQuran(); renderQuiz(); renderKids(); renderNames();
 document.querySelectorAll("[data-learn]").forEach(b => b.setAttribute("aria-pressed", b.dataset.learn === learnSub));
@@ -14556,6 +14702,6 @@ setTab("home");
 if(lang === "en") translateTree(document.body);
 </script>
 <script>if("serviceWorker" in navigator&&location.protocol==="https:"){addEventListener("load",()=>navigator.serviceWorker.register("sw.js").catch(()=>{}));}</script>
-<script>window.LM_BUILD="20261016194516";(function(){function chk(){fetch("version.json?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.json()}).then(function(v){if(!v||!v.b||v.b===window.LM_BUILD)return;try{if(sessionStorage.getItem("lm-upd")===v.b)return;sessionStorage.setItem("lm-upd",v.b)}catch(e){}location.reload()}).catch(function(){})}if(location.protocol==="https:"){addEventListener("load",function(){setTimeout(chk,1500)});document.addEventListener("visibilitychange",function(){if(document.visibilityState==="visible")chk()})}})();</script>
+<script>window.LM_BUILD="20261017060157";(function(){function chk(){fetch("version.json?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.json()}).then(function(v){if(!v||!v.b||v.b===window.LM_BUILD)return;try{if(sessionStorage.getItem("lm-upd")===v.b)return;sessionStorage.setItem("lm-upd",v.b)}catch(e){}location.reload()}).catch(function(){})}if(location.protocol==="https:"){addEventListener("load",function(){setTimeout(chk,1500)});document.addEventListener("visibilitychange",function(){if(document.visibilityState==="visible")chk()})}})();</script>
 </body>
 </html>
