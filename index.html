@@ -3,6 +3,11 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
+<script>/* Tablet: Oberfläche gleichmäßig vergrößern (iPad), statt winziger, breit gezogener Ansicht */
+(function(){try{var m=document.querySelector('meta[name=viewport]');var mob=/iPad|Macintosh|Android/i.test(navigator.userAgent)&&("ontouchend" in document);
+function fit(){var sw=Math.min(screen.width,screen.height),lw=Math.max(screen.width,screen.height);if(sw<700||!mob){m.setAttribute("content","width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover");return}
+var land=matchMedia("(orientation: landscape)").matches;var w=land?Math.round(lw/1.55):Math.round(sw/1.4);m.setAttribute("content","width="+w+", viewport-fit=cover");document.documentElement.classList.add("lm-tab")}
+fit();addEventListener("orientationchange",function(){setTimeout(fit,60)});}catch(e){}})();</script>
 <meta name="theme-color" content="#0A2426">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -4898,6 +4903,6 @@ html.lm-ar .chev, html.lm-ar svg.chev{transform:scaleX(-1)}
 `,document.head.appendChild(we),window.lmSetKAr)try{lmSetKAr(!0)}catch{}document.readyState==="loading"?document.addEventListener("DOMContentLoaded",O):O(),setTimeout(()=>document.documentElement.classList.add("lm-ar-ready"),1500)})(),localize(),applyTheme(),applyPrefs(),renderHome(),renderGebet(),renderQuran(),renderQuiz(),renderKids(),renderNames(),document.querySelectorAll("[data-learn]").forEach(e=>e.setAttribute("aria-pressed",e.dataset.learn===learnSub)),document.querySelectorAll("[data-lang-set]").forEach(e=>e.setAttribute("aria-pressed",e.dataset.langSet===lang)),document.querySelectorAll(".lang button").forEach(e=>e.setAttribute("aria-pressed",e.dataset.lang===lang)),setTab("home"),lang==="en"&&translateTree(document.body);
 </script>
 <script>if("serviceWorker" in navigator&&location.protocol==="https:"){addEventListener("load",()=>navigator.serviceWorker.register("sw.js").catch(()=>{}));}</script>
-<script>window.LM_BUILD="20261023225549";(function(){function chk(){fetch("version.json?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.json()}).then(function(v){if(!v||!v.b||v.b===window.LM_BUILD)return;try{if(sessionStorage.getItem("lm-upd")===v.b)return;sessionStorage.setItem("lm-upd",v.b)}catch(e){}location.reload()}).catch(function(){})}if(location.protocol==="https:"){addEventListener("load",function(){setTimeout(chk,1500)});document.addEventListener("visibilitychange",function(){if(document.visibilityState==="visible")chk()})}})();</script>
+<script>window.LM_BUILD="20261023232413";(function(){function chk(){fetch("version.json?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.json()}).then(function(v){if(!v||!v.b||v.b===window.LM_BUILD)return;try{if(sessionStorage.getItem("lm-upd")===v.b)return;sessionStorage.setItem("lm-upd",v.b)}catch(e){}location.reload()}).catch(function(){})}if(location.protocol==="https:"){addEventListener("load",function(){setTimeout(chk,1500)});document.addEventListener("visibilitychange",function(){if(document.visibilityState==="visible")chk()})}})();</script>
 </body>
 </html>
