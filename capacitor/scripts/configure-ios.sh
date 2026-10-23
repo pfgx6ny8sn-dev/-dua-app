@@ -10,7 +10,10 @@ set_str NSLocationWhenInUseUsageDescription "Little Muslim nutzt deinen Standort
 set_str NSSpeechRecognitionUsageDescription "Little Muslim nutzt die Spracherkennung, um beim Vorlesen des Qur'an die gelesenen Wörter zu erkennen."
 set_str CFBundleDisplayName "Little Muslim"
 plutil -replace ITSAppUsesNonExemptEncryption -bool NO "$PL"
-pb "Delete :UISupportedInterfaceOrientations"; /usr/libexec/PlistBuddy -c "Add :UISupportedInterfaceOrientations array" "$PL"; /usr/libexec/PlistBuddy -c "Add :UISupportedInterfaceOrientations:0 string UIInterfaceOrientationPortrait" "$PL"
+pb "Delete :UISupportedInterfaceOrientations"; /usr/libexec/PlistBuddy -c "Add :UISupportedInterfaceOrientations array" "$PL"
+for o in UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight; do /usr/libexec/PlistBuddy -c "Add :UISupportedInterfaceOrientations: string $o" "$PL"; done
+# Version 1: nur iPhone (läuft auf dem iPad im iPhone-Modus) – keine iPad-Screenshots nötig
+sed -i '' -E 's/TARGETED_DEVICE_FAMILY = "?[0-9,]+"?;/TARGETED_DEVICE_FAMILY = 1;/g' ios/App/App.xcodeproj/project.pbxproj
 # Version: 1.0.<Build-Nummer>
 if [ -n "${BUILD_NUMBER:-}" ]; then
   pb "Set :CFBundleVersion $BUILD_NUMBER"; pb "Set :CFBundleShortVersionString ${APP_VERSION:-1.0.0}"
