@@ -2,6 +2,7 @@ name: iOS-App bauen
 
 # Startet man von Hand: GitHub → Actions → „iOS-App bauen“ → „Run workflow“.
 # Ohne Apple-Schlüssel (Secrets) wird nur geprüft, ob die App baut (Simulator).
+# Archiv wird unsigniert gebaut; beim Export signiert Xcode per Cloud-Signierung (API-Schlüssel mit Rolle „Admin“ nötig).
 # Mit den Secrets wird die App signiert und direkt zu App Store Connect / TestFlight hochgeladen.
 #
 # Benötigte Secrets (Repo → Settings → Secrets and variables → Actions):
@@ -72,7 +73,7 @@ jobs:
           AUTH=(-allowProvisioningUpdates -authenticationKeyPath "$KEY" -authenticationKeyID "$ASC_KEY_ID" -authenticationKeyIssuerID "$ASC_ISSUER_ID")
           xcodebuild archive -project ios/App/App.xcodeproj -scheme App -configuration Release \
             -destination 'generic/platform=iOS' -archivePath "$RUNNER_TEMP/App.xcarchive" \
-            DEVELOPMENT_TEAM="$TEAM" CODE_SIGN_STYLE=Automatic "${AUTH[@]}" > "$RUNNER_TEMP/archive.log" 2>&1 || { tail -80 "$RUNNER_TEMP/archive.log"; exit 1; }
+            DEVELOPMENT_TEAM="$TEAM" CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" > "$RUNNER_TEMP/archive.log" 2>&1 || { tail -80 "$RUNNER_TEMP/archive.log"; exit 1; }
           tail -15 "$RUNNER_TEMP/archive.log"
           cat > "$RUNNER_TEMP/ExportOptions.plist" <<PLIST
           <?xml version="1.0" encoding="UTF-8"?>
