@@ -12,8 +12,10 @@ set_str CFBundleDisplayName "Little Muslim"
 plutil -replace ITSAppUsesNonExemptEncryption -bool NO "$PL"
 pb "Delete :UISupportedInterfaceOrientations"; /usr/libexec/PlistBuddy -c "Add :UISupportedInterfaceOrientations array" "$PL"
 for o in UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight; do /usr/libexec/PlistBuddy -c "Add :UISupportedInterfaceOrientations: string $o" "$PL"; done
-# Version 1: nur iPhone (läuft auf dem iPad im iPhone-Modus) – keine iPad-Screenshots nötig
-sed -i '' -E 's/TARGETED_DEVICE_FAMILY = "?[0-9,]+"?;/TARGETED_DEVICE_FAMILY = 1;/g' ios/App/App.xcodeproj/project.pbxproj
+# iPad: alle Ausrichtungen (Pflicht für Multitasking); iPhone + iPad
+pb "Delete :UISupportedInterfaceOrientations~ipad"; /usr/libexec/PlistBuddy -c "Add :UISupportedInterfaceOrientations~ipad array" "$PL"
+for o in UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight; do /usr/libexec/PlistBuddy -c "Add :UISupportedInterfaceOrientations~ipad: string $o" "$PL"; done
+sed -i '' -E 's/TARGETED_DEVICE_FAMILY = "?[0-9,]+"?;/TARGETED_DEVICE_FAMILY = "1,2";/g' ios/App/App.xcodeproj/project.pbxproj
 # Version: 1.0.<Build-Nummer>
 if [ -n "${BUILD_NUMBER:-}" ]; then
   pb "Set :CFBundleVersion $BUILD_NUMBER"; pb "Set :CFBundleShortVersionString ${APP_VERSION:-1.0.0}"
