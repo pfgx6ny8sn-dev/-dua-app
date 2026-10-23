@@ -18,6 +18,9 @@ on:
         default: "1.0.0"
         required: true
 
+permissions:
+  contents: write
+
 jobs:
   ios:
     runs-on: macos-26
@@ -64,11 +67,13 @@ jobs:
         env:
           ASC_KEY_P8: ${{ secrets.ASC_KEY_P8 }}
         run: |
+          set -o pipefail
           KEY="$RUNNER_TEMP/AuthKey.p8"; printf '%s' "$ASC_KEY_P8" > "$KEY"
           AUTH=(-allowProvisioningUpdates -authenticationKeyPath "$KEY" -authenticationKeyID "$ASC_KEY_ID" -authenticationKeyIssuerID "$ASC_ISSUER_ID")
           xcodebuild archive -project ios/App/App.xcodeproj -scheme App -configuration Release \
             -destination 'generic/platform=iOS' -archivePath "$RUNNER_TEMP/App.xcarchive" \
-            DEVELOPMENT_TEAM="$TEAM" CODE_SIGN_STYLE=Automatic "${AUTH[@]}" | tail -30
+            DEVELOPMENT_TEAM="$TEAM" CODE_SIGN_STYLE=Automatic "${AUTH[@]}" > "$RUNNER_TEMP/archive.log" 2>&1 || { tail -80 "$RUNNER_TEMP/archive.log"; exit 1; }
+          tail -15 "$RUNNER_TEMP/archive.log"
           cat > "$RUNNER_TEMP/ExportOptions.plist" <<PLIST
           <?xml version="1.0" encoding="UTF-8"?>
           <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
@@ -81,5 +86,16 @@ jobs:
           </dict></plist>
           PLIST
           xcodebuild -exportArchive -archivePath "$RUNNER_TEMP/App.xcarchive" -exportOptionsPlist "$RUNNER_TEMP/ExportOptions.plist" \
-            -exportPath "$RUNNER_TEMP/export" "${AUTH[@]}" | tail -30
+            -exportPath "$RUNNER_TEMP/export" "${AUTH[@]}" > "$RUNNER_TEMP/export.log" 2>&1 || { tail -80 "$RUNNER_TEMP/export.log"; exit 1; }
+          tail -30 "$RUNNER_TEMP/export.log"
+          grep -qiE "Upload succeeded|EXPORT SUCCEEDED|Uploaded" "$RUNNER_TEMP/export.log" || { echo "Upload nicht bestätigt"; exit 1; }
           echo "✓ Hochgeladen – in App Store Connect → TestFlight erscheint der Build nach der Verarbeitung (meist 10–30 Min.)."
+      - name: Protokoll sichern (Branch ci-logs)
+        if: always() && env.TEAM != ''
+        working-directory: .
+        run: |
+          mkdir -p /tmp/ci && cd /tmp/ci && git init -q && git checkout -q -b ci-logs
+          for f in archive export; do [ -f "$RUNNER_TEMP/$f.log" ] && grep -vE "^\s*$" "$RUNNER_TEMP/$f.log" | tail -250 > "$f.log" || true; done
+          echo "run ${{ github.run_number }} ${{ job.status }}" > status.txt
+          git add -A && git -c user.name=ci -c user.email=ci@example.com commit -qm "Build ${{ github.run_number }}" 
+          git push -qf "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" ci-logs
