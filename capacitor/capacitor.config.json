@@ -1,0 +1,13 @@
+{
+  "appId": "de.littlemuslim.app",
+  "appName": "Little Muslim",
+  "webDir": "www",
+  "ios": {
+    "contentInset": "never",
+    "backgroundColor": "#13285A",
+    "limitsNavigationsToAppBoundDomains": false
+  },
+  "plugins": {
+    "LocalNotifications": { "iconColor": "#2E9B6C" }
+  }
+}

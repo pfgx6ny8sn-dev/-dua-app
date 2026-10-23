@@ -1,0 +1,20 @@
+{
+  "name": "little-muslim-app",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Little Muslim als iOS-App (Capacitor) – baut aus den Web-Dateien im Repo eine echte App",
+  "scripts": {
+    "build": "node scripts/build-www.mjs",
+    "sync": "npm run build && npx cap sync"
+  },
+  "dependencies": {
+    "@capacitor/browser": "8.0.5",
+    "@capacitor/core": "8.5.3",
+    "@capacitor/ios": "8.5.3",
+    "@capacitor/local-notifications": "8.3.1"
+  },
+  "devDependencies": {
+    "@capacitor/assets": "^3.0.5",
+    "@capacitor/cli": "8.5.3"
+  }
+}

@@ -1,0 +1,85 @@
+name: iOS-App bauen
+
+# Startet man von Hand: GitHub → Actions → „iOS-App bauen“ → „Run workflow“.
+# Ohne Apple-Schlüssel (Secrets) wird nur geprüft, ob die App baut (Simulator).
+# Mit den Secrets wird die App signiert und direkt zu App Store Connect / TestFlight hochgeladen.
+#
+# Benötigte Secrets (Repo → Settings → Secrets and variables → Actions):
+#   APPLE_TEAM_ID      – 10-stellige Team-ID aus developer.apple.com → Membership
+#   ASC_KEY_ID         – Key-ID eines App-Store-Connect-API-Schlüssels (Rolle „App Manager“)
+#   ASC_ISSUER_ID      – Issuer-ID von derselben Seite
+#   ASC_KEY_P8         – Inhalt der heruntergeladenen .p8-Datei (komplett, mit BEGIN/END-Zeilen)
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Versionsnummer, die im App Store angezeigt wird"
+        default: "1.0.0"
+        required: true
+
+jobs:
+  ios:
+    runs-on: macos-26
+    timeout-minutes: 60
+    defaults:
+      run:
+        working-directory: capacitor
+    env:
+      TEAM: ${{ secrets.APPLE_TEAM_ID }}
+      ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+      ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+      BUILD_NUMBER: ${{ github.run_number }}
+      APP_VERSION: ${{ inputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          lfs: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Neuestes Xcode wählen
+        run: |
+          sudo xcode-select -s "$(ls -d /Applications/Xcode_26*.app | sort -V | tail -1)"
+          xcodebuild -version
+      - name: Abhängigkeiten
+        run: npm install --no-audit --no-fund
+      - name: Web-Dateien für die App (www/)
+        run: npm run build
+      - name: iOS-Projekt erzeugen
+        run: |
+          npx cap add ios
+          npx @capacitor/assets generate --ios --iconBackgroundColor '#13285A' --splashBackgroundColor '#13285A'
+          npx cap sync ios
+          gem install xcodeproj --no-document
+          bash scripts/configure-ios.sh
+      - name: Nur prüfen (ohne Apple-Schlüssel)
+        if: env.TEAM == ''
+        run: |
+          xcodebuild build -project ios/App/App.xcodeproj -scheme App -configuration Release \
+            -sdk iphonesimulator -destination 'generic/platform=iOS Simulator' CODE_SIGNING_ALLOWED=NO | tail -20
+          echo "✓ Die App baut. Für TestFlight die vier Secrets eintragen und erneut starten."
+      - name: Signieren, archivieren und zu App Store Connect hochladen
+        if: env.TEAM != ''
+        env:
+          ASC_KEY_P8: ${{ secrets.ASC_KEY_P8 }}
+        run: |
+          KEY="$RUNNER_TEMP/AuthKey.p8"; printf '%s' "$ASC_KEY_P8" > "$KEY"
+          AUTH=(-allowProvisioningUpdates -authenticationKeyPath "$KEY" -authenticationKeyID "$ASC_KEY_ID" -authenticationKeyIssuerID "$ASC_ISSUER_ID")
+          xcodebuild archive -project ios/App/App.xcodeproj -scheme App -configuration Release \
+            -destination 'generic/platform=iOS' -archivePath "$RUNNER_TEMP/App.xcarchive" \
+            DEVELOPMENT_TEAM="$TEAM" CODE_SIGN_STYLE=Automatic "${AUTH[@]}" | tail -30
+          cat > "$RUNNER_TEMP/ExportOptions.plist" <<PLIST
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0"><dict>
+            <key>method</key><string>app-store-connect</string>
+            <key>destination</key><string>upload</string>
+            <key>teamID</key><string>$TEAM</string>
+            <key>signingStyle</key><string>automatic</string>
+            <key>manageAppVersionAndBuildNumber</key><false/>
+          </dict></plist>
+          PLIST
+          xcodebuild -exportArchive -archivePath "$RUNNER_TEMP/App.xcarchive" -exportOptionsPlist "$RUNNER_TEMP/ExportOptions.plist" \
+            -exportPath "$RUNNER_TEMP/export" "${AUTH[@]}" | tail -30
+          echo "✓ Hochgeladen – in App Store Connect → TestFlight erscheint der Build nach der Verarbeitung (meist 10–30 Min.)."

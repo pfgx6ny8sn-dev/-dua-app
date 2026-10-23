@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Hilfe & Kontakt – Little Muslim</title>
+<style>
+:root{--bg:#F6F1E4;--fg:#14382B;--mut:#5B6B62;--acc:#1F7A55;--card:#FFFFFF}
+@media (prefers-color-scheme: dark){:root{--bg:#0E1A2C;--fg:#F4EFE3;--mut:#B9C1CC;--acc:#43C38D;--card:#172840}}
+body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.6 -apple-system,system-ui,"Segoe UI",sans-serif}
+main{max-width:720px;margin:0 auto;padding:28px 18px 60px}
+h1{font-size:30px;margin:0 0 4px}h2{font-size:19px;margin:28px 0 6px;color:var(--acc)}
+p,li{margin:6px 0}small,.mut{color:var(--mut)}
+.box{background:var(--card);border-radius:16px;padding:14px 16px;margin:14px 0}
+a{color:var(--acc)}
+.back{position:sticky;top:0;z-index:5;display:flex;align-items:center;padding:calc(10px + env(safe-area-inset-top,0px)) 14px 10px;background:var(--bg);border-bottom:1px solid rgba(127,127,127,.18)}
+.back a{display:inline-flex;align-items:center;gap:6px;text-decoration:none;font-weight:700;font-size:17px;padding:6px 4px}
+details{background:var(--card);border-radius:16px;padding:12px 16px;margin:10px 0}summary{font-weight:700;cursor:pointer}details p{margin:8px 0 2px}
+.btn{display:inline-block;background:var(--acc);color:#fff;text-decoration:none;font-weight:700;padding:10px 18px;border-radius:999px;border:0;font:inherit;font-weight:700;margin:6px 8px 0 0;cursor:pointer}
+</style>
+</head>
+<body><nav class="back"><a href="./" onclick="if(history.length>1&&document.referrer){history.back();return false;}">‹ Zurück zur App</a></nav><main>
+<h1>Hilfe &amp; Kontakt</h1>
+<p class="mut">Antworten auf häufige Fragen – und wie du uns erreichst.</p>
+<div class="box">
+<p><b>Schreib uns</b> – wir antworten meist innerhalb von 1–2 Tagen.</p>
+<p style="font-size:19px;font-weight:700;user-select:all">info@little-muslim.de</p>
+<a class="btn" href="mailto:info@little-muslim.de?subject=Little%20Muslim%20%E2%80%93%20Frage">E-Mail schreiben</a><button class="btn" id="cp" type="button">Adresse kopieren</button>
+<p class="mut" style="margin-top:10px">Hilfreich: dein Gerät (z. B. iPhone 15), die Sprache der App und eine kurze Beschreibung oder ein Screenshot.</p>
+</div>
+<h2>Häufige Fragen</h2>
+<details><summary>Wie melde ich mich als Elternteil an?</summary><p>Öffne in der App <b>Challenge → Familien einladen</b> und gib deine E-Mail-Adresse ein. Du bekommst einen <b>8-stelligen Code</b> per E-Mail – ein Passwort gibt es nicht. Kein Code angekommen? Schau im Spam-Ordner nach und warte ein bis zwei Minuten, bevor du einen neuen anforderst.</p></details>
+<details><summary>Wie verbinde ich das Gerät meines Kindes?</summary><p>Im Eltern-Bereich erzeugst du einen <b>6-stelligen Geräte-Code</b> und gibst ihn auf dem Gerät des Kindes ein. Der Code gilt 10 Minuten und nur einmal. Kinder brauchen keine E-Mail-Adresse.</p></details>
+<details><summary>Das Vorlesen im Qur'an erkennt nichts.</summary><p>Die App braucht Zugriff auf das <b>Mikrofon</b>. Auf dem iPhone: <b>Einstellungen → Safari → Mikrofon</b> auf „Erlauben“ stellen. Sprich deutlich und nicht zu leise und schließe andere Apps, die gerade Audio abspielen.</p></details>
+<details><summary>Es kommt kein Ton.</summary><p>Prüfe den Lautlos-Schalter und die Lautstärke. Rezitationen werden aus dem Internet geladen – ohne Verbindung sind sie nicht verfügbar.</p></details>
+<details><summary>Wie bekommt mein Kind Punkte?</summary><p>Für Gebete, Duas, gelesene Suren wie al-Kahf und al-Mulk, die Wuḍūʾ- und Gebets-Anleitungen, Quiz, Spiele und mehr. Alle Regeln stehen in der App unter <b>Challenge → So sammelst du Punkte</b>.</p></details>
+<details><summary>Wie lege ich die App auf den Home-Bildschirm?</summary><p>Öffne die App in Safari, tippe auf <b>Teilen</b> und dann auf <b>Zum Home-Bildschirm</b>. Auf Android: Menü ⋮ → <b>App installieren</b>.</p></details>
+<details><summary>Wie lösche ich meine Daten?</summary><p>Fortschritte auf dem Gerät löschst du, indem du die App bzw. die Website-Daten löschst. Dein Eltern-Konto löschst du in der App unter <b>Einstellungen → Konto → „Konto löschen“</b> – oder schreib uns, dann erledigen wir das. Mehr dazu in der <a href='datenschutz.html'>Datenschutzerklärung</a>.</p></details>
+<details><summary>Ich habe einen Fehler in einer Dua oder Quelle gefunden.</summary><p>Danke! Schick uns den Namen der Dua bzw. Sure und was dir aufgefallen ist an die E-Mail-Adresse oben.</p></details>
+<script>document.getElementById("cp").onclick=function(){var b=this;try{navigator.clipboard.writeText("info@little-muslim.de").then(function(){b.textContent="Kopiert ✓"},function(){})}catch(e){}};</script>
+<p class="mut" style="margin-top:36px"><a href="impressum.html">Impressum</a> · <a href="datenschutz.html">Datenschutz</a> · <a href="hilfe.html">Hilfe &amp; Kontakt</a></p>
+</main></body></html>
