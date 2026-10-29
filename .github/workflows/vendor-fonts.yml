@@ -1,0 +1,42 @@
+name: Schriften lokal ablegen
+
+# Lädt die Google-Schriften einmalig herunter und legt sie unter fonts/g/ ab,
+# damit App und Web-Seite keine Verbindung zu Google-Servern mehr brauchen (Datenschutz, offline).
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  fonts:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Herunterladen und umschreiben
+        run: |
+          set -euo pipefail
+          mkdir -p fonts/g
+          UA="Mozilla/5.0 (Macintosh; Intel Mac OS X 14_0) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Safari/605.1.15"
+          get(){ # $1 = Name der CSS-Datei, $2 = Google-URL
+            curl -fsSL -A "$UA" "$2" -o "fonts/g/$1.src.css"
+            grep -oE 'https://fonts\.gstatic\.com/[^)]+' "fonts/g/$1.src.css" | sort -u | while read -r u; do
+              f="$(echo "$u" | sed -E 's#https://fonts\.gstatic\.com/s/##; s#/#_#g')"
+              [ -f "fonts/g/$f" ] || curl -fsSL "$u" -o "fonts/g/$f"
+            done
+            sed -E 's#https://fonts\.gstatic\.com/s/([^)]+)#\1#g' "fonts/g/$1.src.css" | sed -E 's#url\(([^/)]+)/([^/)]+)/([^)]+)\)#url(\1_\2_\3)#g' > "fonts/g/$1.css"
+            rm "fonts/g/$1.src.css"
+          }
+          get scheherazade "https://fonts.googleapis.com/css2?family=Scheherazade+New:wght@400;700&display=swap"
+          get baloo "https://fonts.googleapis.com/css2?family=Baloo+Bhaijaan+2:wght@600;700;800&display=swap"
+          get amiri "https://fonts.googleapis.com/css2?family=Amiri+Quran&family=Amiri:wght@400;700&display=swap"
+          get nunito "https://fonts.googleapis.com/css2?family=Nunito:wght@700;800;900&display=swap"
+          ls -la fonts/g | head -60
+          grep -c "url(" fonts/g/*.css
+          ! grep -q "gstatic" fonts/g/*.css
+      - name: Speichern
+        run: |
+          git config user.name ci && git config user.email ci@example.com
+          git add fonts/g
+          git commit -m "Schriften lokal (fonts/g) statt Google Fonts" || echo "nichts Neues"
+          git push

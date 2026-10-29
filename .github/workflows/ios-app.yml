@@ -31,8 +31,6 @@ jobs:
         working-directory: capacitor
     env:
       TEAM: ${{ secrets.APPLE_TEAM_ID }}
-      ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
-      ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
       BUILD_NUMBER: ${{ github.run_number }}
       APP_VERSION: ${{ inputs.version }}
     steps:
@@ -48,6 +46,12 @@ jobs:
           xcodebuild -version
       - name: Abhängigkeiten
         run: npm install --no-audit --no-fund
+      - name: Sicherheitsprüfung der Pakete (npm audit, nur Bericht)
+        run: |
+          npm audit --omit=dev > "$RUNNER_TEMP/audit.txt" 2>&1 || true
+          npm audit > "$RUNNER_TEMP/audit-all.txt" 2>&1 || true
+          npm ls --all --depth=0 > "$RUNNER_TEMP/packages.txt" 2>&1 || true
+          tail -5 "$RUNNER_TEMP/audit.txt"
       - name: Web-Dateien für die App (www/)
         run: npm run build
       - name: iOS-Projekt erzeugen
@@ -57,6 +61,8 @@ jobs:
           npx cap sync ios
           gem install xcodeproj --no-document
           bash scripts/configure-ios.sh
+          { echo "== ATS"; /usr/libexec/PlistBuddy -c "Print :NSAppTransportSecurity" ios/App/App/Info.plist 2>&1 || echo "kein NSAppTransportSecurity-Eintrag (Standard: nur HTTPS)"; } > "$RUNNER_TEMP/plist.txt"
+          { echo "== Info.plist-Schlüssel"; plutil -p ios/App/App/Info.plist | grep -E '^\s+"(NS|UI|ITS|CF|LS)' ; } >> "$RUNNER_TEMP/plist.txt" 2>&1 || true
       - name: Nur prüfen (ohne Apple-Schlüssel)
         if: env.TEAM == ''
         run: |
@@ -67,6 +73,8 @@ jobs:
         if: env.TEAM != ''
         env:
           ASC_KEY_P8: ${{ secrets.ASC_KEY_P8 }}
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
         run: |
           set -o pipefail
           KEY="$RUNNER_TEMP/AuthKey.p8"; printf '%s' "$ASC_KEY_P8" > "$KEY"
@@ -96,6 +104,7 @@ jobs:
         working-directory: .
         run: |
           mkdir -p /tmp/ci && cd /tmp/ci && git init -q && git checkout -q -b ci-logs
+          for f in audit audit-all packages plist; do [ -f "$RUNNER_TEMP/$f.txt" ] && cp "$RUNNER_TEMP/$f.txt" . || true; done
           for f in archive export; do [ -f "$RUNNER_TEMP/$f.log" ] && grep -vE "^\s*$" "$RUNNER_TEMP/$f.log" | tail -250 > "$f.log" || true; done
           echo "run ${{ github.run_number }} ${{ job.status }}" > status.txt
           git add -A && git -c user.name=ci -c user.email=ci@example.com commit -qm "Build ${{ github.run_number }}" 
