@@ -8,6 +8,7 @@ set_str(){ plutil -replace "$1" -string "$2" "$PL"; }   # plutil: Texte mit Apos
 set_str NSMicrophoneUsageDescription "Little Muslim hört beim Vorlesen des Qur'an zu, damit es die gelesenen Wörter markieren und Fehler anzeigen kann. Die Erkennung läuft auf dem Gerät."
 set_str NSLocationWhenInUseUsageDescription "Little Muslim nutzt deinen Standort, um die Gebetszeiten und die Qibla-Richtung für deinen Ort zu berechnen."
 set_str NSSpeechRecognitionUsageDescription "Little Muslim nutzt die Spracherkennung, um beim Vorlesen des Qur'an die gelesenen Wörter zu erkennen."
+set_str NSPhotoLibraryAddUsageDescription "Little Muslim speichert auf deinen Wunsch Bilder mit Versen, Hadithen und Duas in deinen Fotos, damit du sie teilen kannst."
 set_str CFBundleDisplayName "Little Muslim"
 plutil -replace ITSAppUsesNonExemptEncryption -bool NO "$PL"
 pb "Delete :UISupportedInterfaceOrientations"; /usr/libexec/PlistBuddy -c "Add :UISupportedInterfaceOrientations array" "$PL"
@@ -34,5 +35,5 @@ unless g.files.any? { |f| f.path == "PrivacyInfo.xcprivacy" }
 end
 p.save'
 plutil -lint "$PL" ios/App/App/PrivacyInfo.xcprivacy
-for k in NSMicrophoneUsageDescription NSLocationWhenInUseUsageDescription NSSpeechRecognitionUsageDescription; do printf '%s: ' "$k"; plutil -extract "$k" raw "$PL"; done
+for k in NSMicrophoneUsageDescription NSLocationWhenInUseUsageDescription NSSpeechRecognitionUsageDescription NSPhotoLibraryAddUsageDescription; do printf '%s: ' "$k"; plutil -extract "$k" raw "$PL"; done
 echo "iOS-Projekt eingerichtet"
