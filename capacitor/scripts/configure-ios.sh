@@ -5,9 +5,9 @@ cd "$(dirname "$0")/.."
 PL=ios/App/App/Info.plist
 pb(){ /usr/libexec/PlistBuddy -c "$1" "$PL" 2>/dev/null || true; }
 set_str(){ plutil -replace "$1" -string "$2" "$PL"; }   # plutil: Texte mit Apostroph (Qur'an) sind kein Problem
-set_str NSMicrophoneUsageDescription "Little Muslim hört beim Vorlesen des Qur'an zu, damit es die gelesenen Wörter markieren und Fehler anzeigen kann. Die Erkennung läuft auf dem Gerät."
+set_str NSMicrophoneUsageDescription "Little Muslim hört beim Vorlesen des Qur'an und beim Tasbīḥ per Stimme zu, um gelesene Wörter zu markieren und Dhikr automatisch zu zählen. Es wird nichts aufgenommen oder gespeichert."
 set_str NSLocationWhenInUseUsageDescription "Little Muslim nutzt deinen Standort, um die Gebetszeiten und die Qibla-Richtung für deinen Ort zu berechnen."
-set_str NSSpeechRecognitionUsageDescription "Little Muslim nutzt die Spracherkennung, um beim Vorlesen des Qur'an die gelesenen Wörter zu erkennen."
+set_str NSSpeechRecognitionUsageDescription "Little Muslim nutzt die Spracherkennung, um beim Vorlesen des Qur'an die Wörter zu erkennen und beim Tasbīḥ jede Wiederholung zu zählen."
 set_str NSPhotoLibraryAddUsageDescription "Little Muslim speichert auf deinen Wunsch Bilder mit Versen, Hadithen und Duas in deinen Fotos, damit du sie teilen kannst."
 set_str CFBundleDisplayName "Little Muslim"
 plutil -replace ITSAppUsesNonExemptEncryption -bool NO "$PL"
