@@ -1,0 +1,32 @@
+== ATS
+Print: Entry, ":NSAppTransportSecurity", Does Not Exist
+kein NSAppTransportSecurity-Eintrag (Standard: nur HTTPS)
+== Info.plist-Schlüssel
+  "CFBundleDevelopmentRegion" => "en"
+  "CFBundleDisplayName" => "Little Muslim"
+  "CFBundleExecutable" => "$(EXECUTABLE_NAME)"
+  "CFBundleIdentifier" => "$(PRODUCT_BUNDLE_IDENTIFIER)"
+  "CFBundleInfoDictionaryVersion" => "6.0"
+  "CFBundleName" => "$(PRODUCT_NAME)"
+  "CFBundlePackageType" => "APPL"
+  "CFBundleShortVersionString" => "1.0.0"
+  "CFBundleVersion" => "22"
+  "ITSAppUsesNonExemptEncryption" => false
+  "LSRequiresIPhoneOS" => true
+  "NSLocationWhenInUseUsageDescription" => "Little Muslim nutzt deinen Standort, um die Gebetszeiten und die Qibla-Richtung für deinen Ort zu berechnen."
+  "NSMicrophoneUsageDescription" => "Little Muslim hört beim Vorlesen des Qur'an und beim Tasbīḥ per Stimme zu, um gelesene Wörter zu markieren und Dhikr automatisch zu zählen. Es wird nichts aufgenommen oder gespeichert."
+  "NSPhotoLibraryAddUsageDescription" => "Little Muslim speichert auf deinen Wunsch Bilder mit Versen, Hadithen und Duas in deinen Fotos, damit du sie teilen kannst."
+  "NSSpeechRecognitionUsageDescription" => "Little Muslim nutzt die Spracherkennung, um beim Vorlesen des Qur'an die Wörter zu erkennen und beim Tasbīḥ jede Wiederholung zu zählen."
+  "UIApplicationSceneManifest" => {
+    "UIApplicationSupportsMultipleScenes" => false
+    "UISceneConfigurations" => {
+      "UIWindowSceneSessionRoleApplication" => [
+          "UISceneConfigurationName" => "Default Configuration"
+          "UISceneDelegateClassName" => "$(PRODUCT_MODULE_NAME).SceneDelegate"
+          "UISceneStoryboardFile" => "Main"
+  "UILaunchStoryboardName" => "LaunchScreen"
+  "UIMainStoryboardFile" => "Main"
+  "UIRequiredDeviceCapabilities" => [
+  "UISupportedInterfaceOrientations" => [
+  "UISupportedInterfaceOrientations~ipad" => [
+  "UIViewControllerBasedStatusBarAppearance" => true
