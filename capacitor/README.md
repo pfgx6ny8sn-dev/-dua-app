@@ -28,5 +28,5 @@ GitHub → **Actions** → „iOS-App bauen“ → **Run workflow** → Version 
 
 ## Vor dem Einreichen
 - `datenschutz.html` im Repo: Name, Anschrift und E-Mail eintragen, DPA mit Supabase abschließen. Die Adresse `https://pfgx6ny8sn-dev.github.io/-dua-app/datenschutz.html` in App Store Connect als Datenschutz-URL angeben.
-- App-Datenschutz in App Store Connect: „Name“ und „Spielinhalte/Fortschritt“ (nur bei Familien-Funktion), nicht mit Identität verknüpft, kein Tracking.
+- App-Datenschutz in App Store Connect: wie im Privacy Manifest (ios-extra/PrivacyInfo.xcprivacy) – E-Mail (Eltern), Name (Spitzname Kind), Nutzer-ID, Spielinhalte, sonstige Nutzungsinhalte, sonstige Daten (Alter, Junge/Mädchen); alle **mit Identität verknüpft**, Zweck App-Funktionalität, kein Tracking.
 - Screenshots (6,9″ iPhone) und Beschreibung.

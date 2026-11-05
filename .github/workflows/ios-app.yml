@@ -45,7 +45,9 @@ jobs:
           sudo xcode-select -s "$(ls -d /Applications/Xcode_26*.app | sort -V | tail -1)"
           xcodebuild -version
       - name: Abhängigkeiten
-        run: npm install --no-audit --no-fund
+        # Mit Lockfile: exakt dieselben Paketversionen bei jedem Build (npm ci). Ohne: einmal erzeugen und im Protokoll-Branch ablegen.
+        run: |
+          if [ -f package-lock.json ]; then npm ci --no-audit --no-fund; else npm install --no-audit --no-fund; cp package-lock.json "$RUNNER_TEMP/package-lock.json"; fi
       - name: Sicherheitsprüfung der Pakete (npm audit, nur Bericht)
         run: |
           npm audit --omit=dev > "$RUNNER_TEMP/audit.txt" 2>&1 || true
@@ -105,6 +107,7 @@ jobs:
         run: |
           mkdir -p /tmp/ci && cd /tmp/ci && git init -q && git checkout -q -b ci-logs
           for f in audit audit-all packages plist; do [ -f "$RUNNER_TEMP/$f.txt" ] && cp "$RUNNER_TEMP/$f.txt" . || true; done
+          [ -f "$RUNNER_TEMP/package-lock.json" ] && cp "$RUNNER_TEMP/package-lock.json" . || true
           for f in archive export; do [ -f "$RUNNER_TEMP/$f.log" ] && grep -vE "^\s*$" "$RUNNER_TEMP/$f.log" | tail -250 > "$f.log" || true; done
           echo "run ${{ github.run_number }} ${{ job.status }}" > status.txt
           git add -A && git -c user.name=ci -c user.email=ci@example.com commit -qm "Build ${{ github.run_number }}" 

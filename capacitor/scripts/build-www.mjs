@@ -7,7 +7,7 @@ const OUT = path.resolve(import.meta.dirname, "..", "www");
 const NM = path.resolve(import.meta.dirname, "..", "node_modules");
 const VBASE = "https://pfgx6ny8sn-dev.github.io/-dua-app/";
 const COPY = ["manifest.webmanifest", "icon-192.png", "icon-512.png", "apple-touch-icon.png", "mushaf.js", "mushaf_de.js", "mushaf_en.js", "mushaf_warsh.js", "fonts",
-  "tafsir_ar.js", "tafsir_en.js", "asbab.js", "asbab_en.js", "push_hadith.json", "version.json", "audio"];
+  "tafsir_ar.js", "tafsir_en.js", "asbab.js", "asbab_en.js", "push_hadith.json", "version.json", "audio", "vendor"];
 fs.rmSync(OUT, {recursive: true, force: true});
 fs.mkdirSync(OUT, {recursive: true});
 for(const f of COPY){ const s = path.join(ROOT, f); if(fs.existsSync(s)) fs.cpSync(s, path.join(OUT, f), {recursive: true}); }

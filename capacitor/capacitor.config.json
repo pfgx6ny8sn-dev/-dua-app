@@ -5,9 +5,12 @@
   "ios": {
     "contentInset": "never",
     "backgroundColor": "#13285A",
-    "limitsNavigationsToAppBoundDomains": false
+    "limitsNavigationsToAppBoundDomains": false,
+    "allowsLinkPreview": false
   },
   "plugins": {
-    "LocalNotifications": { "iconColor": "#2E9B6C" }
+    "LocalNotifications": {
+      "iconColor": "#2E9B6C"
+    }
   }
 }
