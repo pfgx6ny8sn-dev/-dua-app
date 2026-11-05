@@ -5,6 +5,10 @@ name: Qur'an-KI lokal ablegen
 # etwas von jsDelivr oder Hugging Face nach (Datenschutz, App Store 2.5.2, feste Version).
 on:
   workflow_dispatch:
+    inputs:
+      dry:
+        description: "nur prüfen, nichts speichern"
+        default: "false"
 
 permissions:
   contents: write
@@ -44,6 +48,12 @@ jobs:
           cp /tmp/tf/package/LICENSE vendor/tf/LICENSE-transformers.txt
           cp /tmp/tf/ort/package/LICENSE vendor/tf/LICENSE-onnxruntime.txt 2>/dev/null || true
           echo "transformers.js ${TF_VERSION} / onnxruntime-web ${ORT}" > vendor/tf/VERSION
+          # GitHub-Push-Schutz hält eine Zeichenkette in der Bibliothek für einen „Mistral-Schlüssel“ (Fehlalarm, öffentlicher Code).
+          # Zeigen, welche Stellen betroffen sind:
+          node -e '
+            const t = require("fs").readFileSync("vendor/tf/transformers.min.js", "utf8");
+            const re = /mistral/gi; let m; const seen = new Set();
+            while((m = re.exec(t))){ const ctx = t.slice(Math.max(0, m.index - 120), m.index + 160); for(const k of ctx.match(/[A-Za-z0-9]{32}/g) || []){ if(!seen.has(k)){ seen.add(k); console.log("KANDIDAT", k, "::", ctx.replace(/\s+/g, " ").slice(0, 280)); } } }'
           ls -la vendor/tf
       - name: Modell holen (feste Revision)
         run: |
@@ -65,6 +75,7 @@ jobs:
           echo "${MODEL} @ ${REV}" > vendor/models/REVISION
           du -sh vendor/models; find vendor -size +95M -print | (! grep .)
       - name: Speichern
+        if: ${{ inputs.dry != 'true' }}
         run: |
           git config user.name ci && git config user.email ci@example.com
           git add vendor
