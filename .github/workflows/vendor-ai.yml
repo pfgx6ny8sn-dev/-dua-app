@@ -1,0 +1,72 @@
+name: Qur'an-KI lokal ablegen
+
+# Lädt die KI-Programmbibliothek (transformers.js + ONNX-Laufzeit) und das Spracherkennungs-Modell
+# einmalig herunter und legt sie unter vendor/ ab. Danach lädt weder die Web-App noch die iPhone-App
+# etwas von jsDelivr oder Hugging Face nach (Datenschutz, App Store 2.5.2, feste Version).
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+env:
+  TF_VERSION: "4.2.0"
+  MODEL: "Sharjeelbaig/whisper-tiny-ar-quran-onnx"
+
+jobs:
+  vendor:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Bibliothek holen
+        run: |
+          set -euo pipefail
+          mkdir -p /tmp/tf && cd /tmp/tf
+          npm pack "@huggingface/transformers@${TF_VERSION}" >/dev/null
+          tar xzf huggingface-transformers-*.tgz
+          ls package/dist
+          # onnxruntime-web: genau die Version, die transformers.js erwartet
+          ORT=$(node -p "require('./package/package.json').dependencies['onnxruntime-web']")
+          echo "onnxruntime-web $ORT"
+          npm pack "onnxruntime-web@${ORT}" >/dev/null
+          mkdir ort && tar xzf onnxruntime-web-*.tgz -C ort
+          ls ort/package/dist | head -50
+          cd "$GITHUB_WORKSPACE"
+          rm -rf vendor/tf && mkdir -p vendor/tf
+          cp /tmp/tf/package/dist/transformers.min.js vendor/tf/
+          [ -f /tmp/tf/package/dist/transformers.min.js.map ] && cp /tmp/tf/package/dist/transformers.min.js.map vendor/tf/ || true
+          cp /tmp/tf/package/dist/*.wasm vendor/tf/ 2>/dev/null || true
+          cp /tmp/tf/ort/package/dist/ort-wasm-simd-threaded*.wasm vendor/tf/ 2>/dev/null || true
+          cp /tmp/tf/ort/package/dist/ort-wasm-simd-threaded*.mjs vendor/tf/ 2>/dev/null || true
+          cp /tmp/tf/package/LICENSE vendor/tf/LICENSE-transformers.txt
+          cp /tmp/tf/ort/package/LICENSE vendor/tf/LICENSE-onnxruntime.txt 2>/dev/null || true
+          echo "transformers.js ${TF_VERSION} / onnxruntime-web ${ORT}" > vendor/tf/VERSION
+          ls -la vendor/tf
+      - name: Modell holen (feste Revision)
+        run: |
+          set -euo pipefail
+          API="https://huggingface.co/api/models/${MODEL}"
+          curl -fsSL "$API" -o /tmp/model.json
+          REV=$(node -p "require('/tmp/model.json').sha")
+          echo "Revision $REV"
+          D="vendor/models/${MODEL}"
+          rm -rf vendor/models && mkdir -p "$D/onnx"
+          node -e '
+            const m = require("/tmp/model.json");
+            for(const s of m.siblings){ const f = s.rfilename;
+              if(/^[^/]+\.(json|txt|model)$/.test(f) || /^onnx\/.*_quantized\.onnx(_data)?$/.test(f)) console.log(f); }' > /tmp/files.txt
+          cat /tmp/files.txt
+          while read -r f; do
+            curl -fsSL "https://huggingface.co/${MODEL}/resolve/${REV}/${f}" -o "$D/$f"
+          done < /tmp/files.txt
+          echo "${MODEL} @ ${REV}" > vendor/models/REVISION
+          du -sh vendor/models; find vendor -size +95M -print | (! grep .)
+      - name: Speichern
+        run: |
+          git config user.name ci && git config user.email ci@example.com
+          git add vendor
+          git commit -m "Qur'an-KI lokal (vendor/) statt jsDelivr/Hugging Face" || echo "nichts Neues"
+          git push
