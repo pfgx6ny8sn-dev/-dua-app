@@ -10,7 +10,15 @@
   },
   "plugins": {
     "LocalNotifications": {
-      "iconColor": "#2E9B6C"
+      "iconColor": "#2E9B6C",
+      "smallIcon": "ic_stat_lm"
+    },
+    "SystemBars": {
+      "insetsHandling": "native"
     }
+  },
+  "android": {
+    "backgroundColor": "#13285A",
+    "allowMixedContent": false
   }
 }
