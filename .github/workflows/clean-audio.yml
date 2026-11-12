@@ -1,0 +1,90 @@
+name: Filme – Hintergrundgeräusche entfernen
+
+# Trennt in den Propheten- und Sahaba-Filmen Stimme + Rezitation von den Hintergrundgeräuschen (Demucs, KI-Tonspurtrennung)
+# und legt die saubere Tonspur je Film und Sprache als .m4a im Branch „clean-audio“ ab.
+# Das Bild bleibt unverändert; die neue Tonspur wird danach in die Videos eingesetzt.
+on:
+  workflow_dispatch:
+    inputs:
+      films:
+        description: "Film-IDs, durch Komma getrennt"
+        default: "abubakr,adam,ali,anas,bilal,ibrahim,isa,khadija,muhammad,musa,nuh,umar,uthman,yunus,yusuf"
+        required: true
+
+permissions:
+  contents: write
+
+jobs:
+  plan:
+    runs-on: ubuntu-latest
+    outputs:
+      films: ${{ steps.p.outputs.films }}
+    steps:
+      - id: p
+        run: echo "films=$(echo '${{ inputs.films }}' | python3 -c 'import sys,json; print(json.dumps([x.strip() for x in sys.stdin.read().split(",") if x.strip()]))')" >> "$GITHUB_OUTPUT"
+
+  separate:
+    needs: plan
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    strategy:
+      fail-fast: false
+      max-parallel: 8
+      matrix:
+        film: ${{ fromJson(needs.plan.outputs.films) }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            videos/${{ matrix.film }}_de.mp4
+            videos/${{ matrix.film }}_ar.mp4
+          sparse-checkout-cone-mode: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: .github/workflows/clean-audio.yml
+      - name: Demucs installieren
+        run: |
+          sudo apt-get update -qq && sudo apt-get install -y -qq ffmpeg >/dev/null
+          pip install -q torch torchaudio --index-url https://download.pytorch.org/whl/cpu
+          pip install -q demucs soundfile
+      - name: Stimme und Rezitation abtrennen
+        run: |
+          set -e
+          mkdir -p out
+          for L in de ar; do
+            V="videos/${{ matrix.film }}_$L.mp4"; [ -f "$V" ] || continue
+            ffmpeg -v error -y -i "$V" -vn -ac 2 -ar 44100 "in_$L.wav"
+            python -m demucs -n htdemucs --two-stems=vocals -j 4 -o sep "in_$L.wav"
+            # Stimme: Brummen unter 70 Hz weg, Restrauschen sanft mindern, Lautheit wie vorher (-16 LUFS), mono
+            ffmpeg -v error -y -i "sep/htdemucs/in_$L/vocals.wav" \
+              -af "highpass=f=70,afftdn=nr=8:nf=-45,loudnorm=I=-16:TP=-1.5:LRA=11" -ac 1 -ar 48000 -c:a aac -b:a 128k \
+              "out/${{ matrix.film }}_$L.m4a"
+            ls -la out
+          done
+      - uses: actions/upload-artifact@v4
+        with:
+          name: clean-${{ matrix.film }}
+          path: out/*.m4a
+          retention-days: 7
+
+  collect:
+    needs: separate
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: clean-*
+          merge-multiple: true
+          path: clean
+      - name: Im Branch clean-audio ablegen
+        run: |
+          ls -la clean
+          U="https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git"
+          mkdir w && cd w && git init -q
+          if git fetch -q "$U" clean-audio 2>/dev/null; then git checkout -q -b clean-audio FETCH_HEAD; else git checkout -q --orphan clean-audio; fi
+          cp ../clean/*.m4a . && git add -A
+          git -c user.name=ci -c user.email=ci@example.com commit -qm "Saubere Tonspuren (${{ github.run_number }})" || echo "nichts Neues"
+          git push -q "$U" clean-audio
