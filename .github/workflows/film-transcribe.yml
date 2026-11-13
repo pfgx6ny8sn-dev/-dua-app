@@ -1,0 +1,86 @@
+name: Filme – Wörter mit Zeitstempel erkennen
+
+# Erkennt in den sauberen Tonspuren (Branch clean-audio) jedes gesprochene Wort mit Zeitstempel (faster-whisper).
+# Damit werden Tier- und Vogelgeräusche genau an die passende Stelle gesetzt (z. B. nach dem Wort „Vögel“).
+on:
+  workflow_dispatch:
+    inputs:
+      films:
+        description: "Film-IDs, durch Komma getrennt"
+        default: "abubakr,adam,ali,anas,bilal,ibrahim,isa,khadija,muhammad,musa,nuh,umar,uthman,yunus,yusuf"
+        required: true
+
+permissions:
+  contents: write
+
+jobs:
+  plan:
+    runs-on: ubuntu-latest
+    outputs:
+      films: ${{ steps.p.outputs.films }}
+    steps:
+      - id: p
+        run: echo "films=$(echo '${{ inputs.films }}' | python3 -c 'import sys,json; print(json.dumps([x.strip() for x in sys.stdin.read().split(",") if x.strip()]))')" >> "$GITHUB_OUTPUT"
+
+  asr:
+    needs: plan
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      max-parallel: 8
+      matrix:
+        film: ${{ fromJson(needs.plan.outputs.films) }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: clean-audio
+          sparse-checkout: |
+            ${{ matrix.film }}_de.m4a
+            ${{ matrix.film }}_ar.m4a
+          sparse-checkout-cone-mode: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: pip install -q faster-whisper
+      - name: Erkennen
+        run: |
+          mkdir -p out
+          python - <<'EOF'
+          import json, os
+          from faster_whisper import WhisperModel
+          m = WhisperModel("small", device="cpu", compute_type="int8")
+          f = "${{ matrix.film }}"
+          for L in ("de", "ar"):
+              p = f"{f}_{L}.m4a"
+              if not os.path.exists(p): continue
+              segs, _ = m.transcribe(p, language=L, word_timestamps=True, vad_filter=True, beam_size=1)
+              words = []
+              for s in segs:
+                  for w in (s.words or []): words.append([round(w.start, 2), round(w.end, 2), w.word.strip()])
+              json.dump(words, open(f"out/{f}_{L}.json", "w"), ensure_ascii=False)
+              print(f, L, len(words), "Wörter", flush=True)
+          EOF
+      - uses: actions/upload-artifact@v4
+        with:
+          name: asr-${{ matrix.film }}
+          path: out/*.json
+          retention-days: 7
+
+  collect:
+    needs: asr
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: asr-*
+          merge-multiple: true
+          path: asr
+      - name: Im Branch film-words ablegen
+        run: |
+          U="https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git"
+          mkdir w && cd w && git init -q && git checkout -q --orphan film-words-${{ github.run_number }}
+          cp ../asr/*.json . && git add -A
+          git -c user.name=ci -c user.email=ci@example.com commit -qm "Wort-Zeitstempel (${{ github.run_number }})"
+          git push -q "$U" film-words-${{ github.run_number }}
