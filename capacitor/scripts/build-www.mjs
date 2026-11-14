@@ -5,7 +5,7 @@ import path from "node:path";
 const ROOT = path.resolve(import.meta.dirname, "..", "..");
 const OUT = path.resolve(import.meta.dirname, "..", "www");
 const NM = path.resolve(import.meta.dirname, "..", "node_modules");
-const VBASE = "https://pfgx6ny8sn-dev.github.io/-dua-app/";
+const VBASE = "https://little-muslim.de/";
 const COPY = ["manifest.webmanifest", "icon-192.png", "icon-512.png", "apple-touch-icon.png", "mushaf.js", "mushaf_de.js", "mushaf_en.js", "mushaf_warsh.js", "fonts",
   "tafsir_ar.js", "tafsir_en.js", "asbab.js", "asbab_en.js", "push_hadith.json", "version.json", "audio", "vendor"];
 fs.rmSync(OUT, {recursive: true, force: true});
