@@ -11,6 +11,9 @@ set_str NSSpeechRecognitionUsageDescription "Little Muslim nutzt die Spracherken
 set_str NSPhotoLibraryAddUsageDescription "Little Muslim speichert auf deinen Wunsch Bilder mit Versen, Hadithen und Duas in deinen Fotos, damit du sie teilen kannst."
 set_str CFBundleDisplayName "Little Muslim"
 plutil -replace ITSAppUsesNonExemptEncryption -bool NO "$PL"
+pb "Delete :CFBundleLocalizations"; /usr/libexec/PlistBuddy -c "Add :CFBundleLocalizations array" "$PL"
+for l in de en ar; do /usr/libexec/PlistBuddy -c "Add :CFBundleLocalizations: string $l" "$PL"; done
+set_str CFBundleDevelopmentRegion de
 pb "Delete :UISupportedInterfaceOrientations"; /usr/libexec/PlistBuddy -c "Add :UISupportedInterfaceOrientations array" "$PL"
 for o in UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight; do /usr/libexec/PlistBuddy -c "Add :UISupportedInterfaceOrientations: string $o" "$PL"; done
 # iPad: alle Ausrichtungen (Pflicht für Multitasking); iPhone + iPad
